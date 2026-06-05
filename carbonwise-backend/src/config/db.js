@@ -16,21 +16,40 @@ const buildPoolConfig = () => {
       port: parsed.port ? Number(parsed.port) : 5432,
       database: parsed.pathname.replace(/^\//, ''),
       user: decodeURIComponent(parsed.username || ''),
-      // Keep password as a string; pg throws if it is undefined/non-string.
       password: decodeURIComponent(parsed.password || ''),
+
+      // SSL required for Render PostgreSQL
+      ssl:
+        process.env.PG_SSL === 'true'
+          ? { rejectUnauthorized: false }
+          : false,
     };
   } catch (error) {
-    console.warn('⚠️ Failed to parse DATABASE_URL, trying raw connection string.');
-    return { connectionString };
+    console.warn(
+      '⚠️ Failed to parse DATABASE_URL, trying raw connection string.'
+    );
+
+    return {
+      connectionString,
+      ssl:
+        process.env.PG_SSL === 'true'
+          ? { rejectUnauthorized: false }
+          : false,
+    };
   }
 };
 
 const pool = new Pool(buildPoolConfig());
 
 pool.connect()
-  .then(() => console.log('✅ PostgreSQL connected successfully!'))
-  .catch(err => console.error('❌ Database connection error', err.stack));
+  .then(() => {
+    console.log('✅ PostgreSQL connected successfully!');
+  })
+  .catch((err) => {
+    console.error('❌ Database connection error', err);
+  });
 
 module.exports = {
   query: (text, params) => pool.query(text, params),
+  pool,
 };
