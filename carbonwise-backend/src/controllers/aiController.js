@@ -1,5 +1,5 @@
 const generateEcoPlan = require("../services/geminiChatService");
-
+//Added new Activity in Plan
 exports.generateEcoPlan = async (req, res) => {
 
   try {

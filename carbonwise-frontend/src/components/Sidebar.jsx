@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-
+//Added new Activity
 const navItems = [
   { path: '/dashboard', label: '📊 Dashboard' },
   { path: '/activities', label: '🏃 Activity Tracker' },

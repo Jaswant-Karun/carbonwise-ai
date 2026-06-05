@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 
 const protect = (req, res, next) => {
   let token;
-
+// JWT Secret
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];

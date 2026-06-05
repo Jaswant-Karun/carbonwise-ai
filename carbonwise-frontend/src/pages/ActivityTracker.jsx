@@ -9,7 +9,6 @@ const activityTypes = [
   { value: 'flight', label: '✈️ Flight', unit: 'km flown', factor: 0.255 },
   { value: 'shopping', label: '🛍️ Shopping', unit: 'items purchased', factor: 5.0 },
 ];
-
 const calculateEmissions = (type, value) => {
   const found = activityTypes.find((a) => a.value === type);
   const val = parseFloat(value);

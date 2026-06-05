@@ -13,7 +13,7 @@ import Insights from './pages/Insights';
 import ActionPlan from './pages/ActionPlan';
 import Reports from './pages/Reports';
 import Profile from './pages/Profile';
-
+//Added new Activity
 const ProtectedRoute = ({ children }) => {
   const { user } = React.useContext(AuthContext);
   return user ? children : <Navigate to="/login" />;

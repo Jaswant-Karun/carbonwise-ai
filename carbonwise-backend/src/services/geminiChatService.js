@@ -7,7 +7,7 @@ async function generateEcoPlan(activities) {
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash"
   });
-
+//Added new Activity
   const activitySummary = activities
     .map(a =>
       `Type: ${a.activity_type}, Value: ${a.details?.value}, Emission: ${a.carbon_emissions} kg`

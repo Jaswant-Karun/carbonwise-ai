@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import api from '../services/api';
 import Layout from '../components/Layout';
-
+//Added new Activity
 const impactBadge = (impact) => {
   const styles = {
     high: { bg: 'rgba(239,68,68,0.15)', color: '#ef4444', label: 'High Impact' },

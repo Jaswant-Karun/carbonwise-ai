@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const PDFDocument = require('pdfkit');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
+//Added new Activity in Plan
 // @desc  Generate monthly AI climate report
 // @route GET /api/reports/monthly
 const generateReport = async (req, res) => {

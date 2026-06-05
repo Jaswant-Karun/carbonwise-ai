@@ -7,7 +7,7 @@ const buildPoolConfig = () => {
   if (!connectionString) {
     throw new Error('DATABASE_URL is missing in .env');
   }
-
+//new URL
   try {
     const parsed = new URL(connectionString);
 

@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
-
+//Added new Activity
 const ActionPlan = () => {
   const { user } = useContext(AuthContext);
   const [plan, setPlan] = useState(null);

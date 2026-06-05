@@ -3,7 +3,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: "https://carbonwise-ai.onrender.com/api",
 });
-
+//Added new Activity
 // Add a request interceptor to inject the token
 api.interceptors.request.use(
   (config) => {

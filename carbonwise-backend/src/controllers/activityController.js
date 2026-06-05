@@ -1,5 +1,5 @@
 const db = require('../config/db');
-
+//Added new Activity
 // @desc    Add a new activity
 // @route   POST /api/activities
 const addActivity = async (req, res) => {

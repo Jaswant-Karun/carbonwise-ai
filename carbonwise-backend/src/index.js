@@ -11,7 +11,7 @@ initDb();
 // Middleware
 app.use(cors());
 app.use(express.json());
-
+//Added new Activity Router
 // Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'CarbonWise API is running!' });

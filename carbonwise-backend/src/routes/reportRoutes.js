@@ -6,7 +6,7 @@ const {
   generatePrediction,
   generatePDFReport
 } = require('../controllers/reportController');
-
+//Added new Activity
 const { protect } = require('../middlewares/authMiddleware');
 
 router.get('/monthly', protect, generateReport);

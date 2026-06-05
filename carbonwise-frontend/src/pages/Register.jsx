@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-
+//Added new Activity
 const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

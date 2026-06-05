@@ -11,7 +11,7 @@ const initDb = async () => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `;
-
+//Added new Activity
   const createActivitiesTable = `
     CREATE TABLE IF NOT EXISTS activities (
       id SERIAL PRIMARY KEY,

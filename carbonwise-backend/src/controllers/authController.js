@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
-
+//Added new Activity
 // @desc    Register new user
 // @route   POST /api/auth/register
 const registerUser = async (req, res) => {
