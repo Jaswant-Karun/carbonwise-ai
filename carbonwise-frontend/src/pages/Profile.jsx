@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import { AuthContext } from '../context/AuthContext';
-//Added new Activity
+
 const Profile = () => {
   const { user } = useContext(AuthContext);
   const [activities, setActivities] = useState([]);
