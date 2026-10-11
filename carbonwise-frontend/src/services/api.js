@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: "https://carbonwise-ai.onrender.com/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 });
 //Added new Activity
 // Add a request interceptor to inject the token
