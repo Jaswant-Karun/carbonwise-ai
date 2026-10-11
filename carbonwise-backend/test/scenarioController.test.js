@@ -3,6 +3,10 @@ const assert = require('node:assert/strict');
 const db = require('../src/config/db');
 const { getScenario } = require('../src/controllers/scenarioController');
 
+test.after(async () => {
+  await db.pool.end();
+});
+
 test('does not return a scenario when it belongs to another user', async () => {
   const originalQuery = db.query;
   let receivedParams;
