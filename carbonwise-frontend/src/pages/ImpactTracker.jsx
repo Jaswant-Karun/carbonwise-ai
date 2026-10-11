@@ -145,6 +145,9 @@ const ImpactTracker = () => {
       <ChartCard title="Report history" description="Previously generated deterministic report snapshots.">
         <div className="impact-history-list">{reports.length === 0 ? <div className="empty-inline"><FileText size={19} />No previous reports.</div> : reports.map((item) => <div className="impact-history-row" key={item.id}><div><strong>{item.period?.currentStart} to {item.period?.currentEnd}</strong><small>{formatKg(item.totals?.current)} recorded · {item.totals?.status} · {item.narrativeSource}</small></div><button className="icon-button" type="button" aria-label={`Download report ${item.id}`} onClick={() => downloadPdf(item.id)}><Download size={16} /></button></div>)}</div>
       </ChartCard>
+      <ChartCard title="Eco-action history" description="Completion records are participation evidence, not proof of an emissions reduction.">
+        <div className="impact-history-list">{(report?.actionHistory || []).length === 0 ? <div className="empty-inline"><Target size={19} />No recorded coach actions yet.</div> : report.actionHistory.map((action) => <div className="impact-history-row" key={action.id}><div><strong>{action.title}</strong><small>{action.category} · {action.status}{action.completed_at ? ` · completed ${new Date(action.completed_at).toLocaleDateString()}` : ''}</small></div><span className={`goal-status ${action.status}`}>{action.status.replace('_', ' ')}</span></div>)}</div>
+      </ChartCard>
     </Layout>
   );
 };
