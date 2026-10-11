@@ -1,6 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const db = require('../src/config/db');
 const { buildObservations, validateRegion } = require('../src/services/environmentService');
+
+test.after(async () => {
+  await db.pool.end();
+});
 
 test('validates environmental regions without accepting invalid coordinates', () => {
   assert.deepEqual(validateRegion({ name: 'Campus', latitude: '12.34', longitude: '56.78' }), {
