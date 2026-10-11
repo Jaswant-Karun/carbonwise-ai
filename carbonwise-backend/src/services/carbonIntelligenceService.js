@@ -6,6 +6,11 @@ const EMISSION_FACTORS = {
   shopping: { label: 'Shopping', unit: 'item', reductionRate: 0.15, rationale: 'Buy fewer, longer-lasting items and choose lower-impact alternatives.' },
 };
 
+const getEmissionFactor = (category) => {
+  const normalizedCategory = typeof category === 'string' ? category.trim().toLowerCase() : '';
+  return EMISSION_FACTORS[normalizedCategory] || null;
+};
+
 const round = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
 
 const parseActivity = (activity) => {
@@ -172,6 +177,7 @@ module.exports = {
   buildIntelligence,
   comparePeriods,
   detectAnomalies,
+  getEmissionFactor,
   getPeriodBounds,
   parseActivity,
 };

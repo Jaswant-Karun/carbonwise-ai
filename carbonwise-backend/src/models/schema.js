@@ -23,9 +23,27 @@ const initDb = async () => {
     );
   `;
 
+  const createScenariosTable = `
+    CREATE TABLE IF NOT EXISTS scenarios (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name VARCHAR(120) NOT NULL,
+      period_days INTEGER NOT NULL CHECK (period_days BETWEEN 1 AND 365),
+      changes JSONB NOT NULL,
+      baseline_emissions DECIMAL(10, 2) NOT NULL CHECK (baseline_emissions >= 0),
+      scenario_emissions DECIMAL(10, 2) NOT NULL CHECK (scenario_emissions >= 0),
+      potential_savings_kg DECIMAL(10, 2) NOT NULL CHECK (potential_savings_kg >= 0),
+      potential_savings_percentage DECIMAL(6, 2) NOT NULL CHECK (potential_savings_percentage >= 0),
+      assumptions JSONB NOT NULL DEFAULT '[]'::jsonb,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   try {
     await db.query(createUsersTable);
     await db.query(createActivitiesTable);
+    await db.query(createScenariosTable);
     console.log('✅ Database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database tables:', err.stack);
