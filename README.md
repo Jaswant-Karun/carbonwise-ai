@@ -364,11 +364,6 @@ Example scenario preview:
   "periodDays": 30,
   "changes": [
     {
-      "action": "reduce",
-      "category": "transport",
-      "percentage": 20
-    },
-    {
       "action": "switch_transport",
       "category": "transport",
       "targetMode": "public_transport",
@@ -378,20 +373,19 @@ Example scenario preview:
 }
 ```
 
-Only one change per category is accepted by the scenario validator, so the
-example above is illustrative of supported change shapes; a real request must
-combine transport assumptions into one supported change.
+Only one change per category is accepted by the scenario validator. To model
+multiple categories, add one validated change for each different category.
 
 ### Optional AI endpoints
 
 | Method | Endpoint | Purpose |
 |---|---|---|
-| POST | `/api/ai/eco-plan` | Optional personalized Eco-Coach narrative |
-| POST | `/api/chat` | Authenticated conversational response |
-| GET | `/api/reports/monthly` | Legacy monthly report endpoint |
-| GET | `/api/reports/insights` | Optional AI insights |
-| GET | `/api/reports/predict` | Legacy narrative around estimates |
-| GET | `/api/reports/pdf` | Legacy PDF report |
+| POST | `/ai/eco-plan` | Optional personalized Eco-Coach narrative |
+| POST | `/chat` | Authenticated conversational response |
+| GET | `/reports/monthly` | Legacy monthly report endpoint |
+| GET | `/reports/insights` | Optional AI insights |
+| GET | `/reports/predict` | Legacy narrative around estimates |
+| GET | `/reports/pdf` | Legacy PDF report |
 
 ## 11. Carbon formulas and configured factors
 
