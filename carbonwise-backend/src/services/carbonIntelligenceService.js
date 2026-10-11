@@ -1,9 +1,9 @@
 const EMISSION_FACTORS = {
-  transport: { label: 'Transport', unit: 'km', reductionRate: 0.2, rationale: 'Combine trips, use public transport, walk, or cycle for short journeys.' },
-  electricity: { label: 'Electricity', unit: 'kWh', reductionRate: 0.15, rationale: 'Reduce standby power and shift usage to efficient appliances and lighting.' },
-  food: { label: 'Food', unit: 'meal', reductionRate: 0.25, rationale: 'Replace some high-emission meals with plant-forward alternatives.' },
-  flight: { label: 'Flights', unit: 'km', reductionRate: 0.1, rationale: 'Prefer rail or virtual meetings where practical and consolidate trips.' },
-  shopping: { label: 'Shopping', unit: 'item', reductionRate: 0.15, rationale: 'Buy fewer, longer-lasting items and choose lower-impact alternatives.' },
+  transport: { label: 'Transport', unit: 'km', factor: 0.21, reductionRate: 0.2, rationale: 'Combine trips, use public transport, walk, or cycle for short journeys.' },
+  electricity: { label: 'Electricity', unit: 'kWh', factor: 0.5, reductionRate: 0.15, rationale: 'Reduce standby power and shift usage to efficient appliances and lighting.' },
+  food: { label: 'Food', unit: 'meal', factor: 2.5, reductionRate: 0.25, rationale: 'Replace some high-emission meals with plant-forward alternatives.' },
+  flight: { label: 'Flights', unit: 'km', factor: 0.255, reductionRate: 0.1, rationale: 'Prefer rail or virtual meetings where practical and consolidate trips.' },
+  shopping: { label: 'Shopping', unit: 'item', factor: 5, reductionRate: 0.15, rationale: 'Buy fewer, longer-lasting items and choose lower-impact alternatives.' },
 };
 
 const getEmissionFactor = (category) => {
