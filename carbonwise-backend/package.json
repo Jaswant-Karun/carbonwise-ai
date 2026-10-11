@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "node --test test/carbonIntelligenceService.test.js test/whatIfSimulatorService.test.js"
+    "test": "node --test test/carbonIntelligenceService.test.js test/whatIfSimulatorService.test.js test/scenarioController.test.js"
   }, 
   "keywords": [],
   "author": "",
