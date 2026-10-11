@@ -54,15 +54,15 @@ test('compares equivalent periods and ranks sources by savings', () => {
     activities: [
       { date: '2026-09-25', activity_type: 'transport', carbon_emissions: 10 },
       { date: '2026-10-01', activity_type: 'transport', carbon_emissions: 10 },
-      { date: '2026-10-02', activity_type: 'food', carbon_emissions: 8 },
+      { date: '2026-10-02', activity_type: 'food', carbon_emissions: 12 },
     ],
     ...bounds,
   });
 
-  assert.equal(result.comparison.current, 18);
+  assert.equal(result.comparison.current, 22);
   assert.equal(result.comparison.previous, 10);
-  assert.equal(result.comparison.absoluteChange, 8);
-  assert.equal(result.comparison.percentageChange, 80);
+  assert.equal(result.comparison.absoluteChange, 12);
+  assert.equal(result.comparison.percentageChange, 120);
   assert.equal(result.recommendations[0].category, 'food');
   assert.equal(result.recommendations[0].potentialSavingsKg, 2);
 });
