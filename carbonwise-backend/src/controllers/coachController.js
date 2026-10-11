@@ -145,7 +145,7 @@ const updateAction = async (req, res) => {
 const getGoals = async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT g.*, COALESCE(SUM(CASE WHEN a.status = 'completed' THEN 1 ELSE 0 END), 0)::int AS completed_actions
+      `SELECT g.*, COALESCE(SUM(CASE WHEN a.status = 'completed' AND a.created_at >= g.started_at THEN 1 ELSE 0 END), 0)::int AS completed_actions
        FROM coach_goals g LEFT JOIN coach_actions a ON a.user_id = g.user_id
        WHERE g.user_id = $1 GROUP BY g.id ORDER BY g.created_at DESC`,
       [req.user.id],

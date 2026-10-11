@@ -165,7 +165,10 @@ const ActionPlan = () => {
             <label>Category<select value={goalForm.category} onChange={(event) => setGoalForm({ ...goalForm, category: event.target.value })}><option value="">All categories</option><option value="transport">Transport</option><option value="electricity">Electricity</option><option value="food">Food</option><option value="flight">Flights</option><option value="shopping">Shopping</option></select></label>
             <button className="btn" type="submit" disabled={goalSaving}>Create goal</button>
           </form>
-          <div className="goal-list">{goals.map((goal) => <div className="goal-row" key={goal.id}><div><strong>{goal.period} goal · {formatKg(goal.targetKg)}</strong><small>{goal.category || 'All categories'} · baseline {formatKg(goal.baselineKg)}</small></div><select value={goal.status} onChange={(event) => updateGoal(goal.id, event.target.value)}><option value="active">Active</option><option value="completed">Completed</option><option value="archived">Archived</option></select></div>)}</div>
+          <div className="goal-list">{goals.map((goal) => {
+            const actionProgress = Math.min(100, Number(goal.completedActions || 0) / 7 * 100);
+            return <div className="goal-row" key={goal.id}><div><strong>{goal.period} goal · {formatKg(goal.targetKg)}</strong><small>{goal.category || 'All categories'} · baseline {formatKg(goal.baselineKg)} · {goal.completedActions || 0} actions completed</small><span className="goal-progress-track"><span style={{ width: `${actionProgress}%` }} /></span><small>Action participation progress; emission change is evaluated separately from completion.</small></div><select value={goal.status} onChange={(event) => updateGoal(goal.id, event.target.value)}><option value="active">Active</option><option value="completed">Completed</option><option value="archived">Archived</option></select></div>;
+          })}</div>
         </section>
         <section className="chart-card coach-note"><MessageCircle size={22} /><h3>How adaptation works</h3><p>Completing an action is recorded as participation, not proof that emissions fell. Future plans review completion history alongside subsequent activity records before changing recommendations.</p></section>
       </div>

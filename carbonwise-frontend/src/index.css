@@ -531,6 +531,23 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Manrope', sans-serif; }
   color: var(--text-muted);
 }
 
+.goal-progress-track {
+  display: block;
+  width: min(280px, 100%);
+  height: 6px;
+  margin-top: 8px;
+  overflow: hidden;
+  background: #e8eee9;
+  border-radius: 999px;
+}
+
+.goal-progress-track span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  border-radius: inherit;
+}
+
 .coach-note {
   align-self: start;
 }
