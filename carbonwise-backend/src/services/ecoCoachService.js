@@ -116,7 +116,7 @@ const buildCoachPlan = ({ activities, completedHistory = [], previousActions = [
   const parsedActivities = activities.map(parseActivity);
   const bounds = getPeriodBounds(30);
   const intelligence = buildIntelligence({
-    activities: parsedActivities.filter(Boolean),
+    activities: activities.filter((activity) => parseActivity(activity)),
     periodDays: 30,
     ...bounds,
   });
