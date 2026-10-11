@@ -20,6 +20,11 @@ const pageMeta = {
     title: 'Carbon Intelligence',
     description: 'Turn your activity data into practical climate insights.',
   },
+  '/intelligence': {
+    eyebrow: 'Carbon intelligence',
+    title: 'Carbon Intelligence',
+    description: 'Turn your activity data into practical climate insights.',
+  },
   '/action-plan': {
     eyebrow: 'Personalized guidance',
     title: 'AI Eco-Coach',

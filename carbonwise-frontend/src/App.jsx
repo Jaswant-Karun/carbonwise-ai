@@ -13,6 +13,7 @@ import Insights from './pages/Insights';
 import ActionPlan from './pages/ActionPlan';
 import Reports from './pages/Reports';
 import Profile from './pages/Profile';
+import CarbonIntelligence from './pages/CarbonIntelligence';
 //Added new Activity
 const ProtectedRoute = ({ children }) => {
   const { user } = React.useContext(AuthContext);
@@ -31,6 +32,7 @@ function App() {
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/activities" element={<ProtectedRoute><ActivityTracker /></ProtectedRoute>} />
             <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
+            <Route path="/intelligence" element={<ProtectedRoute><CarbonIntelligence /></ProtectedRoute>} />
             <Route path="/action-plan" element={<ProtectedRoute><ActionPlan /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

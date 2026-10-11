@@ -18,10 +18,10 @@ import { AuthContext } from '../context/AuthContext';
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: Gauge },
   { path: '/activities', label: 'Activity History', icon: History },
-  { path: '/insights', label: 'Carbon Intelligence', icon: BrainCircuit },
-  { path: '/insights', label: 'What-If Simulator', icon: BarChart3 },
+  { path: '/intelligence', label: 'Carbon Intelligence', icon: BrainCircuit },
+  { path: '/intelligence', label: 'What-If Simulator', icon: BarChart3 },
   { path: '/action-plan', label: 'AI Eco-Coach', icon: Leaf },
-  { path: '/insights', label: 'Forecast & Anomalies', icon: TrendingUp },
+  { path: '/intelligence', label: 'Forecast & Anomalies', icon: TrendingUp },
   { path: '/action-plan', label: 'Sustainability Goals', icon: Target },
   { path: '/profile', label: 'Impact Tracker', icon: Flag },
   { path: '/reports', label: 'Climate Reports', icon: FileText },
