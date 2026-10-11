@@ -1,16 +1,14 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const db = require('../src/config/db');
+const dbModulePath = require.resolve('../src/config/db');
+const fakeDb = { query: null, pool: { end: async () => {} } };
+require.cache[dbModulePath] = { id: dbModulePath, filename: dbModulePath, loaded: true, exports: fakeDb };
 const { getScenario } = require('../src/controllers/scenarioController');
 
-test.after(async () => {
-  await db.pool.end();
-});
-
 test('does not return a scenario when it belongs to another user', async () => {
-  const originalQuery = db.query;
+  const originalQuery = fakeDb.query;
   let receivedParams;
-  db.query = async (query, params) => {
+  fakeDb.query = async (query, params) => {
     receivedParams = params;
     return { rows: [] };
   };
@@ -31,7 +29,7 @@ test('does not return a scenario when it belongs to another user', async () => {
   try {
     await getScenario({ params: { id: '42' }, user: { id: 7 } }, response);
   } finally {
-    db.query = originalQuery;
+    fakeDb.query = originalQuery;
   }
 
   assert.deepEqual(receivedParams, ['42', 7]);
