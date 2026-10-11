@@ -93,26 +93,27 @@ const requestGemini = async (prompt, maxOutputTokens = MAX_OUTPUT_TOKENS) => {
 
 const generateCached = async ({ userId, task, input, dataVersion, prompt, maxOutputTokens, ttlMs = CACHE_TTL_MS, fallback }) => {
   if (!userId) return fallback || fallbackText(task);
-  await ensureCacheTable();
   const key = cacheKey({ userId, task, input, dataVersion });
-  const existing = await db.query(
-    `SELECT response FROM ai_response_cache
-     WHERE user_id = $1 AND task = $2 AND cache_key = $3 AND expires_at > CURRENT_TIMESTAMP`,
-    [userId, task, key],
-  );
-  if (existing.rows[0]) {
-    await db.query('UPDATE ai_response_cache SET last_accessed_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND task = $2 AND cache_key = $3', [userId, task, key]);
-    console.info(`[gemini] task=${task} cache_hit=true`);
-    return existing.rows[0].response;
-  }
   if (inFlight.has(key)) {
     console.info(`[gemini] task=${task} joined_in_flight=true`);
     return inFlight.get(key);
   }
-  consumeRateLimit(userId);
-  const started = Date.now();
-  const request = requestGemini(prompt, maxOutputTokens)
-    .then(async (response) => {
+  const request = (async () => {
+    await ensureCacheTable();
+    const existing = await db.query(
+      `SELECT response FROM ai_response_cache
+       WHERE user_id = $1 AND task = $2 AND cache_key = $3 AND expires_at > CURRENT_TIMESTAMP`,
+      [userId, task, key],
+    );
+    if (existing.rows[0]) {
+      await db.query('UPDATE ai_response_cache SET last_accessed_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND task = $2 AND cache_key = $3', [userId, task, key]);
+      console.info(`[gemini] task=${task} cache_hit=true`);
+      return existing.rows[0].response;
+    }
+    consumeRateLimit(userId);
+    const started = Date.now();
+    try {
+      const response = await requestGemini(prompt, maxOutputTokens);
       await db.query(
         `INSERT INTO ai_response_cache (user_id, task, cache_key, response, data_version, expires_at)
          VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP + ($6 * INTERVAL '1 millisecond'))
@@ -123,12 +124,11 @@ const generateCached = async ({ userId, task, input, dataVersion, prompt, maxOut
       );
       console.info(`[gemini] task=${task} cache_hit=false latency_ms=${Date.now() - started}`);
       return response;
-    })
-    .catch((error) => {
+    } catch (error) {
       console.warn(`[gemini] task=${task} error=${isQuotaError(error) ? 'quota' : error.code === 'ETIMEDOUT' ? 'timeout' : 'request'}`);
       return fallback || fallbackText(task);
-    })
-    .finally(() => inFlight.delete(key));
+    }
+  })().finally(() => inFlight.delete(key));
   inFlight.set(key, request);
   return request;
 };
@@ -214,4 +214,4 @@ module.exports.generatePredictionNarrative = (summary, options = {}) => generate
   fallback: fallbackText('prediction'),
 });
 
-module.exports._test = { cacheKey, stable, inFlight, rateWindows, requestGemini };
+module.exports._test = { cacheKey, stable, inFlight, rateWindows, requestGemini, generateCached, isQuotaError };
