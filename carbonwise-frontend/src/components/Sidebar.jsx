@@ -19,7 +19,7 @@ const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: Gauge },
   { path: '/activities', label: 'Activity History', icon: History },
   { path: '/intelligence', label: 'Carbon Intelligence', icon: BrainCircuit },
-  { path: '/intelligence', label: 'What-If Simulator', icon: BarChart3 },
+  { path: '/simulator', label: 'What-If Simulator', icon: BarChart3 },
   { path: '/action-plan', label: 'AI Eco-Coach', icon: Leaf },
   { path: '/intelligence', label: 'Forecast & Anomalies', icon: TrendingUp },
   { path: '/action-plan', label: 'Sustainability Goals', icon: Target },
@@ -52,7 +52,7 @@ const Sidebar = () => {
             const NavIcon = item.icon;
             return (
             <li key={`${item.label}-${index}`}>
-              <NavLink to={item.path} className={({ isActive }) => `nav-link${isActive && ['Dashboard', 'Activity History', 'Carbon Intelligence', 'AI Eco-Coach', 'Impact Tracker', 'Climate Reports'].includes(item.label) ? ' active' : ''}`}>
+              <NavLink to={item.path} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
                 <NavIcon size={18} aria-hidden="true" />
                 <span>{item.label}</span>
               </NavLink>

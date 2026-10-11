@@ -14,6 +14,7 @@ import ActionPlan from './pages/ActionPlan';
 import Reports from './pages/Reports';
 import Profile from './pages/Profile';
 import CarbonIntelligence from './pages/CarbonIntelligence';
+import WhatIfSimulator from './pages/WhatIfSimulator';
 //Added new Activity
 const ProtectedRoute = ({ children }) => {
   const { user } = React.useContext(AuthContext);
@@ -33,6 +34,7 @@ function App() {
             <Route path="/activities" element={<ProtectedRoute><ActivityTracker /></ProtectedRoute>} />
             <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
             <Route path="/intelligence" element={<ProtectedRoute><CarbonIntelligence /></ProtectedRoute>} />
+            <Route path="/simulator" element={<ProtectedRoute><WhatIfSimulator /></ProtectedRoute>} />
             <Route path="/action-plan" element={<ProtectedRoute><ActionPlan /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

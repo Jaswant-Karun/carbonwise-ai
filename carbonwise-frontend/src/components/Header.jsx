@@ -25,6 +25,11 @@ const pageMeta = {
     title: 'Carbon Intelligence',
     description: 'Turn your activity data into practical climate insights.',
   },
+  '/simulator': {
+    eyebrow: 'Scenario planning',
+    title: 'What-If Simulator',
+    description: 'Model lifestyle changes before you make them.',
+  },
   '/action-plan': {
     eyebrow: 'Personalized guidance',
     title: 'AI Eco-Coach',
