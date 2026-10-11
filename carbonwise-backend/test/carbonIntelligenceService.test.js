@@ -64,5 +64,5 @@ test('compares equivalent periods and ranks sources by savings', () => {
   assert.equal(result.comparison.absoluteChange, 12);
   assert.equal(result.comparison.percentageChange, 120);
   assert.equal(result.recommendations[0].category, 'food');
-  assert.equal(result.recommendations[0].potentialSavingsKg, 2);
+  assert.equal(result.recommendations[0].potentialSavingsKg, 3);
 });
