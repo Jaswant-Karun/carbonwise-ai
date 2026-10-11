@@ -1,4 +1,4 @@
-const askGemini = require("../services/geminiChatService");
+const { generateChatResponse } = require("../services/geminiChatService");
 const Activity = require("../models/Activity");
 //Added new Activity in Plan
 exports.chat = async (req, res) => {
@@ -7,9 +7,11 @@ exports.chat = async (req, res) => {
 
     const { message } = req.body;
 
-    const activities = await Activity.find().limit(10);
-
-    const reply = await askGemini(message, activities);
+    const activitiesResult = await require('../config/db').query(
+      'SELECT activity_type, details, carbon_emissions, date FROM activities WHERE user_id = $1 ORDER BY date DESC LIMIT 10',
+      [req.user.id],
+    );
+    const reply = await generateChatResponse(message, activitiesResult.rows, { userId: req.user.id });
 
     res.json({ reply });
 

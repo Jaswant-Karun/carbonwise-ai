@@ -83,7 +83,7 @@ const createReport = async (req, res) => {
     let narrativeSource = 'deterministic';
     if (req.body.useGemini === true) {
       try {
-        narrative = await generateImpactNarrative(report);
+        narrative = await generateImpactNarrative(report, { userId: req.user.id, dataVersion: `impact-${report.period.currentEnd}-${report.activityCount}` });
         if (typeof narrative !== 'string' || narrative.length < 1 || narrative.length > 1200) throw new Error('Narrative failed validation.');
         narrativeSource = 'gemini';
       } catch (error) {

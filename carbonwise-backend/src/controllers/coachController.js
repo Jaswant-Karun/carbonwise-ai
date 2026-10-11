@@ -61,7 +61,7 @@ const createPlan = async (req, res) => {
         narrative = await generateCoachNarrative({
           categories: plan.highestImpactCategories.map((category) => category.label),
           actions: plan.actions,
-        });
+        }, { userId: req.user.id, dataVersion: `plan-${plan.activityCount}-${plan.invalidActivityCount}` });
         if (typeof narrative !== 'string' || narrative.length < 1 || narrative.length > 800) {
           throw new Error('Gemini narrative failed validation.');
         }

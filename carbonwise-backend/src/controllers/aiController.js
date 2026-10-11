@@ -6,7 +6,7 @@ exports.generateEcoPlan = async (req, res) => {
 
     const { activities } = req.body;
 
-    const plan = await generateEcoPlan(activities);
+    const plan = await generateEcoPlan(activities, { userId: req.user.id });
 
     res.json({ plan });
 

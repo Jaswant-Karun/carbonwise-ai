@@ -112,6 +112,21 @@ const initDb = async () => {
     );
   `;
 
+  const createAiResponseCacheTable = `
+    CREATE TABLE IF NOT EXISTS ai_response_cache (
+      id BIGSERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      task VARCHAR(80) NOT NULL,
+      cache_key CHAR(64) NOT NULL,
+      response TEXT NOT NULL,
+      data_version VARCHAR(120) NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      last_accessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (user_id, task, cache_key)
+    );
+  `;
+
   try {
     await db.query(createUsersTable);
     await db.query(createActivitiesTable);
@@ -121,6 +136,7 @@ const initDb = async () => {
     await db.query(createCoachGoalsTable);
     await db.query(createImpactBaselinesTable);
     await db.query(createImpactReportsTable);
+    await db.query(createAiResponseCacheTable);
     console.log('✅ Database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database tables:', err.stack);
