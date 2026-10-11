@@ -48,14 +48,17 @@ const Sidebar = () => {
       <nav className="sidebar-nav" aria-label="Primary navigation">
         <span className="sidebar-label">Workspace</span>
         <ul>
-          {navItems.map(({ path, label, icon: Icon }, index) => (
-            <li key={`${label}-${index}`}>
-              <NavLink to={path} className={({ isActive }) => `nav-link${isActive && ['Dashboard', 'Activity History', 'Carbon Intelligence', 'AI Eco-Coach', 'Impact Tracker', 'Climate Reports'].includes(label) ? ' active' : ''}`}>
-                <Icon size={18} aria-hidden="true" />
-                <span>{label}</span>
+          {navItems.map((item, index) => {
+            const NavIcon = item.icon;
+            return (
+            <li key={`${item.label}-${index}`}>
+              <NavLink to={item.path} className={({ isActive }) => `nav-link${isActive && ['Dashboard', 'Activity History', 'Carbon Intelligence', 'AI Eco-Coach', 'Impact Tracker', 'Climate Reports'].includes(item.label) ? ' active' : ''}`}>
+                <NavIcon size={18} aria-hidden="true" />
+                <span>{item.label}</span>
               </NavLink>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </nav>
 
