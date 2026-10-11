@@ -22,3 +22,19 @@ test('normalizes provider observations and omits missing values', () => {
   assert.deepEqual(observations.map((item) => item.metric), ['temperature', 'pm2_5', 'us_aqi']);
   assert.equal(observations[1].value, 12.5);
 });
+
+test('prefers current provider values over forecast-hour values', () => {
+  const observations = buildObservations(
+    {
+      current: { time: '2026-01-01T10:00', temperature_2m: 24 },
+      hourly: { time: ['2026-01-01T23:00'], temperature_2m: [31] },
+    },
+    {
+      current: { time: '2026-01-01T10:00', pm2_5: 8, us_aqi: 20 },
+      hourly: { time: ['2026-01-01T23:00'], pm2_5: [55], us_aqi: [140] },
+    },
+    { weather: 1, airQuality: 2 },
+    10,
+  );
+  assert.deepEqual(observations.map((item) => item.value), [24, 8, 20]);
+});

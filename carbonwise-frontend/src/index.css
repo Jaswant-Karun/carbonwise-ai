@@ -99,6 +99,9 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Manrope', sans-serif; }
 .alert-critical { color: #9f3030; background: #ffe5e5; }
 .alert-info { color: var(--primary); background: var(--mint); }
 .empty-inline { display: flex; align-items: center; gap: 9px; padding: 20px 0; color: var(--text-muted); }
+.source-row > div { display: grid; gap: 3px; }
+.alert-actions { display: flex; gap: 12px; margin-top: 8px; }
+.text-button { padding: 0; color: var(--primary); background: transparent; border: 0; cursor: pointer; font: inherit; font-size: .76rem; font-weight: 700; }
 
 .glass-panel, .chart-card, .summary-card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 16px; box-shadow: var(--shadow); }
 .glass-panel { padding: 24px; }

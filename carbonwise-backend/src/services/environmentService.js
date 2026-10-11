@@ -1,6 +1,8 @@
 const db = require('../config/db');
 const { METRICS, SOURCE_DEFINITIONS, buildObservations, validateRegion } = require('./environmentUtils');
 
+const round = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+
 const fetchJson = async (url) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
@@ -31,8 +33,8 @@ const ensureSource = async (definition) => {
 const ingestRegion = async (region) => {
   const weatherSource = await ensureSource(SOURCE_DEFINITIONS.weather);
   const airSource = await ensureSource(SOURCE_DEFINITIONS.air_quality);
-  const query = `latitude=${encodeURIComponent(region.latitude)}&longitude=${encodeURIComponent(region.longitude)}&forecast_days=1&hourly=temperature_2m&timezone=UTC`;
-  const airQuery = `latitude=${encodeURIComponent(region.latitude)}&longitude=${encodeURIComponent(region.longitude)}&forecast_days=1&hourly=pm2_5,us_aqi&timezone=UTC`;
+  const query = `latitude=${encodeURIComponent(region.latitude)}&longitude=${encodeURIComponent(region.longitude)}&forecast_days=1&current=temperature_2m&hourly=temperature_2m&timezone=UTC`;
+  const airQuery = `latitude=${encodeURIComponent(region.latitude)}&longitude=${encodeURIComponent(region.longitude)}&forecast_days=1&current=pm2_5,us_aqi&hourly=pm2_5,us_aqi&timezone=UTC`;
   const [weather, airQuality] = await Promise.all([
     fetchJson(`https://api.open-meteo.com/v1/forecast?${query}`),
     fetchJson(`https://air-quality-api.open-meteo.com/v1/air-quality?${airQuery}`),
@@ -58,7 +60,7 @@ const standardDeviation = (values, average) => values.length
 
 const summarizeRegion = async (userId, regionId) => {
   const result = await db.query(
-    `SELECT o.id, o.metric, o.value, o.unit, o.observed_at, o.quality, o.metadata,
+    `SELECT o.id, o.metric, o.value, o.unit, o.observed_at, o.ingested_at, o.quality, o.metadata,
             r.name AS region_name, s.name AS source_name
      FROM environment_observations o
      JOIN environment_regions r ON r.id = o.region_id
@@ -78,12 +80,18 @@ const summarizeRegion = async (userId, regionId) => {
     const deviation = standardDeviation(values, average || 0);
     const latest = rows[0];
     const threshold = average == null ? null : round(average + Math.max(deviation * 2, average * 0.5));
+    const freshnessMinutes = latest.ingested_at
+      ? Math.max(0, Math.round((Date.now() - new Date(latest.ingested_at).getTime()) / 60000))
+      : null;
     return {
       metric,
       label: METRICS[metric]?.label || metric,
       unit: latest.unit,
       latest: round(latest.value),
       observedAt: latest.observed_at,
+      ingestedAt: latest.ingested_at,
+      freshnessMinutes,
+      freshness: freshnessMinutes == null ? 'unknown' : freshnessMinutes <= 120 ? 'fresh' : 'stale',
       baseline: average == null ? null : round(average),
       threshold,
       anomaly: threshold != null && Number(latest.value) >= threshold && values.length >= 3,

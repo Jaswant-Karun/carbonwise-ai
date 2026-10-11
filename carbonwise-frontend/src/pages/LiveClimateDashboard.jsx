@@ -118,6 +118,15 @@ const LiveClimateDashboard = () => {
     }
   };
 
+  const updateAlert = async (alertId, status) => {
+    try {
+      const response = await api.patch(`/environment/alerts/${alertId}`, { status });
+      setAlerts((current) => current.map((alert) => (alert.id === alertId ? { ...alert, ...response.data } : alert)));
+    } catch (error) {
+      setMessage(error.response?.data?.message || 'Unable to update this alert.');
+    }
+  };
+
   const chartData = useMemo(() => {
     const metric = summary?.metrics?.find((item) => item.metric === 'pm2_5')
       || summary?.metrics?.[0];
@@ -193,7 +202,7 @@ const LiveClimateDashboard = () => {
             </ChartCard>
             <ChartCard title="Data quality and limits" description="Every value remains tied to its provider timestamp.">
               <div className="source-list">
-                {summary?.metrics?.map((metric) => <div className="source-row" key={metric.metric}><div><strong>{metric.label}</strong><span>Baseline: {metric.baseline == null ? 'insufficient history' : `${metric.baseline} ${metric.unit}`}</span></div><strong>{metric.anomaly ? 'Warning' : 'Within rule'}</strong></div>)}
+                {summary?.metrics?.map((metric) => <div className="source-row" key={metric.metric}><div><strong>{metric.label}</strong><span>Baseline: {metric.baseline == null ? 'insufficient history' : `${metric.baseline} ${metric.unit}`}</span><span>{metric.freshness === 'stale' ? 'Stale observation' : metric.freshness === 'fresh' ? 'Fresh observation' : 'Freshness unavailable'}</span></div><strong>{metric.anomaly ? 'Warning' : 'Within rule'}</strong></div>)}
               </div>
             </ChartCard>
           </div>
@@ -201,7 +210,7 @@ const LiveClimateDashboard = () => {
       )}
 
       <ChartCard title="Environmental alerts" description="Alerts are rule-based early warnings, not medical, safety, or emergency advice.">
-        {alerts.length ? alerts.slice(0, 10).map((alert) => <div className="recommendation-row" key={alert.id}><span className={`alert-severity alert-${alert.severity}`}>{alert.severity}</span><div><strong>{alert.region_name} · {alert.metric}</strong><p>{alert.explanation}</p><small>{new Date(alert.observed_at).toLocaleString()} · {alert.status}</small></div></div>) : <div className="empty-inline"><ShieldCheck size={20} /> No environmental alerts have been generated yet.</div>}
+        {alerts.length ? alerts.slice(0, 10).map((alert) => <div className="recommendation-row" key={alert.id}><span className={`alert-severity alert-${alert.severity}`}>{alert.severity}</span><div><strong>{alert.region_name} · {alert.metric}</strong><p>{alert.explanation}</p><small>{new Date(alert.observed_at).toLocaleString()} · {alert.status}</small><div className="alert-actions">{alert.status === 'open' && <button className="text-button" type="button" onClick={() => updateAlert(alert.id, 'acknowledged')}>Acknowledge</button>}{alert.status !== 'resolved' && <button className="text-button" type="button" onClick={() => updateAlert(alert.id, 'resolved')}>Resolve</button>}</div></div></div>) : <div className="empty-inline"><ShieldCheck size={20} /> No environmental alerts have been generated yet.</div>}
       </ChartCard>
     </Layout>
   );
