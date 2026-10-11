@@ -27,7 +27,7 @@ const ImpactTracker = () => {
   const reportRequest = useRef(false);
 
   const load = async () => {
-    const [reportResponse, reportsResponse, baselinesResponse] = await Promise.all([
+    const [reportsResponse, baselinesResponse] = await Promise.all([
       api.get('/impact/reports'),
       api.get('/impact/baselines'),
     ]);
