@@ -84,7 +84,7 @@ const Dashboard = () => {
     setPlanMessage('');
     setLoadingPlan(true);
     try {
-      const res = await api.post('/ai/eco-plan', { activities });
+      const res = await api.post('/ai/eco-plan');
       setEcoPlan(res.data.plan);
       if (res.data.fallback) {
         setPlanMessage(res.data.message || 'Gemini unavailable. Showing local plan.');
