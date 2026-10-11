@@ -1,214 +1,173 @@
-import React, { useState, useContext } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, Clock3, Leaf, MessageCircle, RotateCcw, Target, XCircle } from 'lucide-react';
 import api from '../services/api';
 import Layout from '../components/Layout';
-import { AuthContext } from '../context/AuthContext';
+import LoadingState from '../components/LoadingState';
+import SummaryCard from '../components/SummaryCard';
+
+const statuses = [
+  { value: 'planned', label: 'Planned', icon: Clock3 },
+  { value: 'in_progress', label: 'In Progress', icon: RotateCcw },
+  { value: 'completed', label: 'Completed', icon: CheckCircle2 },
+  { value: 'skipped', label: 'Skipped', icon: XCircle },
+];
+
+const formatKg = (value) => value == null ? 'Not calculated' : `${Number(value).toFixed(2)} kg`;
+
 const ActionPlan = () => {
-  const { user } = useContext(AuthContext);
   const [plan, setPlan] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [goals, setGoals] = useState([]);
+  const [status, setStatus] = useState('loading');
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [useGemini, setUseGemini] = useState(false);
+  const [goalForm, setGoalForm] = useState({ period: 'weekly', targetKg: 10, category: '' });
+  const [goalSaving, setGoalSaving] = useState(false);
 
-  const generatePlan = async () => {
-    setLoading(true);
-    try {
-      const activitiesRes = await api.get('/activities');
-      const activities = activitiesRes.data;
-
-      if (activities.length === 0) {
-        alert('Please log some activities first so the AI can personalize your plan.');
-        setLoading(false);
-        return;
-      }
-
-      const res = await api.post('/ai/eco-plan', { activities });
-      setPlan(res.data.plan);
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error generating plan. Is the backend running?');
-    }
-    setLoading(false);
+  const load = async () => {
+    const [plansResponse, goalsResponse] = await Promise.all([
+      api.get('/coach/plans'),
+      api.get('/coach/goals'),
+    ]);
+    setPlan(plansResponse.data[0] || null);
+    setGoals(goalsResponse.data);
+    setStatus('ready');
   };
 
-  // Default plan shown while user hasn't generated yet
-  const sampleDays = [
-    { day: 'Day 1', action: 'Use public transport or walk instead of driving', icon: '🚌' },
-    { day: 'Day 2', action: 'Switch off unused appliances and lights', icon: '💡' },
-    { day: 'Day 3', action: 'Eat a plant-based meal — skip meat for one day', icon: '🥗' },
-    { day: 'Day 4', action: 'Avoid single-use plastics — bring a reusable bag', icon: '♻️' },
-    { day: 'Day 5', action: 'Take a shorter shower and save water', icon: '💧' },
-    { day: 'Day 6', action: 'Sort waste and recycle correctly', icon: '🗑️' },
-    { day: 'Day 7', action: 'Share your eco progress with a friend or family member', icon: '🌍' },
-  ];
+  useEffect(() => {
+    load().catch((requestError) => {
+      setError(requestError.response?.data?.message || 'Unable to load your Eco-Coach workspace.');
+      setStatus('error');
+    });
+  }, []);
+
+  const generatePlan = async () => {
+    setStatus('loading');
+    setError('');
+    setNotice('');
+    try {
+      const response = await api.post('/coach/plans', { useGemini });
+      setPlan(response.data);
+      setStatus('ready');
+      setNotice(response.data.narrativeSource === 'gemini'
+        ? 'Plan created with optional Gemini wording and deterministic recommendations.'
+        : 'Plan created with deterministic recommendations.');
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to create your action plan.');
+      setStatus('error');
+    }
+  };
+
+  const updateAction = async (actionId, actionStatus) => {
+    try {
+      const response = await api.patch(`/coach/actions/${actionId}`, { status: actionStatus });
+      setPlan((current) => ({
+        ...current,
+        actions: current.actions.map((action) => action.id === actionId ? response.data : action),
+      }));
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to update this action.');
+    }
+  };
+
+  const createGoal = async (event) => {
+    event.preventDefault();
+    setGoalSaving(true);
+    try {
+      const response = await api.post('/coach/goals', {
+        ...goalForm,
+        targetKg: Number(goalForm.targetKg),
+        category: goalForm.category || null,
+      });
+      setGoals((current) => [response.data, ...current]);
+      setNotice('Reduction goal created.');
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to create this goal.');
+    } finally {
+      setGoalSaving(false);
+    }
+  };
+
+  const updateGoal = async (id, goalStatus) => {
+    try {
+      const response = await api.patch(`/coach/goals/${id}`, { status: goalStatus });
+      setGoals((current) => current.map((goal) => goal.id === id ? { ...goal, ...response.data } : goal));
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to update this goal.');
+    }
+  };
+
+  const completedCount = useMemo(() => plan?.actions?.filter((action) => action.status === 'completed').length || 0, [plan]);
+  const inProgressCount = useMemo(() => plan?.actions?.filter((action) => action.status === 'in_progress').length || 0, [plan]);
+
+  if (status === 'loading') return <Layout><div className="intelligence-loading"><LoadingState label="Preparing your adaptive action plan..." /></div></Layout>;
 
   return (
     <Layout>
-      <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '2rem', marginBottom: '8px' }}>
-        Eco Action Plan
-      </h1>
-      <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>
-        Get a personalized 7-day sustainability plan generated by Gemini AI based on your
-        logged activities.
-      </p>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-        {/* Generator Panel */}
-        <div className="glass-panel" style={{ alignSelf: 'start' }}>
-          <h3 style={{ marginBottom: '16px' }}>✨ Generate Your Plan</h3>
-          <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '24px' }}>
-            CarbonWise AI will analyze your logged activities and create a personalized
-            weekly eco-action plan with practical, achievable steps tailored to your
-            lifestyle.
-          </p>
-
-          <div
-            style={{
-              padding: '16px',
-              borderRadius: '10px',
-              background: 'rgba(16,185,129,0.08)',
-              border: '1px solid rgba(16,185,129,0.2)',
-              marginBottom: '24px',
-            }}
-          >
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              💡 <strong style={{ color: 'var(--text-main)' }}>Tip:</strong> Log at least 3–5
-              activities in the Activity Tracker for a more accurate and personalized AI plan.
-            </p>
-          </div>
-
-          <button
-            className="btn"
-            onClick={generatePlan}
-            disabled={loading}
-          >
-            {loading ? '🤖 Generating with Gemini...' : '🌱 Generate My Eco Plan'}
-          </button>
-
-          {plan && (
-            <button
-              className="btn"
-              style={{
-                marginTop: '12px',
-                background: 'transparent',
-                border: '1px solid var(--surface-border)',
-                color: 'var(--text-muted)',
-              }}
-              onClick={() => setPlan(null)}
-            >
-              Clear Plan
-            </button>
-          )}
+      <div className="coach-intro">
+        <div>
+          <span className="section-kicker">Adaptive guidance</span>
+          <h2>Small actions, grounded in your footprint</h2>
+          <p>Recommendations use your activity history and adapt after you complete or skip actions.</p>
         </div>
-
-        {/* Plan Display */}
-        <div className="glass-panel">
-          <h3 style={{ marginBottom: '20px' }}>
-            {plan ? `🌍 Your Personalized Plan — ${user?.name}` : '📅 Sample Weekly Plan'}
-          </h3>
-
-          {plan ? (
-            <div
-              style={{
-                background: 'rgba(0,0,0,0.2)',
-                padding: '20px',
-                borderRadius: '10px',
-                lineHeight: 1.8,
-                whiteSpace: 'pre-wrap',
-                color: 'var(--text-muted)',
-                fontSize: '0.95rem',
-                maxHeight: '500px',
-                overflowY: 'auto',
-              }}
-            >
-              {plan}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {sampleDays.map((d) => (
-                <div
-                  key={d.day}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    padding: '14px 16px',
-                    borderRadius: '10px',
-                    background: 'rgba(0,0,0,0.2)',
-                    border: '1px solid var(--surface-border)',
-                  }}
-                >
-                  <span style={{ fontSize: '1.5rem' }}>{d.icon}</span>
-                  <div>
-                    <div
-                      style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 600, marginBottom: '2px' }}
-                    >
-                      {d.day}
-                    </div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{d.action}</div>
-                  </div>
-                </div>
-              ))}
-              <p
-                style={{
-                  marginTop: '8px',
-                  fontSize: '0.8rem',
-                  color: 'var(--text-muted)',
-                  fontStyle: 'italic',
-                  textAlign: 'center',
-                }}
-              >
-                This is a generic sample. Generate your personalized AI plan above.
-              </p>
-            </div>
-          )}
-        </div>
+        <button className="btn" type="button" onClick={generatePlan}>Generate new 7-day plan</button>
       </div>
 
-      {/* Impact Goals */}
-      <div className="glass-panel" style={{ marginTop: '32px' }}>
-        <h3 style={{ marginBottom: '20px' }}>🎯 Impact Goals</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          {[
-            { goal: 'Reduce transport emissions by 30%', icon: '🚗', difficulty: 'Medium' },
-            { goal: 'Switch to energy-saving appliances', icon: '⚡', difficulty: 'Easy' },
-            { goal: 'Eat plant-based 3x per week', icon: '🥗', difficulty: 'Easy' },
-            { goal: 'Zero single-use plastic for a week', icon: '♻️', difficulty: 'Hard' },
-          ].map((item) => (
-            <div
-              key={item.goal}
-              style={{
-                padding: '16px',
-                borderRadius: '10px',
-                background: 'rgba(0,0,0,0.2)',
-                border: '1px solid var(--surface-border)',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: '2rem', marginBottom: '8px' }}>{item.icon}</div>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '8px', lineHeight: 1.4 }}>
-                {item.goal}
-              </p>
-              <span
-                style={{
-                  fontSize: '0.75rem',
-                  padding: '3px 10px',
-                  borderRadius: '12px',
-                  background:
-                    item.difficulty === 'Easy'
-                      ? 'rgba(16,185,129,0.15)'
-                      : item.difficulty === 'Medium'
-                      ? 'rgba(245,158,11,0.15)'
-                      : 'rgba(239,68,68,0.15)',
-                  color:
-                    item.difficulty === 'Easy'
-                      ? '#10b981'
-                      : item.difficulty === 'Medium'
-                      ? '#f59e0b'
-                      : '#ef4444',
-                }}
-              >
-                {item.difficulty}
-              </span>
-            </div>
-          ))}
+      {error && <div className="simulator-alert" role="alert">{error}</div>}
+      {notice && <div className="simulator-notice" role="status">{notice}</div>}
+
+      <div className="summary-grid">
+        <SummaryCard label="Completed" value={`${completedCount}/7`} detail="Actions completed in this plan" icon={CheckCircle2} />
+        <SummaryCard label="In progress" value={inProgressCount} detail="Actions currently underway" icon={Clock3} tone="blue" />
+        <SummaryCard label="Plan source" value={plan?.narrativeSource === 'gemini' ? 'Hybrid' : 'Deterministic'} detail="Recommendations are always data grounded" icon={Leaf} tone="purple" />
+      </div>
+
+      {!plan ? (
+        <div className="coach-empty chart-card">
+          <Leaf size={32} />
+          <h3>No plan saved yet</h3>
+          <p>Generate a plan to turn your highest-impact categories into seven practical actions.</p>
+          <label className="coach-toggle"><input type="checkbox" checked={useGemini} onChange={(event) => setUseGemini(event.target.checked)} /> Add optional personalized Gemini introduction</label>
+          <button className="btn" type="button" onClick={generatePlan}>Create my plan</button>
         </div>
+      ) : (
+        <>
+          <div className="coach-plan-heading">
+            <div><span className="section-kicker">Seven-day plan</span><h3>{plan.narrative || 'Your personalized action plan'}</h3></div>
+            <span className="coach-estimate">Estimates are not verified reductions</span>
+          </div>
+          <div className="coach-action-list">
+            {plan.actions.map((action) => {
+              const StatusIcon = statuses.find((item) => item.value === action.status)?.icon || Clock3;
+              return (
+                <article className={`coach-action-card status-${action.status}`} key={action.id}>
+                  <div className="coach-day">Day {action.dayNumber}</div>
+                  <div className="coach-action-copy">
+                    <div className="coach-action-meta"><span>{action.category}</span><span>{formatKg(action.estimatedPotentialSavingsKg)} potential</span></div>
+                    <h3>{action.title}</h3>
+                    <p>{action.explanation}</p>
+                    <strong>Suggested target: {action.suggestedTarget}</strong>
+                  </div>
+                  <label className="coach-status"><StatusIcon size={16} /><span className="sr-only">Status for {action.title}</span><select value={action.status} onChange={(event) => updateAction(action.id, event.target.value)}>{statuses.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+                </article>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      <div className="coach-lower-grid">
+        <section className="chart-card">
+          <div className="chart-card-heading"><div><h3>Reduction goals</h3><p>Set a weekly or monthly target to guide your actions.</p></div><Target size={20} /></div>
+          <form className="goal-form" onSubmit={createGoal}>
+            <label>Period<select value={goalForm.period} onChange={(event) => setGoalForm({ ...goalForm, period: event.target.value })}><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
+            <label>Target kg CO₂<input type="number" min="0.01" step="0.01" value={goalForm.targetKg} onChange={(event) => setGoalForm({ ...goalForm, targetKg: event.target.value })} required /></label>
+            <label>Category<select value={goalForm.category} onChange={(event) => setGoalForm({ ...goalForm, category: event.target.value })}><option value="">All categories</option><option value="transport">Transport</option><option value="electricity">Electricity</option><option value="food">Food</option><option value="flight">Flights</option><option value="shopping">Shopping</option></select></label>
+            <button className="btn" type="submit" disabled={goalSaving}>Create goal</button>
+          </form>
+          <div className="goal-list">{goals.map((goal) => <div className="goal-row" key={goal.id}><div><strong>{goal.period} goal · {formatKg(goal.targetKg)}</strong><small>{goal.category || 'All categories'} · baseline {formatKg(goal.baselineKg)}</small></div><select value={goal.status} onChange={(event) => updateGoal(goal.id, event.target.value)}><option value="active">Active</option><option value="completed">Completed</option><option value="archived">Archived</option></select></div>)}</div>
+        </section>
+        <section className="chart-card coach-note"><MessageCircle size={22} /><h3>How adaptation works</h3><p>Completing an action is recorded as participation, not proof that emissions fell. Future plans review completion history alongside subsequent activity records before changing recommendations.</p></section>
       </div>
     </Layout>
   );

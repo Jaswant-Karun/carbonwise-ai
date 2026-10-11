@@ -8,10 +8,11 @@ const {
 } = require('../src/services/ecoCoachService');
 
 test('builds seven deterministic actions from highest-impact history', () => {
+  const today = new Date().toISOString().slice(0, 10);
   const plan = buildCoachPlan({
     activities: [
-      { activity_type: 'electricity', carbon_emissions: 50, date: '2026-10-10' },
-      { activity_type: 'transport', carbon_emissions: 21, date: '2026-10-09' },
+      { activity_type: 'electricity', carbon_emissions: 50, date: today },
+      { activity_type: 'transport', carbon_emissions: 21, date: today },
     ],
     completedHistory: [{ category: 'electricity', title: 'Earlier action' }],
   });
