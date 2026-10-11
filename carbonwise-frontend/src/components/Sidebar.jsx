@@ -1,91 +1,76 @@
 import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
+import {
+  BarChart3,
+  BrainCircuit,
+  CalendarCheck2,
+  FileText,
+  Flag,
+  Gauge,
+  History,
+  Leaf,
+  LogOut,
+  Target,
+  TrendingUp,
+} from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-//Added new Activity
+
 const navItems = [
-  { path: '/dashboard', label: '📊 Dashboard' },
-  { path: '/activities', label: '🏃 Activity Tracker' },
-  { path: '/insights', label: '🔍 AI Insights' },
-  { path: '/action-plan', label: '🌱 Eco Action Plan' },
-  { path: '/reports', label: '📋 Reports' },
-  { path: '/profile', label: '👤 Profile' },
+  { path: '/dashboard', label: 'Dashboard', icon: Gauge },
+  { path: '/activities', label: 'Activity History', icon: History },
+  { path: '/insights', label: 'Carbon Intelligence', icon: BrainCircuit },
+  { path: '/insights', label: 'What-If Simulator', icon: BarChart3 },
+  { path: '/action-plan', label: 'AI Eco-Coach', icon: Leaf },
+  { path: '/insights', label: 'Forecast & Anomalies', icon: TrendingUp },
+  { path: '/action-plan', label: 'Sustainability Goals', icon: Target },
+  { path: '/profile', label: 'Impact Tracker', icon: Flag },
+  { path: '/reports', label: 'Climate Reports', icon: FileText },
 ];
 
 const Sidebar = () => {
   const { user, logout } = useContext(AuthContext);
 
   return (
-    <aside
-      className="sidebar glass-panel"
-      style={{
-        borderRadius: 0,
-        borderTop: 'none',
-        borderBottom: 'none',
-        borderLeft: 'none',
-      }}
-    >
-      <h2
-        className="auth-title"
-        style={{ fontSize: '1.5rem', marginBottom: '2rem' }}
-      >
-        CarbonWise.ai
-      </h2>
-
-      <div style={{ flex: 1 }}>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-          Welcome,
-          <br />
-          <b style={{ color: 'white', fontSize: '1.1rem' }}>{user?.name}</b>
-        </p>
-
-        <nav>
-          <ul
-            style={{
-              listStyle: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px',
-            }}
-          >
-            {navItems.map((item) => (
-              <li key={item.path}>
-                <NavLink
-                  to={item.path}
-                  style={({ isActive }) => ({
-                    display: 'block',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                    fontWeight: isActive ? '600' : '400',
-                    background: isActive
-                      ? 'rgba(16, 185, 129, 0.12)'
-                      : 'transparent',
-                    textDecoration: 'none',
-                    transition: 'all 0.2s',
-                    borderLeft: isActive
-                      ? '3px solid var(--primary)'
-                      : '3px solid transparent',
-                  })}
-                >
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
+    <aside className="sidebar">
+      <div className="brand">
+        <span className="brand-mark"><Leaf size={20} /></span>
+        <span>CarbonWise<span className="brand-dot">.</span></span>
       </div>
 
-      <button
-        onClick={logout}
-        className="btn"
-        style={{
-          background: 'transparent',
-          border: '1px solid var(--danger)',
-          color: 'var(--danger)',
-        }}
-      >
-        Logout
-      </button>
+      <div className="sidebar-profile">
+        <span className="sidebar-profile-avatar">{user?.name?.charAt(0)?.toUpperCase() || 'C'}</span>
+        <div>
+          <strong>{user?.name || 'CarbonWise member'}</strong>
+          <span>Personal workspace</span>
+        </div>
+      </div>
+
+      <nav className="sidebar-nav" aria-label="Primary navigation">
+        <span className="sidebar-label">Workspace</span>
+        <ul>
+          {navItems.map(({ path, label, icon: Icon }, index) => (
+            <li key={`${label}-${index}`}>
+              <NavLink to={path} className={({ isActive }) => `nav-link${isActive && ['Dashboard', 'Activity History', 'Carbon Intelligence', 'AI Eco-Coach', 'Impact Tracker', 'Climate Reports'].includes(label) ? ' active' : ''}`}>
+                <Icon size={18} aria-hidden="true" />
+                <span>{label}</span>
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div className="sidebar-footer">
+        <div className="sidebar-goal">
+          <div className="sidebar-goal-heading"><span>Annual goal</span><CalendarCheck2 size={16} /></div>
+          <strong>Keep tracking your impact</strong>
+          <div className="goal-progress"><span /></div>
+          <small>Activity data powers your insights</small>
+        </div>
+        <button onClick={logout} className="logout-button" type="button">
+          <LogOut size={17} />
+          Log out
+        </button>
+      </div>
     </aside>
   );
 };
