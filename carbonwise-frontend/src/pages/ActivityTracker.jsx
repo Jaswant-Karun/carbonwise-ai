@@ -47,7 +47,6 @@ const ActivityTracker = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const carbon = calculateEmissions(activityType, amount);
     setSubmitting(true);
     try {
       await api.post('/activities', {
