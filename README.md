@@ -110,14 +110,18 @@ Carbonwise_Ai_SDG13/
 ├── .gitignore
 ├── carbonwise-backend/
 │   ├── .env.example
+│   ├── migrations/001_environment_intelligence.sql
 │   ├── package.json
 │   ├── src/
 │   │   ├── config/db.js
 │   │   ├── controllers/
+│   │   │   └── environmentController.js
 │   │   ├── middlewares/authMiddleware.js
 │   │   ├── models/schema.js
 │   │   ├── routes/
+│   │   │   └── environmentRoutes.js
 │   │   ├── services/
+│   │   │   └── environmentService.js
 │   │   └── index.js
 │   └── test/
 │       ├── carbonIntelligenceService.test.js
@@ -350,6 +354,38 @@ Example request body:
 | GET | `/impact/reports` | List reports |
 | GET | `/impact/reports/:id/pdf` | Export an owned report as PDF |
 
+### Live Climate Intelligence
+
+The live monitor is an additive environmental pipeline separate from personal
+carbon activities. It currently uses the keyless Open-Meteo Weather and Air
+Quality APIs for temperature, PM2.5, and US AQI observations. Provider values
+are stored with their source, region, observation timestamp, ingestion
+timestamp, and quality metadata.
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/environment/regions` | List the authenticated user's monitored regions |
+| POST | `/environment/regions` | Create a region from a name and coordinates |
+| GET | `/environment/regions/:regionId/summary` | Read owned observations and deterministic baselines |
+| POST | `/environment/regions/:regionId/refresh` | Fetch and persist current provider observations |
+| GET | `/environment/alerts` | List owned early-warning alerts |
+| PATCH | `/environment/alerts/:alertId` | Acknowledge or resolve an owned alert |
+
+Example region:
+
+```json
+{
+  "name": "Campus",
+  "latitude": 12.9716,
+  "longitude": 77.5946
+}
+```
+
+The current anomaly rule requires at least three observations and flags a
+latest value above the recent mean plus two standard deviations, with a
+minimum 50% increase over the mean. It is an explainable early-warning rule,
+not an emergency or medical warning.
+
 Example intelligence request:
 
 ```bash
@@ -565,8 +601,18 @@ Additional recorded validation:
 
 ## 18. Known limitations and future enhancements
 
-- Replace startup table initialization with numbered, reviewed, additive
-  migrations and explicit rollback scripts.
+- The live environmental tables have an additive SQL migration at
+  `carbonwise-backend/migrations/001_environment_intelligence.sql`; the
+  existing startup initializer also creates them idempotently for local setup.
+  Apply the migration with `psql "$DATABASE_URL" -f ...` in deployment
+  environments, and remove only these new objects with a reviewed rollback
+  script if a rollback is required. Never drop existing CarbonWise tables.
+- Open-Meteo is currently the only environmental provider. Production
+  deployments should add provider health monitoring, a scheduled worker, and
+  a reviewed fallback provider before treating observations as operational
+  alerts.
+- The live dashboard requires user-entered coordinates and does not yet include
+  a map, outbound notifications, or hazard-specific emergency integrations.
 - Add an isolated HTTP integration-test database for full registration,
   login, cross-user ownership, and end-to-end workflows.
 - Resolve the remaining frontend ESLint errors and warnings.

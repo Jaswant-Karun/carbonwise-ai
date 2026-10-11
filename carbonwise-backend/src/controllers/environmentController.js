@@ -60,12 +60,17 @@ const refreshRegion = async (req, res) => {
   try {
     const region = await getOwnedRegion(req.user.id, req.params.regionId);
     if (!region) return res.status(404).json({ message: 'Environmental region not found.' });
+    const source = await db.query(
+      `INSERT INTO environment_sources (name, provider, metric, unit)
+       VALUES ('Open-Meteo Weather', 'open-meteo', 'temperature', '°C')
+       ON CONFLICT (provider, metric) DO UPDATE SET enabled = TRUE
+       RETURNING id`,
+    );
     const run = await db.query(
       `INSERT INTO environment_ingestion_runs (source_id, region_id, status)
-       SELECT id, $1, 'running' FROM environment_sources
-       WHERE provider = 'open-meteo' AND metric = 'temperature'
+       VALUES ($1, $2, 'running')
        RETURNING id`,
-      [region.id],
+      [source.rows[0].id, region.id],
     );
     try {
       const ingestion = await ingestRegion(region);
