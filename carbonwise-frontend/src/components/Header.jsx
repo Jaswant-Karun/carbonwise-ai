@@ -30,6 +30,11 @@ const pageMeta = {
     title: 'What-If Simulator',
     description: 'Model lifestyle changes before you make them.',
   },
+  '/forecast': {
+    eyebrow: 'Forecasting',
+    title: 'Forecast & Anomalies',
+    description: 'Separate observed history from cautious projections.',
+  },
   '/action-plan': {
     eyebrow: 'Personalized guidance',
     title: 'AI Eco-Coach',

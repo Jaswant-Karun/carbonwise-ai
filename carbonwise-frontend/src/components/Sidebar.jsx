@@ -21,7 +21,7 @@ const navItems = [
   { path: '/intelligence', label: 'Carbon Intelligence', icon: BrainCircuit },
   { path: '/simulator', label: 'What-If Simulator', icon: BarChart3 },
   { path: '/action-plan', label: 'AI Eco-Coach', icon: Leaf },
-  { path: '/intelligence', label: 'Forecast & Anomalies', icon: TrendingUp },
+  { path: '/forecast', label: 'Forecast & Anomalies', icon: TrendingUp },
   { path: '/action-plan', label: 'Sustainability Goals', icon: Target },
   { path: '/profile', label: 'Impact Tracker', icon: Flag },
   { path: '/reports', label: 'Climate Reports', icon: FileText },
