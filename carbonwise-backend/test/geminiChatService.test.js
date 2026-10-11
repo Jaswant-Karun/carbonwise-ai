@@ -7,24 +7,37 @@ const dbPath = require.resolve('../src/config/db');
 require.cache[dbPath] = { exports: {
   query: async (sql, params = []) => {
     queries.push(sql);
-    if (sql.startsWith('SELECT response')) {
+    if (sql.trimStart().startsWith('SELECT response')) {
       const value = cache.get(params[2]);
       return { rows: value ? [{ response: value }] : [] };
     }
-    if (sql.startsWith('INSERT INTO ai_response_cache')) {
+    if (sql.trimStart().startsWith('INSERT INTO ai_response_cache')) {
       cache.set(params[2], params[3]);
     }
     return { rows: [] };
   },
 } };
 
-delete process.env.GEMINI_API_KEY;
+let generationCount = 0;
+const sdkPath = require.resolve('@google/generative-ai');
+require.cache[sdkPath] = { exports: {
+  GoogleGenerativeAI: class {
+    getGenerativeModel() {
+      return { generateContent: async () => {
+        generationCount += 1;
+        return { response: { text: () => 'cached AI response' } };
+      } };
+    }
+  },
+} };
+process.env.GEMINI_API_KEY = 'test-only-placeholder';
 const service = require('../src/services/geminiChatService');
 const { generateCached, cacheKey, inFlight, rateWindows, isQuotaError } = service._test;
 
 test.beforeEach(() => {
   cache.clear();
   queries.length = 0;
+  generationCount = 0;
   inFlight.clear();
   rateWindows.clear();
 });
@@ -34,8 +47,9 @@ test('reuses an identical cached response without another Gemini request', async
     userId: 7, task: 'impact', input: { total: 10 }, dataVersion: 'activities-1',
     prompt: 'prompt', fallback: 'deterministic fallback',
   };
-  assert.equal(await generateCached(options), 'deterministic fallback');
-  assert.equal(await generateCached(options), 'deterministic fallback');
+  assert.equal(await generateCached(options), 'cached AI response');
+  assert.equal(await generateCached(options), 'cached AI response');
+  assert.equal(generationCount, 1);
   assert.equal(queries.filter((query) => query.startsWith('INSERT INTO ai_response_cache')).length, 1);
   assert.equal(cacheKey({ userId: 7, task: 'impact', input: { total: 10 }, dataVersion: 'activities-1' }),
     cacheKey({ userId: 7, task: 'impact', input: { total: 10 }, dataVersion: 'activities-1' }));
@@ -47,7 +61,8 @@ test('joins concurrent identical requests and only creates one cache record', as
     prompt: 'prompt', fallback: 'fallback',
   };
   const results = await Promise.all([generateCached(options), generateCached(options)]);
-  assert.deepEqual(results, ['fallback', 'fallback']);
+  assert.deepEqual(results, ['cached AI response', 'cached AI response']);
+  assert.equal(generationCount, 1);
   assert.equal(queries.filter((query) => query.startsWith('INSERT INTO ai_response_cache')).length, 1);
 });
 
@@ -55,4 +70,15 @@ test('classifies quota responses without retry semantics', () => {
   assert.equal(isQuotaError({ status: 429 }), true);
   assert.equal(isQuotaError(new Error('resource exhausted')), true);
   assert.equal(isQuotaError(new Error('network unavailable')), false);
+});
+
+test('returns an explicit deterministic fallback when credentials are unavailable', async () => {
+  const key = process.env.GEMINI_API_KEY;
+  delete process.env.GEMINI_API_KEY;
+  const result = await generateCached({
+    userId: 9, task: 'impact', input: { total: 2 }, dataVersion: 'fallback',
+    prompt: 'prompt', fallback: 'deterministic fallback',
+  });
+  process.env.GEMINI_API_KEY = key;
+  assert.equal(result, 'deterministic fallback');
 });
