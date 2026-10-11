@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import Layout from '../components/Layout';
 import {
@@ -27,7 +26,6 @@ ChartJS.register(
 );
 
 const Dashboard = () => {
-  const { user, logout } = useContext(AuthContext);
   const [activities, setActivities] = useState([]);
   const [ecoPlan, setEcoPlan] = useState(null);
   const [loadingPlan, setLoadingPlan] = useState(false);
@@ -48,19 +46,6 @@ const Dashboard = () => {
       setActivities(res.data);
     } catch (error) {
       console.error('Error fetching activities');
-    }
-  };
-
-  const calculateEmissions = (type, detailStr) => {
-    // Simple mock logic for MVP. In reality, details would be a JSON object parsed appropriately
-    let val = parseFloat(detailStr);
-    if (isNaN(val)) val = 10;
-
-    switch (type) {
-      case 'transport': return val * 0.21; // kg per km roughly
-      case 'electricity': return val * 0.5; // kg per kWh
-      case 'food': return val * 2.5; // kg per meal (beef etc.)
-      default: return 1.5;
     }
   };
 
