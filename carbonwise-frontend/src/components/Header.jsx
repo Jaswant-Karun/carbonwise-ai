@@ -35,6 +35,11 @@ const pageMeta = {
     title: 'Forecast & Anomalies',
     description: 'Separate observed history from cautious projections.',
   },
+  '/impact': {
+    eyebrow: 'Sustainability progress',
+    title: 'Impact Tracker',
+    description: 'Measure recorded change against a clear baseline.',
+  },
   '/action-plan': {
     eyebrow: 'Personalized guidance',
     title: 'AI Eco-Coach',

@@ -52,3 +52,15 @@ ${context.actions.map((action) => `- ${action.title}: ${action.explanation}`).jo
 `);
   return result.response.text().trim();
 };
+
+module.exports.generateImpactNarrative = async (report) => {
+  if (!process.env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY is not configured');
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const result = await model.generateContent(`Write a supportive sustainability report explanation in no more than 120 words. Do not invent numbers, claim actions caused reductions, or describe potential savings as observed savings.
+Current emissions: ${report.totals.current} kg CO2
+Baseline emissions: ${report.totals.baseline} kg CO2
+Observed status: ${report.totals.status}
+Top categories: ${report.categoryBreakdown.slice(0, 3).map((item) => `${item.label} ${item.emissions} kg`).join(', ')}`);
+  return result.response.text().trim();
+};

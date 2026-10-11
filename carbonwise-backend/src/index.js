@@ -25,6 +25,7 @@ app.use('/api/intelligence', require('./routes/intelligenceRoutes'));
 app.use('/api/scenarios', require('./routes/scenarioRoutes'));
 app.use('/api/coach', require('./routes/coachRoutes'));
 app.use('/api/forecast', require('./routes/forecastRoutes'));
+app.use('/api/impact', require('./routes/impactRoutes'));
 
 const PORT = process.env.PORT || 5000;
 

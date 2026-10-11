@@ -85,6 +85,33 @@ const initDb = async () => {
     );
   `;
 
+  const createImpactBaselinesTable = `
+    CREATE TABLE IF NOT EXISTS impact_baselines (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name VARCHAR(120) NOT NULL,
+      period_days INTEGER NOT NULL CHECK (period_days IN (7, 30, 90, 365)),
+      start_date DATE NOT NULL,
+      end_date DATE NOT NULL,
+      total_emissions DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (total_emissions >= 0),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  const createImpactReportsTable = `
+    CREATE TABLE IF NOT EXISTS impact_reports (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      baseline_id INTEGER REFERENCES impact_baselines(id) ON DELETE SET NULL,
+      period_days INTEGER NOT NULL CHECK (period_days IN (7, 30, 90, 365)),
+      report_month DATE NOT NULL,
+      report_data JSONB NOT NULL,
+      narrative TEXT,
+      narrative_source VARCHAR(20) NOT NULL DEFAULT 'deterministic' CHECK (narrative_source IN ('deterministic', 'gemini')),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   try {
     await db.query(createUsersTable);
     await db.query(createActivitiesTable);
@@ -92,6 +119,8 @@ const initDb = async () => {
     await db.query(createCoachPlansTable);
     await db.query(createCoachActionsTable);
     await db.query(createCoachGoalsTable);
+    await db.query(createImpactBaselinesTable);
+    await db.query(createImpactReportsTable);
     console.log('✅ Database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database tables:', err.stack);

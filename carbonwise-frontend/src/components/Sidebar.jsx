@@ -23,7 +23,7 @@ const navItems = [
   { path: '/action-plan', label: 'AI Eco-Coach', icon: Leaf },
   { path: '/forecast', label: 'Forecast & Anomalies', icon: TrendingUp },
   { path: '/action-plan', label: 'Sustainability Goals', icon: Target },
-  { path: '/profile', label: 'Impact Tracker', icon: Flag },
+  { path: '/impact', label: 'Impact Tracker', icon: Flag },
   { path: '/reports', label: 'Climate Reports', icon: FileText },
 ];
 
