@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, Clock3, Leaf, MessageCircle, RotateCcw, Target, XCircle } from 'lucide-react';
 import api from '../services/api';
 import Layout from '../components/Layout';
@@ -23,6 +23,7 @@ const ActionPlan = () => {
   const [useGemini, setUseGemini] = useState(false);
   const [goalForm, setGoalForm] = useState({ period: 'weekly', targetKg: 10, category: '' });
   const [goalSaving, setGoalSaving] = useState(false);
+  const planRequest = useRef(false);
 
   const load = async () => {
     const [plansResponse, goalsResponse] = await Promise.all([
@@ -42,6 +43,8 @@ const ActionPlan = () => {
   }, []);
 
   const generatePlan = async () => {
+    if (planRequest.current) return;
+    planRequest.current = true;
     setStatus('loading');
     setError('');
     setNotice('');
@@ -55,6 +58,8 @@ const ActionPlan = () => {
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Unable to create your action plan.');
       setStatus('error');
+    } finally {
+      planRequest.current = false;
     }
   };
 

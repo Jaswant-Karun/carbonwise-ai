@@ -1,14 +1,16 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import api from "../services/api";
 //Added new Activity
 const Chatbot = () => {
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const sending = useRef(false);
 
   const sendMessage = async () => {
 
-    if (!input) return;
+    if (!input.trim() || sending.current) return;
+    sending.current = true;
 
     const userMsg = { sender: "user", text: input };
 
@@ -40,6 +42,7 @@ const Chatbot = () => {
     }
 
     setInput("");
+    sending.current = false;
 
   };
 

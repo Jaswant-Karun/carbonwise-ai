@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import Layout from '../components/Layout';
@@ -32,6 +32,7 @@ const Dashboard = () => {
   const [ecoPlan, setEcoPlan] = useState(null);
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [planMessage, setPlanMessage] = useState('');
+  const planRequest = useRef(false);
 
   // Form State
   const [activityType, setActivityType] = useState('transport');
@@ -80,6 +81,8 @@ const Dashboard = () => {
   };
 
   const getEcoPlan = async () => {
+    if (planRequest.current) return;
+    planRequest.current = true;
     setPlanMessage('');
     setLoadingPlan(true);
     try {
@@ -94,6 +97,7 @@ const Dashboard = () => {
       setPlanMessage(apiMessage || 'Unable to generate plan right now. Please try again.');
     }
     setLoadingPlan(false);
+    planRequest.current = false;
   };
 
   const totalEmissions = activities.reduce((sum, act) => sum + parseFloat(act.carbon_emissions), 0);

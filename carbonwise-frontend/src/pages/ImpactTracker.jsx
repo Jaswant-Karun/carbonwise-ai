@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import { Download, FileText, Leaf, RefreshCw, Target, TrendingDown, TrendingUp } from 'lucide-react';
@@ -24,14 +24,15 @@ const ImpactTracker = () => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const reportRequest = useRef(false);
 
   const load = async () => {
     const [reportResponse, reportsResponse, baselinesResponse] = await Promise.all([
-      api.get(`/impact/reports?periodDays=${period}`),
       api.get('/impact/reports'),
       api.get('/impact/baselines'),
     ]);
-    setReport(reportResponse.data[0] || null);
+    const matching = reportsResponse.data.filter((item) => Number(item.periodDays) === Number(period));
+    setReport(matching[0] || reportsResponse.data[0] || null);
     setReports(reportsResponse.data);
     setBaselines(baselinesResponse.data);
     setStatus('ready');
@@ -42,7 +43,7 @@ const ImpactTracker = () => {
       setError(requestError.response?.data?.message || 'Unable to load your impact tracker.');
       setStatus('error');
     });
-  }, []);
+  }, [period]);
 
   const createBaseline = async (event) => {
     event.preventDefault();
@@ -60,6 +61,8 @@ const ImpactTracker = () => {
   };
 
   const generateReport = async () => {
+    if (reportRequest.current) return;
+    reportRequest.current = true;
     setBusy(true);
     setError('');
     try {
@@ -71,6 +74,7 @@ const ImpactTracker = () => {
       setError(requestError.response?.data?.message || 'Unable to generate impact report.');
     } finally {
       setBusy(false);
+      reportRequest.current = false;
     }
   };
 
