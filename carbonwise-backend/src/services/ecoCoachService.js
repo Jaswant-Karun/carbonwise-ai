@@ -52,7 +52,12 @@ const buildFallbackActions = ({ intelligence, completedHistory = [] }) => {
     return counts;
   }, {});
 
-  return intelligence.largestSources.slice(0, 3).map((source, index) => {
+  const sources = intelligence.largestSources.length
+    ? intelligence.largestSources
+    : [{ category: 'transport', label: 'Transport', emissions: 0, contributionPercentage: 0 }];
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const source = sources[index % sources.length];
     const template = fallbackTemplates[source.category] || {
       title: `Review ${source.label.toLowerCase()} emissions`,
       explanation: `Review your ${source.label.toLowerCase()} activity and identify one practical reduction.`,
@@ -64,14 +69,12 @@ const buildFallbackActions = ({ intelligence, completedHistory = [] }) => {
     return {
       dayNumber: index + 1,
       category: source.category,
-      title: completedBefore
-        ? `${template.title} again`
-        : template.title,
+      title: `${completedBefore ? `${template.title} again` : template.title}${index >= sources.length ? ` — day ${index + 1}` : ''}`,
       explanation: completedBefore
         ? `${template.explanation} You have completed ${completedBefore} related action${completedBefore === 1 ? '' : 's'} before; try a slightly more consistent version.`
         : template.explanation,
       suggestedTarget: template.target,
-      estimatedPotentialSavingsKg: potentialSavingsKg,
+      estimatedPotentialSavingsKg: source.emissions > 0 ? potentialSavingsKg : null,
       sourceEmissionsKg: source.emissions,
       isEstimate: true,
     };
