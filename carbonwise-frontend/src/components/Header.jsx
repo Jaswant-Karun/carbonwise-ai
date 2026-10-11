@@ -40,6 +40,11 @@ const pageMeta = {
     title: 'Impact Tracker',
     description: 'Measure recorded change against a clear baseline.',
   },
+  '/live-climate': {
+    eyebrow: 'Environmental intelligence',
+    title: 'Live Climate Monitor',
+    description: 'Track current observations and transparent early warnings.',
+  },
   '/action-plan': {
     eyebrow: 'Personalized guidance',
     title: 'AI Eco-Coach',

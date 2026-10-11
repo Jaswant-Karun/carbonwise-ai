@@ -12,6 +12,7 @@ import {
   LogOut,
   Target,
   TrendingUp,
+  CloudSun,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
@@ -24,6 +25,7 @@ const navItems = [
   { path: '/forecast', label: 'Forecast & Anomalies', icon: TrendingUp },
   { path: '/action-plan', label: 'Sustainability Goals', icon: Target },
   { path: '/impact', label: 'Impact Tracker', icon: Flag },
+  { path: '/live-climate', label: 'Live Climate Monitor', icon: CloudSun },
   { path: '/reports', label: 'Climate Reports', icon: FileText },
 ];
 
