@@ -383,8 +383,10 @@ Example region:
 
 The current anomaly rule requires at least three observations and flags a
 latest value above the recent mean plus two standard deviations, with a
-minimum 50% increase over the mean. It is an explainable early-warning rule,
-not an emergency or medical warning.
+minimum 50% increase over the mean. Refresh requests prefer the provider's
+current observation over forecast-hour values, and summaries expose fresh or
+stale status from the ingestion timestamp. It is an explainable early-warning
+rule, not an emergency or medical warning.
 
 Example intelligence request:
 
