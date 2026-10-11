@@ -66,12 +66,10 @@ const Dashboard = () => {
 
   const handleAddActivity = async (e) => {
     e.preventDefault();
-    const carbon = calculateEmissions(activityType, details);
     try {
       await api.post('/activities', {
         activity_type: activityType,
         details: { value: details },
-        carbon_emissions: carbon
       });
       setDetails('');
       fetchActivities();

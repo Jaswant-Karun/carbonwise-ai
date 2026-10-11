@@ -53,7 +53,6 @@ const ActivityTracker = () => {
       await api.post('/activities', {
         activity_type: activityType,
         details: { value: amount, unit: activityTypes.find((a) => a.value === activityType)?.unit },
-        carbon_emissions: carbon,
       });
       setAmount('');
       fetchActivities();

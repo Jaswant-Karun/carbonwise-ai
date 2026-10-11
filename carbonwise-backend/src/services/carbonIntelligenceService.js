@@ -11,6 +11,17 @@ const getEmissionFactor = (category) => {
   return EMISSION_FACTORS[normalizedCategory] || null;
 };
 
+const calculateActivityEmissions = (category, details) => {
+  const factor = getEmissionFactor(category);
+  const value = Number(typeof details === 'object' ? details?.value : details);
+  if (!factor || !Number.isFinite(value) || value < 0) {
+    const error = new Error('Activity category and non-negative numeric value are required.');
+    error.statusCode = 400;
+    throw error;
+  }
+  return round(value * factor.factor);
+};
+
 const round = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
 
 const parseActivity = (activity) => {
@@ -175,6 +186,7 @@ module.exports = {
   EMISSION_FACTORS,
   addDays,
   buildIntelligence,
+  calculateActivityEmissions,
   comparePeriods,
   detectAnomalies,
   getEmissionFactor,
