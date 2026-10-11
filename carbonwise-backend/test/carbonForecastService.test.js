@@ -46,7 +46,7 @@ test('flags a high day and includes related records and category', () => {
   const result = buildForecast({
     activities,
     startDate: '2026-10-01',
-    endDate: '2026-10-03',
+    endDate: '2026-10-20',
     periodDays: 30,
     horizonDays: 7,
   });
