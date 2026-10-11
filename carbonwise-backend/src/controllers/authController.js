@@ -5,11 +5,26 @@ const jwt = require('jsonwebtoken');
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
+
+const validateCredentials = ({ name, email, password }, requireName = false) => {
+  if (requireName && (typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100)) {
+    return 'Name must be between 2 and 100 characters.';
+  }
+  if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return 'A valid email is required.';
+  }
+  if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
+    return 'Password must be between 8 and 128 characters.';
+  }
+  return null;
+};
 //Added new Activity
 // @desc    Register new user
 // @route   POST /api/auth/register
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
+  const validationError = validateCredentials({ name, email, password }, true);
+  if (validationError) return res.status(400).json({ message: validationError });
 
   try {
     const userExists = await db.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -33,7 +48,8 @@ const registerUser = async (req, res) => {
       token: generateToken(user.id),
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Register error:', error.code || error.name || 'unknown');
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -41,6 +57,8 @@ const registerUser = async (req, res) => {
 // @route   POST /api/auth/login
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
+  const validationError = validateCredentials({ email, password });
+  if (validationError) return res.status(400).json({ message: validationError });
 
   try {
     const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -57,7 +75,8 @@ const loginUser = async (req, res) => {
       res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Login error:', error.code || error.name || 'unknown');
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -66,7 +85,8 @@ const getMe = async (req, res) => {
     const userResult = await db.query('SELECT id, name, email FROM users WHERE id = $1', [req.user.id]);
     res.json(userResult.rows[0]);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Get user error:', error.code || error.name || 'unknown');
+    res.status(500).json({ message: 'Server error' });
   }
 };
 

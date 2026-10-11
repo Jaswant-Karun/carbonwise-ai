@@ -3,8 +3,9 @@ const { buildCoachPlan, validateActions, validateGoal, validateStatus } = requir
 const { generateCoachNarrative } = require('../services/geminiChatService');
 
 const sendError = (res, error, fallback) => {
-  console.error(fallback, error);
-  res.status(error.statusCode || 400).json({ message: error.statusCode ? error.message : (error.message || fallback) });
+  const isClientError = Number.isInteger(error.statusCode) && error.statusCode >= 400 && error.statusCode < 500;
+  console.error(fallback, error.code || error.name || 'unknown');
+  res.status(isClientError ? error.statusCode : 500).json({ message: isClientError ? error.message : fallback });
 };
 
 const getActivities = async (userId) => {
