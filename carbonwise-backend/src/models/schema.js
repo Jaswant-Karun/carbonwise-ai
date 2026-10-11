@@ -40,10 +40,58 @@ const initDb = async () => {
     );
   `;
 
+  const createCoachPlansTable = `
+    CREATE TABLE IF NOT EXISTS coach_plans (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      period_days INTEGER NOT NULL DEFAULT 7 CHECK (period_days BETWEEN 1 AND 31),
+      narrative TEXT,
+      narrative_source VARCHAR(20) NOT NULL DEFAULT 'deterministic' CHECK (narrative_source IN ('deterministic', 'gemini')),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  const createCoachActionsTable = `
+    CREATE TABLE IF NOT EXISTS coach_actions (
+      id SERIAL PRIMARY KEY,
+      plan_id INTEGER NOT NULL REFERENCES coach_plans(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      day_number INTEGER NOT NULL CHECK (day_number BETWEEN 1 AND 7),
+      category VARCHAR(50) NOT NULL,
+      title VARCHAR(160) NOT NULL,
+      explanation VARCHAR(500) NOT NULL,
+      suggested_target VARCHAR(240) NOT NULL,
+      estimated_potential_savings_kg DECIMAL(10, 2),
+      status VARCHAR(20) NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'in_progress', 'completed', 'skipped')),
+      completed_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  const createCoachGoalsTable = `
+    CREATE TABLE IF NOT EXISTS coach_goals (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      period VARCHAR(10) NOT NULL CHECK (period IN ('weekly', 'monthly')),
+      category VARCHAR(50),
+      target_kg DECIMAL(10, 2) NOT NULL CHECK (target_kg > 0),
+      baseline_kg DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (baseline_kg >= 0),
+      status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'archived')),
+      started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      completed_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   try {
     await db.query(createUsersTable);
     await db.query(createActivitiesTable);
     await db.query(createScenariosTable);
+    await db.query(createCoachPlansTable);
+    await db.query(createCoachActionsTable);
+    await db.query(createCoachGoalsTable);
     console.log('✅ Database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database tables:', err.stack);
