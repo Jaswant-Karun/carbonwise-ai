@@ -220,6 +220,18 @@ const initDb = async () => {
         ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMP
     `);
     await db.query(`
+      ALTER TABLE environment_alerts
+        ADD COLUMN IF NOT EXISTS anomaly_category VARCHAR(40) DEFAULT 'atmospheric',
+        ADD COLUMN IF NOT EXISTS anomaly_type VARCHAR(60),
+        ADD COLUMN IF NOT EXISTS deviation DECIMAL(14, 4),
+        ADD COLUMN IF NOT EXISTS detection_method VARCHAR(80),
+        ADD COLUMN IF NOT EXISTS data_source VARCHAR(100) DEFAULT 'open-meteo',
+        ADD COLUMN IF NOT EXISTS confidence_score DECIMAL(5, 2) DEFAULT 1.0,
+        ADD COLUMN IF NOT EXISTS duration_hours INTEGER DEFAULT 1,
+        ADD COLUMN IF NOT EXISTS is_persistent BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    `);
+    await db.query(`
       INSERT INTO environment_sources (name, provider, metric, unit)
       VALUES
         ('Open-Meteo Weather', 'open-meteo', 'temperature', '°C'),
@@ -234,6 +246,7 @@ const initDb = async () => {
     `);
     await db.query('CREATE INDEX IF NOT EXISTS environment_observations_region_metric_time_idx ON environment_observations (region_id, metric, observed_at DESC)');
     await db.query('CREATE INDEX IF NOT EXISTS environment_alerts_user_status_created_idx ON environment_alerts (user_id, status, created_at DESC)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_environment_alerts_dedup ON environment_alerts (user_id, region_id, metric, anomaly_category, status)');
     await db.query('CREATE INDEX IF NOT EXISTS idx_environment_observations_observed_at ON environment_observations (observed_at DESC)');
     await db.query('CREATE INDEX IF NOT EXISTS idx_environment_ingestion_runs_started_at ON environment_ingestion_runs (started_at DESC)');
     console.log('✅ Database tables initialized successfully');

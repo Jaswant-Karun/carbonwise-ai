@@ -3,6 +3,7 @@ const { protect } = require('../middlewares/authMiddleware');
 const {
   createRegion,
   getOverview,
+  getRegionAnomalies,
   getSummary,
   listAlerts,
   listRegions,
@@ -23,6 +24,7 @@ router.get('/locations/search', protect, searchLocationSuggestions);
 router.get('/regions', protect, listRegions);
 router.post('/regions', protect, createRegion);
 router.get('/regions/:regionId/summary', protect, getSummary);
+router.get('/regions/:regionId/anomalies', protect, getRegionAnomalies);
 router.post('/regions/:regionId/refresh', protect, refreshRegion);
 
 // Alerts endpoints

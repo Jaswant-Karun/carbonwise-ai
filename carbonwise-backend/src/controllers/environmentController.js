@@ -138,11 +138,49 @@ const refreshRegion = async (req, res) => {
   }
 };
 
+const getRegionAnomalies = async (req, res) => {
+  try {
+    const region = await getOwnedRegion(req.user.id, req.params.regionId);
+    if (!region) return res.status(404).json({ message: 'Environmental region not found.' });
+
+    const summary = await summarizeRegion(req.user.id, region.id);
+    const alertsRes = await db.query(
+      `SELECT id, metric, severity, status, observed_value, baseline_value,
+              threshold_value, deviation, anomaly_category, anomaly_type,
+              detection_method, data_source, confidence_score, duration_hours,
+              is_persistent, explanation, observed_at, updated_at, created_at
+       FROM environment_alerts
+       WHERE region_id = $1 AND user_id = $2
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [region.id, req.user.id],
+    );
+
+    const atmosphericAnomalies = summary.metrics.filter((m) => m.anomaly);
+    const dataQualityIssues = summary.metrics.filter((m) => m.qualityCheck && !m.qualityCheck.isValid);
+
+    res.json({
+      region,
+      atmosphericAnomalies,
+      dataQualityIssues,
+      metrics: summary.metrics,
+      activeAlerts: alertsRes.rows,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Region anomalies check failed:', error.code || 'database_error');
+    res.status(500).json({ message: 'Unable to analyze regional anomalies.' });
+  }
+};
+
 const listAlerts = async (req, res) => {
   try {
     const result = await db.query(
       `SELECT a.id, a.metric, a.severity, a.status, a.observed_value, a.baseline_value,
-              a.threshold_value, a.explanation, a.observed_at, a.created_at, r.name AS region_name
+              a.threshold_value, a.deviation, a.anomaly_category, a.anomaly_type,
+              a.detection_method, a.data_source, a.confidence_score, a.duration_hours,
+              a.is_persistent, a.explanation, a.observed_at, a.updated_at, a.created_at,
+              r.name AS region_name
        FROM environment_alerts a
        JOIN environment_regions r ON r.id = a.region_id
        WHERE a.user_id = $1
@@ -216,6 +254,7 @@ const getOverview = async (req, res) => {
 module.exports = {
   createRegion,
   getOverview,
+  getRegionAnomalies,
   getSummary,
   listAlerts,
   listRegions,

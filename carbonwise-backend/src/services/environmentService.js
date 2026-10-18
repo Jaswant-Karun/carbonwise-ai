@@ -118,6 +118,14 @@ const standardDeviation = (values, average) =>
     ? Math.sqrt(values.reduce((sum, v) => sum + (v - average) ** 2, 0) / values.length)
     : 0;
 
+const {
+  calculateBaseline,
+  evaluateDataQuality,
+  detectAtmosphericAnomaly,
+  persistOrUpdateAlert,
+  analyzeRegionAnomalies,
+} = require('./climateAnomalyService');
+
 /**
  * Summarize telemetry and historical observations for a user region
  */
@@ -140,31 +148,75 @@ const summarizeRegion = async (userId, regionId) => {
   });
 
   const metrics = Object.entries(byMetric).map(([metric, rows]) => {
-    const values = rows.slice(0, 30).map((r) => Number(r.value));
-    const average = mean(values);
-    const deviation = standardDeviation(values, average || 0);
     const latest = rows[0];
-
-    // Anomaly threshold
-    const threshold =
-      average == null ? null : round(average + Math.max(deviation * 2, Math.abs(average) * 0.5));
-
+    const latestValue = Number(latest.value);
     const freshnessMinutes = latest.ingested_at
       ? Math.max(0, Math.round((Date.now() - new Date(latest.ingested_at).getTime()) / 60000))
+      : null;
+
+    // 1. Data Quality and Sensor integrity check
+    const qualityCheck = evaluateDataQuality(metric, latestValue, rows, {
+      latestObservedAt: latest.observed_at,
+    });
+
+    // 2. Baseline calculation (minimum 7 samples required)
+    const baselineInfo = calculateBaseline(
+      rows,
+      latest.observed_at ? new Date(latest.observed_at) : new Date(),
+    );
+
+    // 3. Anomaly detection via robust Z-score & seasonal thresholds
+    const anomalyInfo = qualityCheck.isValid
+      ? detectAtmosphericAnomaly({
+          metric,
+          observedValue: latestValue,
+          unit: latest.unit,
+          baselineInfo,
+          recentObservations: rows,
+        })
+      : {
+          isAnomaly: false,
+          severity: qualityCheck.severity || 'warning',
+          anomalyType: qualityCheck.issueType,
+          anomalyCategory: 'data_quality',
+          explanation: qualityCheck.explanation,
+          confidenceScore: qualityCheck.confidenceImpact,
+          confidenceLabel: 'low',
+        };
+
+    const threshold = baselineInfo.status === 'sufficient'
+      ? round(baselineInfo.median + (baselineInfo.robustStdDev * 2))
       : null;
 
     return {
       metric,
       label: METRICS[metric]?.label || metric,
       unit: latest.unit,
-      latest: round(latest.value),
+      latest: round(latestValue),
       observedAt: latest.observed_at,
       ingestedAt: latest.ingested_at,
       freshnessMinutes,
       freshness: freshnessMinutes == null ? 'unknown' : freshnessMinutes <= 120 ? 'fresh' : 'stale',
-      baseline: average == null ? null : round(average),
+      baseline: baselineInfo.baseline,
+      baselineStatus: baselineInfo.status,
+      mad: baselineInfo.mad,
+      robustStdDev: baselineInfo.robustStdDev,
+      deviation: anomalyInfo.deviation ?? null,
+      robustZScore: anomalyInfo.robustZScore ?? null,
       threshold,
-      anomaly: threshold != null && Number(latest.value) >= threshold && values.length >= 3,
+      anomaly: anomalyInfo.isAnomaly,
+      severity: anomalyInfo.severity,
+      anomalyType: anomalyInfo.anomalyType,
+      anomalyCategory: anomalyInfo.anomalyCategory,
+      detectionMethod: anomalyInfo.detectionMethod || 'none',
+      durationType: anomalyInfo.durationType || 'short_term',
+      isPersistent: anomalyInfo.isPersistent || false,
+      confidenceScore: anomalyInfo.confidenceScore,
+      confidenceLabel: anomalyInfo.confidenceLabel,
+      explanation: baselineInfo.status === 'insufficient_history'
+        ? 'Insufficient baseline data'
+        : anomalyInfo.explanation,
+      qualityCheck,
       observations: rows
         .slice(0, 30)
         .reverse()
@@ -193,46 +245,38 @@ const summarizeRegion = async (userId, regionId) => {
 };
 
 /**
- * Generate rule-based early warnings when metrics exceed anomaly thresholds
+ * Generate explainable alerts using deterministic statistical engine with deduplication
  */
 const createAlerts = async (userId, summary) => {
   const alerts = [];
   if (!summary?.metrics || !summary?.region) return alerts;
 
   for (const metric of summary.metrics) {
-    if (!metric.anomaly) continue;
+    if (!metric.anomaly && metric.qualityCheck?.isValid !== false) continue;
 
-    let severity = 'warning';
-    if (metric.metric === 'us_aqi' && metric.latest >= 150) severity = 'critical';
-    if (metric.metric === 'temperature' && metric.latest >= 38) severity = 'critical';
-    if (metric.metric === 'precipitation' && metric.latest >= 50) severity = 'critical';
+    const anomalyPayload = {
+      metric: metric.metric,
+      observedValue: metric.latest,
+      baselineValue: metric.baseline,
+      deviation: metric.deviation,
+      severity: metric.severity || 'warning',
+      isAnomaly: metric.anomaly,
+      anomalyCategory: metric.anomalyCategory || (metric.qualityCheck?.isValid === false ? 'data_quality' : 'atmospheric'),
+      anomalyType: metric.anomalyType || 'unspecified_anomaly',
+      detectionMethod: metric.detectionMethod || 'robust_zscore_mad',
+      isPersistent: metric.isPersistent || false,
+      confidenceScore: metric.confidenceScore,
+      explanation: metric.explanation,
+    };
 
-    const explanation = `${metric.label} observed at ${metric.latest} ${metric.unit}, exceeding anomalous baseline threshold of ${metric.threshold} ${metric.unit}.`;
+    const saved = await persistOrUpdateAlert(userId, summary.region.id, anomalyPayload, {
+      observedAt: metric.observedAt,
+      dataSource: 'open-meteo',
+    });
 
-    const result = await db.query(
-      `INSERT INTO environment_alerts
-       (user_id, region_id, metric, severity, observed_value, baseline_value, threshold_value, explanation, observed_at)
-       SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9
-       WHERE NOT EXISTS (
-         SELECT 1 FROM environment_alerts
-         WHERE user_id = $1 AND region_id = $2 AND metric = $3
-           AND observed_at = $9
-       )
-       RETURNING id, metric, severity, explanation, observed_at`,
-      [
-        userId,
-        summary.region.id,
-        metric.metric,
-        severity,
-        metric.latest,
-        metric.baseline,
-        metric.threshold,
-        explanation,
-        metric.observedAt,
-      ],
-    );
-
-    if (result.rows[0]) alerts.push(result.rows[0]);
+    if (saved?.alert) {
+      alerts.push(saved.alert);
+    }
   }
   return alerts;
 };
