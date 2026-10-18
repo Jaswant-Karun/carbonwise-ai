@@ -487,7 +487,7 @@ const LiveClimateDashboard = () => {
 
             <ChartCard
               title="Data Integrity & Freshness Attribution"
-              description="Every observation is normalized and timestamped in PostgreSQL."
+              description="Observations are normalized with deterministic statistical baselines in PostgreSQL."
             >
               <div className="source-list">
                 {summary?.metrics?.map((metric) => (
@@ -495,13 +495,26 @@ const LiveClimateDashboard = () => {
                     <div>
                       <strong>{metric.label}</strong>
                       <span>
-                        Baseline: {metric.baseline == null ? 'gathering history' : `${metric.baseline} ${metric.unit}`}
+                        Baseline: {metric.baselineStatus === 'insufficient_history' || metric.baseline == null
+                          ? 'Insufficient baseline data'
+                          : `${metric.baseline} ${metric.unit} (Robust MAD: ±${metric.mad || 0} ${metric.unit})`}
                       </span>
                       <small style={{ color: metric.freshness === 'stale' ? 'var(--accent-amber)' : 'var(--mint-strong)' }}>
                         {metric.freshness === 'stale' ? '⚠️ Stale observation (>2h)' : '✓ Verified fresh observation'}
+                        {metric.confidenceLabel ? ` · Confidence: ${metric.confidenceLabel}` : ''}
                       </small>
                     </div>
-                    <strong>{metric.anomaly ? '⚠️ Anomaly' : '✓ Normal'}</strong>
+                    <strong>
+                      {metric.baselineStatus === 'insufficient_history' ? (
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Insufficient baseline data</span>
+                      ) : metric.anomaly ? (
+                        <span style={{ color: 'var(--accent-amber)' }}>
+                          ⚠️ Anomaly ({metric.deviation > 0 ? '+' : ''}{metric.deviation} {metric.unit})
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--mint-strong)' }}>✓ Normal</span>
+                      )}
+                    </strong>
                   </div>
                 ))}
               </div>
@@ -521,12 +534,50 @@ const LiveClimateDashboard = () => {
               <div className="recommendation-row" key={alert.id}>
                 <span className={`alert-severity alert-${alert.severity}`}>{alert.severity}</span>
                 <div>
-                  <strong>
-                    {alert.region_name} · {alert.metric}
-                  </strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                    <strong>
+                      {alert.region_name} · {alert.metric}
+                    </strong>
+                    {alert.anomaly_category && (
+                      <span
+                        className="badge"
+                        style={{
+                          fontSize: '0.68rem',
+                          padding: '2px 6px',
+                          background: alert.anomaly_category === 'data_quality' ? '#ef444420' : '#3b82f620',
+                          color: alert.anomaly_category === 'data_quality' ? '#f87171' : '#60a5fa',
+                          border: '1px solid currentColor',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {alert.anomaly_category === 'data_quality' ? 'Sensor/Data Quality' : 'Atmospheric'}
+                      </span>
+                    )}
+                    {alert.duration_hours && alert.duration_hours > 1 && (
+                      <span
+                        className="badge"
+                        style={{
+                          fontSize: '0.68rem',
+                          padding: '2px 6px',
+                          background: '#eab30820',
+                          color: '#facc15',
+                          border: '1px solid currentColor',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {alert.duration_hours}h Ongoing Event
+                      </span>
+                    )}
+                    {alert.confidence_score && (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        Confidence: {Math.round(Number(alert.confidence_score) * 100)}%
+                      </span>
+                    )}
+                  </div>
                   <p>{alert.explanation}</p>
                   <small>
                     {new Date(alert.observed_at).toLocaleString()} · Status: {alert.status}
+                    {alert.detection_method ? ` · Method: ${alert.detection_method}` : ''}
                   </small>
                   <div className="alert-actions">
                     {alert.status === 'open' && (

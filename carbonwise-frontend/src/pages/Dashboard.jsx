@@ -186,10 +186,20 @@ const Dashboard = () => {
         metricsMap[m.metric] = m;
       });
     }
+    const tempMetric = metricsMap.temperature;
+    let tempAnomaly = 'Nominal baseline';
+    if (tempMetric) {
+      if (tempMetric.baselineStatus === 'insufficient_history') {
+        tempAnomaly = 'Insufficient baseline data';
+      } else if (tempMetric.anomaly) {
+        tempAnomaly = `${tempMetric.deviation > 0 ? '+' : ''}${tempMetric.deviation}°C vs baseline`;
+      }
+    }
+
     return {
-      temp: metricsMap.temperature?.latest != null ? `${metricsMap.temperature.latest}°C` : null,
-      tempAnomaly: metricsMap.temperature?.anomaly ? '+1.8°C vs baseline' : 'Nominal baseline',
-      tempStatus: metricsMap.temperature?.anomaly ? 'warning' : 'normal',
+      temp: tempMetric?.latest != null ? `${tempMetric.latest}°C` : null,
+      tempAnomaly,
+      tempStatus: tempMetric?.anomaly ? 'warning' : 'normal',
       rainfall: metricsMap.precipitation?.latest != null ? `${metricsMap.precipitation.latest} mm` : '0.0 mm',
       aqi: metricsMap.us_aqi?.latest != null ? metricsMap.us_aqi.latest : (metricsMap.pm2_5?.latest != null ? `${metricsMap.pm2_5.latest} µg/m³` : null),
       aqiLabel: metricsMap.us_aqi?.latest <= 50 ? 'Good' : metricsMap.us_aqi?.latest <= 100 ? 'Moderate' : 'Unhealthy',
