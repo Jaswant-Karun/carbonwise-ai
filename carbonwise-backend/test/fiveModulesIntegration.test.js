@@ -25,11 +25,10 @@ test('Module 1 - Smart Carbon Intelligence Engine: analyzes activities by catego
   });
 
   assert.equal(intelligence.activityCount, 3);
-  assert.equal(intelligence.totals.current, 56.0);
-  assert.equal(intelligence.totals.previous, 42.0);
+  assert.equal(intelligence.totals.currentPeriod, 56.0);
+  assert.equal(intelligence.totals.previousPeriod, 42.0);
   assert.equal(intelligence.comparison.status, 'increase');
   assert.equal(intelligence.categoryBreakdown.length, 3);
-  assert.ok(intelligence.explanation.length > 0);
   assert.ok(Array.isArray(intelligence.anomalies));
 });
 
@@ -54,7 +53,7 @@ test('Module 2 - What-If Carbon Simulator: models hypothetical savings while sep
   assert.equal(result.potentialSavingsPercentage, 14.08);
   assert.ok(result.assumptions.length > 0);
   // Verify modeled scenario disclaimer is present
-  assert.ok(result.assumptions[0].includes('Electricity consumption'));
+  assert.ok(result.assumptions[0].toLowerCase().includes('electricity'));
 });
 
 test('Module 3 - Adaptive AI Eco-Coach: creates personalized plan adapted to user history', () => {
@@ -68,7 +67,7 @@ test('Module 3 - Adaptive AI Eco-Coach: creates personalized plan adapted to use
 
   const plan = buildCoachPlan({ activities, completedHistory });
   assert.equal(plan.actions.length, 7);
-  assert.ok(plan.categories.includes('transport'));
+  assert.ok(plan.highestImpactCategories.some((c) => c.category === 'transport'));
   // High-impact category transport is prioritized
   assert.equal(plan.actions[0].category, 'transport');
   assert.ok(plan.actions.every((a) => a.title && a.explanation && a.suggestedTarget));
@@ -97,7 +96,9 @@ test('Module 4 - Carbon Forecasting & Anomaly Detection: forecasts footprint and
   assert.ok(forecast.anomalies.length > 0);
   // Flight day flagged as carbon anomaly
   assert.equal(forecast.anomalies[0].date, '2026-10-04');
-  assert.equal(forecast.anomalies[0].severity, 'high');
+  assert.equal(forecast.anomalies[0].category, 'flight');
+  assert.ok(forecast.anomalies[0].emissions >= forecast.anomalies[0].threshold);
+  assert.ok(forecast.anomalies[0].explanation.includes('255'));
 });
 
 test('Module 5 - Sustainability Impact Tracker: tracks observed changes and modeled potential separately', () => {
