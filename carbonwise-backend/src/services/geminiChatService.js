@@ -54,6 +54,9 @@ const fallbackText = (task) => ({
   report: 'Your report is temporarily unavailable. Focus on the categories with the highest recorded emissions.',
   insights: 'AI insights are temporarily unavailable. Review the highest-emission categories in your dashboard.',
   prediction: 'The deterministic forecast is shown separately. Treat it as an estimate based on recorded history, not a guarantee.',
+  env_anomaly: 'Environmental anomaly explanation is temporarily unavailable. Review the observed deviation against seasonal baseline.',
+  env_trend: 'Climate trend report summary is temporarily unavailable. Review the numerical trend data directly.',
+  env_insights: 'Regional environmental insights are temporarily unavailable. Telemetry observations remain nominal.',
 }[task] || 'AI insights are temporarily unavailable. Please try again later.');
 
 const isQuotaError = (error) => error?.status === 429 || error?.statusCode === 429
@@ -214,4 +217,304 @@ module.exports.generatePredictionNarrative = (summary, options = {}) => generate
   fallback: fallbackText('prediction'),
 });
 
-module.exports._test = { cacheKey, stable, inFlight, rateWindows, requestGemini, generateCached, isQuotaError };
+const summarizeAnomalyEvidence = (anomaly, region) => {
+  if (!anomaly) return null;
+  return {
+    regionName: region?.name || 'Monitored Region',
+    metric: anomaly.metric,
+    observedValue: Number(anomaly.observed_value != null ? anomaly.observed_value : anomaly.latest_value),
+    baselineValue: anomaly.baseline_value != null ? Number(anomaly.baseline_value) : null,
+    deviation: anomaly.deviation != null ? Number(anomaly.deviation) : null,
+    unit: anomaly.unit || '',
+    method: anomaly.detection_method || 'seasonal_baseline',
+    observedPeriod: anomaly.observed_at ? String(anomaly.observed_at).slice(0, 16) : 'recent_telemetry',
+    dataSource: anomaly.data_source || 'Open-Meteo',
+    severity: anomaly.severity || 'warning',
+    anomalyType: anomaly.anomaly_category || anomaly.anomaly_type || 'atmospheric',
+  };
+};
+
+const buildDeterministicAnomalyExplanation = (evidence) => {
+  if (!evidence) {
+    return {
+      summary: 'Environmental anomaly explanation unavailable.',
+      whatChanged: 'No specific anomaly evidence provided.',
+      baselineUsed: 'Historical reference baseline',
+      observedPeriod: 'Recent observation window',
+      dataSource: 'Environmental telemetry',
+      limitations: 'Automated statistical baseline approximation.',
+      recommendations: ['Maintain regular station telemetry polling.'],
+    };
+  }
+  const metricName = evidence.metric?.replace(/_/g, ' ') || 'Environmental metric';
+  const whatChanged = evidence.deviation != null
+    ? `${metricName} recorded at ${evidence.observedValue} ${evidence.unit}, reflecting an excursion of ${evidence.deviation > 0 ? '+' : ''}${evidence.deviation} ${evidence.unit} relative to baseline.`
+    : `${metricName} recorded at ${evidence.observedValue} ${evidence.unit}.`;
+  const baselineUsed = evidence.baselineValue != null
+    ? `Seasonal historical baseline of ${evidence.baselineValue} ${evidence.unit} calculated via ${evidence.method}.`
+    : 'Historical seasonal reference threshold.';
+  const limitations = 'Baseline derived from reanalysis and ground telemetry. Local microclimates, thermal lag, and localized topography may influence point observations.';
+  const recommendations = [
+    `Cross-verify localized ground observations against adjacent meteorological stations to confirm duration.`,
+    `Review historical seasonal variance for ${evidence.regionName} before dispatching operational alerts.`,
+    `Track potential downstream impact on municipal water reserves and energy grid demand.`,
+  ];
+  return {
+    summary: `${evidence.regionName}: ${metricName} anomaly flagged with ${evidence.severity} severity.`,
+    whatChanged,
+    baselineUsed,
+    observedPeriod: evidence.observedPeriod || 'Recent telemetry window',
+    dataSource: evidence.dataSource || 'Open-Meteo Verified Telemetry',
+    limitations,
+    recommendations,
+  };
+};
+
+const summarizeTrendEvidence = (trendData, region) => {
+  if (!trendData) return null;
+  return {
+    regionName: region?.name || 'Monitored Region',
+    parameter: trendData.parameter || 'temperature_2m',
+    timeRange: trendData.timeRange || 'annual',
+    ratePerDecade: trendData.linearTrend?.ratePerDecade != null ? Number(trendData.linearTrend.ratePerDecade) : null,
+    unit: trendData.linearTrend?.unit || '°C',
+    slope: trendData.linearTrend?.slope != null ? Number(trendData.linearTrend.slope) : null,
+    rSquared: trendData.linearTrend?.rSquared != null ? Number(trendData.linearTrend.rSquared) : null,
+    sampleSize: trendData.linearTrend?.sampleSize || 0,
+    baselinePeriod: trendData.referencePeriod?.label || '1991-2020 WMO Standard Reference',
+    missingIntervalsCount: trendData.missingIntervals?.length || 0,
+    dataSource: trendData.provider || 'NASA POWER / Open-Meteo Historical API',
+  };
+};
+
+const buildDeterministicTrendReport = (evidence) => {
+  if (!evidence) {
+    return {
+      summary: 'Climate trend summary unavailable.',
+      whatChanged: 'Insufficient historical data points.',
+      baselineUsed: 'WMO Standard Baseline',
+      observedPeriod: 'Historical period',
+      dataSource: 'NASA POWER / Open-Meteo',
+      limitations: 'Data resolution constraints.',
+      recommendations: ['Expand telemetry history for long-term climatological evaluation.'],
+    };
+  }
+  const param = evidence.parameter?.replace(/_/g, ' ') || 'Temperature';
+  const decadalRate = evidence.ratePerDecade != null ? `${evidence.ratePerDecade > 0 ? '+' : ''}${evidence.ratePerDecade} ${evidence.unit}/decade` : 'indivisible';
+  const whatChanged = `Long-term historical trend indicates a slope of ${evidence.slope || 0} (${decadalRate}) over the observed ${evidence.timeRange} series across ${evidence.sampleSize} valid records.`;
+  const baselineUsed = `Comparative reference period: ${evidence.baselinePeriod}.`;
+  const limitations = `Linear least-squares regression has R² of ${evidence.rSquared != null ? evidence.rSquared : 'N/A'} with ${evidence.missingIntervalsCount} missing observation intervals. External climate projections are based on CMIP6 model ensembles and represent scenario pathways, not guaranteed weather forecasts.`;
+  const recommendations = [
+    `Factor decadal temperature shifts into urban infrastructure and thermal resilience planning.`,
+    `Incorporate drought risk mitigation and rainwater harvesting based on seasonal precipitation baselines.`,
+    `Utilize multi-model ensemble ranges rather than single-model extrapolations for policy targets.`,
+  ];
+  return {
+    summary: `${evidence.regionName}: ${param} decadal trend analysis (${decadalRate}).`,
+    whatChanged,
+    baselineUsed,
+    observedPeriod: `${evidence.sampleSize} aggregated intervals`,
+    dataSource: evidence.dataSource,
+    limitations,
+    recommendations,
+  };
+};
+
+const summarizeRegionalEvidence = ({ region, metrics = [], anomalies = [], alerts = [], airQuality }) => {
+  return {
+    regionName: region?.name || 'Monitored Region',
+    coordinates: region ? `${Number(region.latitude).toFixed(2)}, ${Number(region.longitude).toFixed(2)}` : null,
+    metrics: (metrics || []).slice(0, 5).map((m) => ({
+      metric: m.metric,
+      label: m.label,
+      value: Number(m.latest),
+      unit: m.unit,
+      anomaly: Boolean(m.anomaly),
+      freshness: m.freshness,
+    })),
+    activeAnomaliesCount: (anomalies || []).length,
+    activeAlertsCount: (alerts || []).filter((a) => a.status === 'open').length,
+    airQualityStatus: airQuality?.status || 'unavailable',
+    airQualityStation: airQuality?.stationName || null,
+    airQualityPollutants: (airQuality?.measurements || []).slice(0, 4).map((p) => ({
+      pollutant: p.pollutant,
+      value: p.value,
+      unit: p.unit,
+    })),
+  };
+};
+
+const buildDeterministicRegionalInsights = (evidence) => {
+  const insights = [];
+  if (!evidence) return insights;
+
+  insights.push({
+    title: `${evidence.regionName} Environmental Telemetry Status`,
+    whatChanged: `Monitored with ${evidence.metrics.length} active telemetry metrics. ${evidence.activeAnomaliesCount} anomalies and ${evidence.activeAlertsCount} active alerts currently open.`,
+    evidence: `Coordinates: ${evidence.coordinates || 'Configured region'}; Air quality status: ${evidence.airQualityStatus}.`,
+    recommendation: 'Continue scheduled background ingestion and periodic historical baseline updates.',
+    severity: evidence.activeAnomaliesCount > 0 ? 'warning' : 'normal',
+    dataSource: 'Open-Meteo & OpenAQ',
+    limitations: 'Telemetry reflects nearest ground or reanalysis grid cell.',
+  });
+
+  if (evidence.airQualityPollutants?.length > 0) {
+    insights.push({
+      title: 'Ground Air Quality Telemetry',
+      whatChanged: `OpenAQ ground station reporting ${evidence.airQualityPollutants.map((p) => `${p.pollutant.toUpperCase()}: ${p.value} ${p.unit}`).join(', ')}.`,
+      evidence: `Station: ${evidence.airQualityStation || 'Nearest Ground Monitor'}; evaluation against WHO 2021 air quality guidelines.`,
+      recommendation: 'Ambient particulate matter reflects local conditions and is evaluated separately from long-term climate change baselines.',
+      severity: 'info',
+      dataSource: 'OpenAQ Ground Station Network',
+      limitations: 'Ground monitoring coverage depends on local station operation.',
+    });
+  } else if (evidence.airQualityStatus === 'data_unavailable' || evidence.airQualityStatus === 'auth_required') {
+    insights.push({
+      title: 'Air Quality Telemetry Coverage',
+      whatChanged: 'No active ground air quality monitor detected within 25 km.',
+      evidence: 'Missing sensor telemetry is explicitly tagged as data unavailable and is not assumed to be clean air.',
+      recommendation: 'Inquire with local municipal environmental protection boards or deploy community sensors.',
+      severity: 'info',
+      dataSource: 'OpenAQ Community',
+      limitations: 'Sparse sensor density in remote or rural locations.',
+    });
+  }
+
+  return insights;
+};
+
+module.exports.generateEnvironmentalAnomalyExplanation = async (anomaly, region, options = {}) => {
+  const evidence = summarizeAnomalyEvidence(anomaly, region);
+  const fallback = buildDeterministicAnomalyExplanation(evidence);
+  if (!evidence) return fallback;
+
+  const prompt = `You are an environmental analytics assistant. Explain this verified environmental anomaly using ONLY the provided evidence.
+DO NOT invent any measurements, locations, historical records, or confidence values.
+Your explanation must address:
+1. What changed (observed value vs baseline and deviation)
+2. The baseline used
+3. The observed period
+4. The data source
+5. Limitations (e.g., local station microclimates, sensor calibration, temporal resolution)
+6. Practical, actionable recommendations appropriate to the observed evidence.
+
+Return a JSON object with keys: summary, whatChanged, baselineUsed, observedPeriod, dataSource, limitations, recommendations (array of strings).
+Evidence:
+${JSON.stringify(evidence)}`;
+
+  const responseText = await generateCached({
+    userId: options.userId,
+    task: 'env_anomaly',
+    input: evidence,
+    dataVersion: options.dataVersion || `anomaly-${anomaly.id || evidence.metric}-${evidence.observedPeriod}`,
+    prompt,
+    maxOutputTokens: 380,
+    fallback: JSON.stringify(fallback),
+  });
+
+  try {
+    const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
+    return {
+      ...fallback,
+      summary: responseText.slice(0, 200),
+      whatChanged: responseText,
+    };
+  }
+};
+
+module.exports.generateEnvironmentalTrendReport = async (trendData, region, options = {}) => {
+  const evidence = summarizeTrendEvidence(trendData, region);
+  const fallback = buildDeterministicTrendReport(evidence);
+  if (!evidence) return fallback;
+
+  const prompt = `You are an environmental reporting assistant. Summarize this verified climate trend using ONLY the provided evidence.
+DO NOT invent numbers, projections, or historical periods.
+Address:
+1. What changed over the observed period (e.g., rate per decade, historical trend)
+2. The historical reference baseline used
+3. The data source
+4. Scientific limitations (e.g., coverage gaps, statistical R², regional downscaling)
+5. Practical sustainability and planning recommendations.
+
+Return a JSON object with keys: summary, whatChanged, baselineUsed, observedPeriod, dataSource, limitations, recommendations (array of strings).
+Evidence:
+${JSON.stringify(evidence)}`;
+
+  const responseText = await generateCached({
+    userId: options.userId,
+    task: 'env_trend',
+    input: evidence,
+    dataVersion: options.dataVersion || `trend-${evidence.regionName}-${evidence.parameter}-${evidence.timeRange}`,
+    prompt,
+    maxOutputTokens: 380,
+    fallback: JSON.stringify(fallback),
+  });
+
+  try {
+    const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
+    return {
+      ...fallback,
+      summary: responseText.slice(0, 200),
+      whatChanged: responseText,
+    };
+  }
+};
+
+module.exports.generateRegionalAiInsights = async (regionalContext, options = {}) => {
+  const evidence = summarizeRegionalEvidence(regionalContext);
+  const fallback = buildDeterministicRegionalInsights(evidence);
+  if (!evidence) return fallback;
+
+  const prompt = `You are an environmental analytics assistant. Generate 2 to 3 concise, factual AI insight cards for this regional environmental dashboard based ONLY on this evidence.
+DO NOT invent measurements, alerts, or confidence scores.
+Each insight must have:
+- title: concise heading
+- whatChanged: factual statement of current state
+- evidence: data points supporting it
+- recommendation: practical, realistic action
+- severity: 'normal', 'info', or 'warning'
+- dataSource: verified source name
+- limitations: scientific or sensor limitations
+
+Return a JSON array of objects.
+Evidence:
+${JSON.stringify(evidence)}`;
+
+  const responseText = await generateCached({
+    userId: options.userId,
+    task: 'env_insights',
+    input: evidence,
+    dataVersion: options.dataVersion || `insights-${evidence.regionName}-${evidence.metrics.length}-${evidence.activeAnomaliesCount}`,
+    prompt,
+    maxOutputTokens: 420,
+    fallback: JSON.stringify(fallback),
+  });
+
+  try {
+    const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+module.exports._test = {
+  cacheKey,
+  stable,
+  inFlight,
+  rateWindows,
+  requestGemini,
+  generateCached,
+  isQuotaError,
+  summarizeAnomalyEvidence,
+  summarizeTrendEvidence,
+  summarizeRegionalEvidence,
+  buildDeterministicAnomalyExplanation,
+  buildDeterministicTrendReport,
+  buildDeterministicRegionalInsights,
+};

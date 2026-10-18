@@ -14,6 +14,11 @@ const {
   storeAirQualityAlert,
   updateAlertStatusWithHistory,
 } = require('../services/airQualityService');
+const {
+  generateEnvironmentalAnomalyExplanation,
+  generateEnvironmentalTrendReport,
+  generateRegionalAiInsights,
+} = require('../services/geminiChatService');
 
 const getOwnedRegion = async (userId, regionId) => {
   const result = await db.query(
