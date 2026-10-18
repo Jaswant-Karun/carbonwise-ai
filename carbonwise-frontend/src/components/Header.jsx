@@ -82,7 +82,7 @@ const Header = () => {
           setRegions(res.data);
           setSelectedRegion(res.data[0].name);
         }
-      } catch (err) {
+      } catch {
         // Fallback silently if not yet configured
       }
       if (isMounted) {
