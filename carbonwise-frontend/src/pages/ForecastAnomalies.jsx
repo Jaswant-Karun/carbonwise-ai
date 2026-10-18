@@ -94,6 +94,26 @@ const ForecastAnomalies = () => {
         </div>
       </div>
 
+      <div
+        style={{
+          background: 'rgba(16, 24, 39, 0.75)',
+          border: '1px solid rgba(59, 130, 246, 0.25)',
+          borderRadius: '12px',
+          padding: '12px 18px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          fontSize: '0.82rem',
+          color: '#94a3b8',
+        }}
+      >
+        <span style={{ fontSize: '1rem' }}>🛡️</span>
+        <div>
+          <strong style={{ color: '#f1f5f9' }}>Independent Telemetry Architecture:</strong> Personal footprint forecasting uses trailing moving averages and activity log anomaly detection. Atmospheric temperature excursions and ambient air quality alerts are processed via separate dedicated telemetry pipelines under <a href="/live-climate" style={{ color: '#38bdf8', textDecoration: 'underline' }}>Live Monitoring</a> and <a href="/alerts" style={{ color: '#38bdf8', textDecoration: 'underline' }}>Alerts</a>.
+        </div>
+      </div>
+
       {insufficient && <div className="forecast-insufficient" role="status"><Info size={18} /><div><strong>More history is needed for this horizon.</strong><span>{data.forecast.limitation}</span></div></div>}
 
       <div className="summary-grid">
