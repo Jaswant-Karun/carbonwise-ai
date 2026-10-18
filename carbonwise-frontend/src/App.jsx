@@ -20,6 +20,7 @@ import ImpactTracker from './pages/ImpactTracker';
 import LiveClimateDashboard from './pages/LiveClimateDashboard';
 import ClimateTrends from './pages/ClimateTrends';
 import ClimateForecasts from './pages/ClimateForecasts';
+import AlertsDashboard from './pages/AlertsDashboard';
 //Added new Activity
 const ProtectedRoute = ({ children }) => {
   const { user } = React.useContext(AuthContext);
@@ -45,6 +46,7 @@ function App() {
             <Route path="/forecast" element={<ProtectedRoute><ClimateForecasts /></ProtectedRoute>} />
             <Route path="/climate-forecast" element={<ProtectedRoute><ClimateForecasts /></ProtectedRoute>} />
             <Route path="/carbon-forecast" element={<ProtectedRoute><ForecastAnomalies /></ProtectedRoute>} />
+            <Route path="/alerts" element={<ProtectedRoute><AlertsDashboard /></ProtectedRoute>} />
             <Route path="/impact" element={<ProtectedRoute><ImpactTracker /></ProtectedRoute>} />
             <Route path="/live-climate" element={<ProtectedRoute><LiveClimateDashboard /></ProtectedRoute>} />
             <Route path="/action-plan" element={<ProtectedRoute><ActionPlan /></ProtectedRoute>} />
