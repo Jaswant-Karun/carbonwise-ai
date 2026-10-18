@@ -5,12 +5,14 @@ const { calculateActivityEmissions } = require('../services/carbonIntelligenceSe
 // @route   POST /api/activities
 const addActivity = async (req, res) => {
   try {
-    const { activity_type, details } = req.body;
+    const activity_type = req.body.activity_type || req.body.activityType;
+    const details = req.body.details;
     const carbon_emissions = calculateActivityEmissions(activity_type, details);
+    const date = req.body.date ? req.body.date : new Date().toISOString().slice(0, 10);
     
     const newActivity = await db.query(
-      'INSERT INTO activities (user_id, activity_type, details, carbon_emissions) VALUES ($1, $2, $3, $4) RETURNING *',
-      [req.user.id, activity_type, details, carbon_emissions]
+      'INSERT INTO activities (user_id, activity_type, details, carbon_emissions, date) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [req.user.id, activity_type, details, carbon_emissions, date]
     );
 
     res.status(201).json(newActivity.rows[0]);
