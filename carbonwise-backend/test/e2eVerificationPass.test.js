@@ -262,8 +262,9 @@ test('CarbonWise AI - End-to-End Verification Pass', async (t) => {
   await t.test('16. Gemini deterministic fallbacks and caching', async () => {
     const aiInsightRes = await apiRequest(`/environment/regions/${testRegionId}/ai-insights`, { token: user1Token });
     assert.equal(aiInsightRes.status, 200);
-    assert.ok(aiInsightRes.body.insight);
-    assert.ok(aiInsightRes.body.source === 'gemini' || aiInsightRes.body.source === 'deterministic_fallback');
+    assert.ok(Array.isArray(aiInsightRes.body.insights));
+    assert.ok(aiInsightRes.body.insights.length > 0);
+    assert.ok(aiInsightRes.body.insights[0].title);
   });
 
   // Cleanup test records
