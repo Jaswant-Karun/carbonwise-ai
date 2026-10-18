@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Layout from '../components/Layout';
@@ -62,7 +62,6 @@ const Dashboard = () => {
   const [selectedRegionId, setSelectedRegionId] = useState('');
   const [regionSummary, setRegionSummary] = useState(null);
   const [alerts, setAlerts] = useState([]);
-  const [forecastData, setForecastData] = useState(null);
   const [timeframe, setTimeframe] = useState('daily');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -143,7 +142,7 @@ const Dashboard = () => {
       setRefreshing(true);
       const summaryRes = await api.get(`/environment/regions/${regionId}/summary`);
       setRegionSummary(summaryRes.data);
-    } catch (err) {
+    } catch {
       setRegionSummary(null);
     } finally {
       setRefreshing(false);

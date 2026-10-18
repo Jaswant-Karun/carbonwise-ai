@@ -80,7 +80,6 @@ const ForecastAnomalies = () => {
     return <Layout><div className="intelligence-state"><AlertTriangle size={34} /><h2>Forecast unavailable</h2><p>{error}</p><button className="btn state-button" type="button" onClick={fetchForecast}><RefreshCw size={16} /> Try again</button></div></Layout>;
   }
 
-  const actual = data?.forecast?.actual || [];
   const projected = data?.forecast?.projected || [];
   const insufficient = !data?.forecast?.sufficientData;
 

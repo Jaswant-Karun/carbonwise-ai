@@ -64,7 +64,7 @@ const ClimateTrends = () => {
         } else if (isMounted) {
           setStatus('empty');
         }
-      } catch (err) {
+      } catch {
         if (isMounted) {
           setError('Unable to load environmental regions.');
           setStatus('error');

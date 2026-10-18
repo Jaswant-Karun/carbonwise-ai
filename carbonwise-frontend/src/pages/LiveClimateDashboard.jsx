@@ -161,7 +161,7 @@ const LiveClimateDashboard = () => {
         admin1: item.admin1,
         timezone: item.timezone,
       });
-      const nextRegions = await loadRegions();
+      await loadRegions();
       setSelectedRegionId(String(response.data.id));
       await loadSummary(response.data.id);
       await loadAlerts();
