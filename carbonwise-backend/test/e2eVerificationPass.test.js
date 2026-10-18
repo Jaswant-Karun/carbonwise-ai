@@ -131,7 +131,9 @@ test('CarbonWise AI - End-to-End Verification Pass', async (t) => {
     assert.equal(forecastRes.status, 200);
     assert.ok(forecastRes.body.tiers?.shortTermForecast);
     assert.ok(Array.isArray(forecastRes.body.tiers.shortTermForecast.days));
-    assert.ok(forecastRes.body.tiers.shortTermForecast.uncertaintyDescription);
+    assert.ok(forecastRes.body.tiers.shortTermForecast.attribution);
+    assert.ok(forecastRes.body.tiers.shortTermForecast.days.length > 0);
+    assert.equal(forecastRes.body.tiers.shortTermForecast.days[0].type, 'short_term_forecast');
   });
 
   await t.test('8. CMIP6 Climate Projections with explicit assumptions and models', async () => {
