@@ -411,7 +411,7 @@ const getRegionAiInsights = async (req, res) => {
     const region = await getOwnedRegion(req.user.id, req.params.regionId);
     if (!region) return res.status(404).json({ message: 'Region not found.' });
 
-    const summary = await summarizeRegion(region.id);
+    const summary = await summarizeRegion(req.user.id, region.id);
     const anomaliesRes = await db.query(
       `SELECT id, metric, observed_value, baseline_value, deviation, anomaly_category, severity, explanation
        FROM environment_alerts
