@@ -139,10 +139,71 @@ const buildObservations = (weather, airQuality, sourceIds, regionId) => {
   return observations.filter((item) => Number.isFinite(item.value));
 };
 
+const geoCache = new Map();
+const GEO_CACHE_TTL_MS = 15 * 60 * 1000;
+
+const fetchJson = async (url, timeoutMs = 10000) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      const error = new Error(`Environmental provider returned HTTP ${response.status}`);
+      error.code = `HTTP_${response.status}`;
+      error.statusCode = response.status;
+      throw error;
+    }
+    return await response.json();
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      const timeoutErr = new Error('Environmental provider request timed out');
+      timeoutErr.code = 'ETIMEDOUT';
+      throw timeoutErr;
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const searchLocations = async (query) => {
+  const cleanQuery = typeof query === 'string' ? query.trim() : '';
+  if (!cleanQuery || cleanQuery.length < 2) return [];
+
+  const cacheKey = `geo:${cleanQuery.toLowerCase()}`;
+  const cached = geoCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < GEO_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cleanQuery)}&count=8&language=en&format=json`;
+  try {
+    const data = await fetchJson(url, 6000);
+    const results = (data?.results || []).map((item) => ({
+      id: item.id,
+      name: item.name,
+      latitude: round(item.latitude),
+      longitude: round(item.longitude),
+      country: item.country || null,
+      admin1: item.admin1 || null,
+      timezone: item.timezone || 'UTC',
+      elevation: item.elevation != null ? round(item.elevation) : null,
+    }));
+    geoCache.set(cacheKey, { timestamp: Date.now(), data: results });
+    return results;
+  } catch (err) {
+    console.warn('[geocoding] provider lookup failed:', err.message);
+    return [];
+  }
+};
+
 module.exports = {
   METRICS,
   SOURCE_DEFINITIONS,
   buildObservations,
   validateRegion,
   round,
+  fetchJson,
+  searchLocations,
+  geoCache,
 };

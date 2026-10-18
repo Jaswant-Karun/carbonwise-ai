@@ -1,7 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildObservations, validateRegion, METRICS } = require('../src/services/environmentUtils');
-const { searchLocations, _cache } = require('../src/services/environmentService');
+const { buildObservations, validateRegion, METRICS, searchLocations, geoCache } = require('../src/services/environmentUtils');
 
 test('validates environmental regions without accepting invalid coordinates', () => {
   assert.deepEqual(validateRegion({ name: 'Campus', latitude: '12.34', longitude: '56.78' }), {
@@ -128,7 +127,7 @@ test('searchLocations caches results and handles empty or short queries safely',
   assert.deepEqual(emptyResult, []);
 
   // Pre-seed cache entry
-  _cache.set('geo:tokyo', {
+  geoCache.set('geo:tokyo', {
     timestamp: Date.now(),
     data: [{ id: 1850147, name: 'Tokyo', country: 'Japan', latitude: 35.69, longitude: 139.69 }],
   });
