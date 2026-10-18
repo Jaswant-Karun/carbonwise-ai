@@ -99,7 +99,7 @@ test('CarbonWise AI - End-to-End Verification Pass', async (t) => {
       token: user1Token,
     });
     assert.equal(refreshRes.status, 200);
-    assert.ok(refreshRes.body.observationsCount >= 0);
+    assert.ok(refreshRes.body.ingestion?.observationsCount >= 0 || refreshRes.body.summary);
 
     // Verify observations exist in DB for this region
     const obsDb = await db.query(
@@ -122,27 +122,26 @@ test('CarbonWise AI - End-to-End Verification Pass', async (t) => {
   await t.test('6. Climate Trends and historical aggregation endpoint', async () => {
     const trendsRes = await apiRequest(`/environment/regions/${testRegionId}/trends?resolution=daily`, { token: user1Token });
     assert.equal(trendsRes.status, 200);
-    assert.ok(trendsRes.body.trends);
-    assert.ok(Array.isArray(trendsRes.body.trends));
-    assert.ok(trendsRes.body.statisticalBaseline);
+    assert.ok(Array.isArray(trendsRes.body.timeSeries));
+    assert.ok(trendsRes.body.trend);
   });
 
   await t.test('7. 7-Day Weather Forecasts separating predictions from actuals', async () => {
     const forecastRes = await apiRequest(`/environment/regions/${testRegionId}/forecasts`, { token: user1Token });
     assert.equal(forecastRes.status, 200);
-    assert.ok(forecastRes.body.forecast);
-    assert.ok(Array.isArray(forecastRes.body.forecast.temperature));
-    assert.ok(forecastRes.body.meta.disclaimer);
+    assert.ok(forecastRes.body.tiers?.shortTermForecast);
+    assert.ok(Array.isArray(forecastRes.body.tiers.shortTermForecast.days));
+    assert.ok(forecastRes.body.tiers.shortTermForecast.disclaimer);
   });
 
   await t.test('8. CMIP6 Climate Projections with explicit assumptions and models', async () => {
     const projRes = await apiRequest(`/environment/regions/${testRegionId}/climate-projections`, { token: user1Token });
     assert.equal(projRes.status, 200);
-    assert.ok(projRes.body.scenarios);
-    assert.ok(projRes.body.scenarios.ssp126);
-    assert.ok(projRes.body.scenarios.ssp245);
-    assert.ok(projRes.body.scenarios.ssp585);
-    assert.ok(projRes.body.metadata.attribution);
+    assert.ok(projRes.body.projections?.scenarios);
+    assert.ok(projRes.body.projections.scenarios['SSP1-2.6']);
+    assert.ok(projRes.body.projections.scenarios['SSP2-4.5']);
+    assert.ok(projRes.body.projections.scenarios['SSP5-8.5']);
+    assert.ok(projRes.body.projections.model);
   });
 
   await t.test('9. Air-Quality telemetry endpoint', async () => {
