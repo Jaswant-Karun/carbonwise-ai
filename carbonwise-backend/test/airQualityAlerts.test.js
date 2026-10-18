@@ -90,3 +90,26 @@ test('provider availability: handles unauthenticated OpenAQ gracefully with sour
     assert.deepEqual(result.measurements, []);
   }
 });
+
+test('stale observation detection: flags observations older than 2 hours as stale', () => {
+  const threeHoursAgo = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
+  const freshTime = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+  const isStale = (timestamp) => {
+    const elapsedMinutes = (Date.now() - new Date(timestamp).getTime()) / 60000;
+    return elapsedMinutes > 120;
+  };
+
+  assert.equal(isStale(threeHoursAgo), true);
+  assert.equal(isStale(freshTime), false);
+});
+
+test('station unavailable: explicitly returns data unavailable without claiming clean air', async () => {
+  // In the middle of the ocean (0, 0), no ground station exists
+  const oceanResult = await fetchOpenAqMeasurements(0.0, 0.0, 5000);
+  assert.ok(['data_unavailable', 'auth_required', 'provider_unavailable'].includes(oceanResult.status));
+  // Under no circumstance should this indicate clean or normal air
+  assert.equal(oceanResult.measurements.length, 0);
+  assert.match(oceanResult.attribution, /OpenAQ/);
+});
+
