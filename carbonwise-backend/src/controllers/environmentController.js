@@ -2,22 +2,42 @@ const db = require('../config/db');
 const {
   createAlerts,
   ingestRegion,
+  searchLocations,
   summarizeRegion,
   validateRegion,
 } = require('../services/environmentService');
 
 const getOwnedRegion = async (userId, regionId) => {
   const result = await db.query(
-    'SELECT id, user_id, name, latitude, longitude, created_at FROM environment_regions WHERE id = $1 AND user_id = $2',
+    `SELECT id, user_id, name, latitude, longitude, country, admin1, timezone, last_synced_at, created_at
+     FROM environment_regions
+     WHERE id = $1 AND user_id = $2`,
     [regionId, userId],
   );
   return result.rows[0];
 };
 
+/**
+ * Search locations using Open-Meteo Geocoding
+ */
+const searchLocationSuggestions = async (req, res) => {
+  try {
+    const query = req.query.q || req.query.query || '';
+    const results = await searchLocations(query);
+    res.json(results);
+  } catch (error) {
+    console.error('Location search failed:', error.message);
+    res.status(500).json({ message: 'Unable to query location geocoding service.' });
+  }
+};
+
 const listRegions = async (req, res) => {
   try {
     const result = await db.query(
-      'SELECT id, name, latitude, longitude, created_at FROM environment_regions WHERE user_id = $1 ORDER BY created_at DESC',
+      `SELECT id, name, latitude, longitude, country, admin1, timezone, last_synced_at, created_at
+       FROM environment_regions
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
       [req.user.id],
     );
     res.json(result.rows);
@@ -31,12 +51,24 @@ const createRegion = async (req, res) => {
   try {
     const region = validateRegion(req.body || {});
     const result = await db.query(
-      `INSERT INTO environment_regions (user_id, name, latitude, longitude)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, name, latitude, longitude, created_at`,
-      [req.user.id, region.name, region.latitude, region.longitude],
+      `INSERT INTO environment_regions (user_id, name, latitude, longitude, country, admin1, timezone)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, name, latitude, longitude, country, admin1, timezone, created_at`,
+      [req.user.id, region.name, region.latitude, region.longitude, region.country, region.admin1, region.timezone],
     );
-    res.status(201).json(result.rows[0]);
+
+    const created = result.rows[0];
+
+    // Proactively trigger initial telemetry ingestion for the newly added region
+    try {
+      const ingestion = await ingestRegion(created);
+      created.initialSync = { status: 'completed', count: ingestion.observationsCount };
+    } catch (ingestErr) {
+      console.warn('Initial telemetry ingestion deferred:', ingestErr.message);
+      created.initialSync = { status: 'pending', error: ingestErr.code || 'network_defer' };
+    }
+
+    res.status(201).json(created);
   } catch (error) {
     if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
     console.error('Environment region creation failed:', error.code || 'database_error');
@@ -60,18 +92,21 @@ const refreshRegion = async (req, res) => {
   try {
     const region = await getOwnedRegion(req.user.id, req.params.regionId);
     if (!region) return res.status(404).json({ message: 'Environmental region not found.' });
+
     const source = await db.query(
       `INSERT INTO environment_sources (name, provider, metric, unit)
        VALUES ('Open-Meteo Weather', 'open-meteo', 'temperature', '°C')
        ON CONFLICT (provider, metric) DO UPDATE SET enabled = TRUE
        RETURNING id`,
     );
+
     const run = await db.query(
       `INSERT INTO environment_ingestion_runs (source_id, region_id, status)
        VALUES ($1, $2, 'running')
        RETURNING id`,
       [source.rows[0].id, region.id],
     );
+
     try {
       const ingestion = await ingestRegion(region);
       await db.query(
@@ -80,6 +115,7 @@ const refreshRegion = async (req, res) => {
          WHERE id = $2`,
         [ingestion.observationsCount, run.rows[0]?.id],
       );
+
       const summary = await summarizeRegion(req.user.id, region.id);
       const alerts = await createAlerts(req.user.id, summary);
       res.json({ region, ingestion, summary, alerts });
@@ -91,7 +127,10 @@ const refreshRegion = async (req, res) => {
         [providerError.code || 'provider_error', run.rows[0]?.id],
       );
       console.error('Environment ingestion failed:', providerError.code || 'provider_error');
-      res.status(502).json({ message: 'Environmental provider is unavailable. Existing observations were preserved.' });
+      res.status(502).json({
+        message: 'Environmental provider is temporarily unavailable. Existing historical observations were preserved.',
+        code: providerError.code || 'PROVIDER_UNAVAILABLE',
+      });
     }
   } catch (error) {
     console.error('Environment refresh failed:', error.code || 'database_error');
@@ -136,11 +175,51 @@ const updateAlert = async (req, res) => {
   }
 };
 
+/**
+ * Public or authenticated overview of system climate intelligence
+ */
+const getOverview = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const regionsQuery = userId
+      ? 'SELECT id, name, latitude, longitude, country, admin1, last_synced_at FROM environment_regions WHERE user_id = $1 ORDER BY created_at DESC'
+      : 'SELECT id, name, latitude, longitude, country, admin1, last_synced_at FROM environment_regions ORDER BY created_at DESC LIMIT 5';
+    const params = userId ? [userId] : [];
+
+    const regionsRes = await db.query(regionsQuery, params);
+    const regions = regionsRes.rows;
+
+    const latestObsRes = await db.query(
+      `SELECT DISTINCT ON (region_id, metric) region_id, metric, value, unit, observed_at, ingested_at
+       FROM environment_observations
+       ORDER BY region_id, metric, observed_at DESC`
+    );
+
+    const alertsCountRes = await db.query(
+      `SELECT COUNT(*)::int AS count FROM environment_alerts WHERE status = 'open' ${userId ? 'AND user_id = $1' : ''}`,
+      params
+    );
+
+    res.json({
+      regions,
+      activeAlertsCount: alertsCountRes.rows[0]?.count || 0,
+      recentObservations: latestObsRes.rows,
+      provider: 'open-meteo',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Overview error:', error);
+    res.status(500).json({ message: 'Unable to load climate overview.' });
+  }
+};
+
 module.exports = {
   createRegion,
+  getOverview,
   getSummary,
   listAlerts,
   listRegions,
   refreshRegion,
+  searchLocationSuggestions,
   updateAlert,
 };
