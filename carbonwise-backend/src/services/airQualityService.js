@@ -269,14 +269,14 @@ const evaluateAirQualityThresholds = (pollutant, value, unit) => {
     isExceeded = true;
     categoryLabel = 'Hazardous';
   } else if (thresholds.unhealthy && numVal >= thresholds.unhealthy) {
-    severity = 'critical';
+    severity = numVal >= 200 ? 'critical' : 'warning';
     isExceeded = true;
     categoryLabel = 'Unhealthy';
   } else if (thresholds.unhealthySensitive && numVal >= thresholds.unhealthySensitive) {
     severity = 'warning';
     isExceeded = true;
     categoryLabel = 'Unhealthy for Sensitive Groups';
-  } else if (thresholds.moderate && numVal >= thresholds.moderate) {
+  } else if (numVal > (thresholds.good || std.guideline)) {
     severity = 'info';
     isExceeded = true;
     categoryLabel = 'Moderate';
