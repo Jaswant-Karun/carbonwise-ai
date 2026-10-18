@@ -212,8 +212,30 @@ const initDb = async () => {
     await db.query(createEnvironmentObservationsTable);
     await db.query(createEnvironmentIngestionRunsTable);
     await db.query(createEnvironmentAlertsTable);
+    await db.query(`
+      ALTER TABLE environment_regions
+        ADD COLUMN IF NOT EXISTS country VARCHAR(100),
+        ADD COLUMN IF NOT EXISTS admin1 VARCHAR(100),
+        ADD COLUMN IF NOT EXISTS timezone VARCHAR(60) DEFAULT 'UTC',
+        ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMP
+    `);
+    await db.query(`
+      INSERT INTO environment_sources (name, provider, metric, unit)
+      VALUES
+        ('Open-Meteo Weather', 'open-meteo', 'temperature', '°C'),
+        ('Open-Meteo Weather', 'open-meteo', 'relative_humidity', '%'),
+        ('Open-Meteo Weather', 'open-meteo', 'precipitation', 'mm'),
+        ('Open-Meteo Weather', 'open-meteo', 'wind_speed', 'km/h'),
+        ('Open-Meteo Weather', 'open-meteo', 'surface_pressure', 'hPa'),
+        ('Open-Meteo Air Quality', 'open-meteo', 'pm2_5', 'µg/m³'),
+        ('Open-Meteo Air Quality', 'open-meteo', 'pm10', 'µg/m³'),
+        ('Open-Meteo Air Quality', 'open-meteo', 'us_aqi', 'AQI')
+      ON CONFLICT (provider, metric) DO UPDATE SET enabled = TRUE
+    `);
     await db.query('CREATE INDEX IF NOT EXISTS environment_observations_region_metric_time_idx ON environment_observations (region_id, metric, observed_at DESC)');
     await db.query('CREATE INDEX IF NOT EXISTS environment_alerts_user_status_created_idx ON environment_alerts (user_id, status, created_at DESC)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_environment_observations_observed_at ON environment_observations (observed_at DESC)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_environment_ingestion_runs_started_at ON environment_ingestion_runs (started_at DESC)');
     console.log('✅ Database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database tables:', err.stack);
