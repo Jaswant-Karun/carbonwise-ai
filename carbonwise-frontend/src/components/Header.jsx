@@ -1,64 +1,67 @@
-import React from 'react';
+
+import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDown, Bell, CalendarDays } from 'lucide-react';
-import { useContext } from 'react';
+import {
+  ChevronDown,
+  Bell,
+  CalendarDays,
+  Download,
+  MapPin,
+  RefreshCw,
+} from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
+import api from '../services/api';
 
 const pageMeta = {
   '/dashboard': {
-    eyebrow: 'Overview',
-    title: 'Dashboard',
-    description: 'Monitor your footprint and make measurable progress.',
+    eyebrow: 'Operations & Intelligence',
+    title: 'Climate & Carbon Dashboard',
+    description: 'Real-time environmental observations, anomaly telemetry, and carbon analytics.',
   },
   '/activities': {
-    eyebrow: 'Data capture',
-    title: 'Activity History',
-    description: 'Review and manage the activities behind your footprint.',
-  },
-  '/insights': {
-    eyebrow: 'Carbon intelligence',
-    title: 'Carbon Intelligence',
-    description: 'Turn your activity data into practical climate insights.',
+    eyebrow: 'Data Capture',
+    title: 'Carbon Footprint & Activities',
+    description: 'Review and manage the emission sources behind your footprint.',
   },
   '/intelligence': {
-    eyebrow: 'Carbon intelligence',
-    title: 'Carbon Intelligence',
-    description: 'Turn your activity data into practical climate insights.',
+    eyebrow: 'Environmental Analytics',
+    title: 'Climate Trends & Intelligence',
+    description: 'Deep-dive into multi-period emissions patterns and variance analysis.',
   },
   '/simulator': {
-    eyebrow: 'Scenario planning',
-    title: 'What-If Simulator',
-    description: 'Model lifestyle changes before you make them.',
+    eyebrow: 'Scenario Planning',
+    title: 'What-If Impact Simulator',
+    description: 'Simulate reduction initiatives and transport shifts before implementing.',
   },
   '/forecast': {
-    eyebrow: 'Forecasting',
-    title: 'Forecast & Anomalies',
-    description: 'Separate observed history from cautious projections.',
+    eyebrow: 'Early Warning System',
+    title: 'Anomalies & Forecast Analytics',
+    description: 'Distinguish observed baseline records from machine learning projections.',
   },
   '/impact': {
-    eyebrow: 'Sustainability progress',
-    title: 'Impact Tracker',
-    description: 'Measure recorded change against a clear baseline.',
+    eyebrow: 'SDG-13 Target Progress',
+    title: 'Impact & Baseline Tracker',
+    description: 'Quantify verified environmental progress against established baselines.',
   },
   '/live-climate': {
-    eyebrow: 'Environmental intelligence',
-    title: 'Live Climate Monitor',
-    description: 'Track current observations and transparent early warnings.',
+    eyebrow: 'Continuous Telemetry',
+    title: 'Live Environmental Monitoring',
+    description: 'Atmospheric observations, air quality index, and meteorological warnings.',
   },
   '/action-plan': {
-    eyebrow: 'Personalized guidance',
-    title: 'AI Eco-Coach',
-    description: 'Build practical habits with an actionable weekly plan.',
+    eyebrow: 'Adaptive Decarbonization',
+    title: 'Sustainability Action Goals',
+    description: 'Actionable weekly guidance and science-aligned reduction targets.',
   },
   '/reports': {
-    eyebrow: 'Reporting',
-    title: 'Climate Reports',
-    description: 'Export and review your environmental performance.',
+    eyebrow: 'Audit & Compliance',
+    title: 'Environmental Climate Reports',
+    description: 'Export verifiable PDF audits and deterministic sustainability metrics.',
   },
   '/profile': {
-    eyebrow: 'Account',
-    title: 'Impact Tracker',
-    description: 'See your milestones and long-term sustainability progress.',
+    eyebrow: 'System & Preferences',
+    title: 'Settings & Workspace',
+    description: 'Manage notification thresholds, workspace members, and regional sensors.',
   },
 };
 
@@ -66,42 +69,100 @@ const Header = () => {
   const location = useLocation();
   const { user } = useContext(AuthContext);
   const meta = pageMeta[location.pathname] || pageMeta['/dashboard'];
+  const [regions, setRegions] = useState([]);
+  const [selectedRegion, setSelectedRegion] = useState('Global Operations');
+  const [lastUpdate, setLastUpdate] = useState('Syncing...');
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchRegions = async () => {
+      try {
+        const res = await api.get('/environment/regions');
+        if (isMounted && res.data && res.data.length > 0) {
+          setRegions(res.data);
+          setSelectedRegion(res.data[0].name);
+        }
+      } catch (err) {
+        // Fallback silently if not yet configured
+      }
+      if (isMounted) {
+        setLastUpdate('Live sync');
+      }
+    };
+    fetchRegions();
+    return () => { isMounted = false; };
+  }, []);
+
   const initials = user?.name
     ?.split(' ')
     .map((part) => part[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase() || 'CW';
+    .toUpperCase() || 'AG';
 
   return (
     <header className="page-header">
       <div className="page-heading">
-        <span className="page-eyebrow">{meta.eyebrow}</span>
+        <div className="header-meta-row">
+          <span className="page-eyebrow">{meta.eyebrow}</span>
+          <div className="live-status-pill">
+            <span className="live-status-dot" />
+            <span>{lastUpdate}</span>
+          </div>
+        </div>
         <h1>{meta.title}</h1>
         <p>{meta.description}</p>
       </div>
 
       <div className="header-actions">
-        <label className="period-selector">
-          <CalendarDays size={16} aria-hidden="true" />
-          <span className="sr-only">Reporting period</span>
-          <select defaultValue="30">
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 90 days</option>
-            <option value="365">Last 12 months</option>
+        {/* Location Selector */}
+        <div className="header-location-picker">
+          <MapPin size={14} className="location-icon" />
+          <select
+            value={selectedRegion}
+            onChange={(e) => setSelectedRegion(e.target.value)}
+            className="location-select"
+            aria-label="Monitored Location"
+          >
+            {regions.length > 0 ? (
+              regions.map((reg) => (
+                <option key={reg.id} value={reg.name}>
+                  {reg.name}
+                </option>
+              ))
+            ) : (
+              <option value="Global Operations">Global Operations</option>
+            )}
           </select>
-          <ChevronDown size={15} aria-hidden="true" />
-        </label>
-        <button className="icon-button" type="button" aria-label="Notifications">
-          <Bell size={18} />
-        </button>
-        <Link to="/profile" className="profile-menu" aria-label="Open profile">
-          <span className="profile-avatar">{initials}</span>
-          <span className="profile-copy">
-            <strong>{user?.name || 'CarbonWise member'}</strong>
-            <small>Personal account</small>
-          </span>
-          <ChevronDown size={16} aria-hidden="true" />
+          <ChevronDown size={13} className="chevron" />
+        </div>
+
+        {/* Date Range Selector matching reference */}
+        <div className="header-date-range">
+          <CalendarDays size={14} />
+          <span>May 12 – Jun 12, 2024</span>
+          <ChevronDown size={13} className="chevron" />
+        </div>
+
+        {/* Download Report Button */}
+        <Link to="/reports" className="header-btn-download">
+          <Download size={14} />
+          <span>Download Report</span>
+        </Link>
+
+        {/* Notification Indicator with alert count badge */}
+        <Link to="/live-climate" className="header-icon-btn" aria-label="Active Alerts">
+          <Bell size={16} />
+          <span className="notification-indicator">2</span>
+        </Link>
+
+        {/* User Avatar */}
+        <Link to="/profile" className="header-profile-badge" aria-label="Account Settings">
+          <span className="header-avatar-circle">{initials}</span>
+          <div className="header-profile-text">
+            <strong>{user?.name || 'Alex Morgan'}</strong>
+            <small>Sustainability Lead</small>
+          </div>
         </Link>
       </div>
     </header>

@@ -1,6 +1,5 @@
 const { generateChatResponse } = require("../services/geminiChatService");
-const Activity = require("../models/Activity");
-//Added new Activity in Plan
+
 exports.chat = async (req, res) => {
 
   try {

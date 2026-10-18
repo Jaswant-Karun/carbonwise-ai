@@ -42,8 +42,9 @@ const buildPoolConfig = () => {
 const pool = new Pool(buildPoolConfig());
 
 pool.connect()
-  .then(() => {
+  .then((client) => {
     console.log('✅ PostgreSQL connected successfully!');
+    client.release();
   })
   .catch((err) => {
     console.error('❌ Database connection error', err);

@@ -82,3 +82,86 @@ test('returns an explicit deterministic fallback when credentials are unavailabl
   process.env.GEMINI_API_KEY = key;
   assert.equal(result, 'deterministic fallback');
 });
+
+test('summarizeAnomalyEvidence: extracts minimum non-sensitive evidence without private data', () => {
+  const { summarizeAnomalyEvidence, buildDeterministicAnomalyExplanation } = service._test;
+  const rawAnomaly = {
+    metric: 'temperature',
+    observed_value: 36.8,
+    baseline_value: 29.2,
+    deviation: 7.6,
+    unit: '°C',
+    detection_method: 'robust_z_score_mad',
+    observed_at: '2026-10-18T12:00:00Z',
+    data_source: 'Open-Meteo Verification',
+    severity: 'critical',
+  };
+  const region = { name: 'Berlin Central' };
+  const evidence = summarizeAnomalyEvidence(rawAnomaly, region);
+
+  assert.equal(evidence.regionName, 'Berlin Central');
+  assert.equal(evidence.metric, 'temperature');
+  assert.equal(evidence.observedValue, 36.8);
+  assert.equal(evidence.baselineValue, 29.2);
+  assert.equal(evidence.deviation, 7.6);
+  assert.equal(evidence.unit, '°C');
+
+  // Verify deterministic fallback structure
+  const explanation = buildDeterministicAnomalyExplanation(evidence);
+  assert.ok(explanation.whatChanged.includes('36.8 °C'));
+  assert.ok(explanation.whatChanged.includes('+7.6 °C'));
+  assert.ok(explanation.baselineUsed.includes('29.2 °C'));
+  assert.ok(explanation.dataSource.includes('Open-Meteo'));
+  assert.ok(explanation.limitations.length > 0);
+  assert.ok(Array.isArray(explanation.recommendations) && explanation.recommendations.length > 0);
+});
+
+test('summarizeTrendEvidence: formats decadal rate and regression limitations deterministically', () => {
+  const { summarizeTrendEvidence, buildDeterministicTrendReport } = service._test;
+  const rawTrend = {
+    parameter: 'temperature_2m',
+    timeRange: 'annual',
+    provider: 'NASA POWER / Open-Meteo',
+    referencePeriod: { label: '1991-2020 WMO Standard Reference' },
+    missingIntervals: ['2004-01-01'],
+    linearTrend: {
+      ratePerDecade: 0.38,
+      unit: '°C',
+      slope: 0.038,
+      rSquared: 0.82,
+      sampleSize: 30,
+    },
+  };
+  const region = { name: 'Paris' };
+  const evidence = summarizeTrendEvidence(rawTrend, region);
+
+  assert.equal(evidence.ratePerDecade, 0.38);
+  assert.equal(evidence.unit, '°C');
+  assert.equal(evidence.sampleSize, 30);
+  assert.equal(evidence.missingIntervalsCount, 1);
+
+  const report = buildDeterministicTrendReport(evidence);
+  assert.ok(report.whatChanged.includes('+0.38 °C/decade'));
+  assert.ok(report.baselineUsed.includes('1991-2020'));
+  assert.ok(report.limitations.includes('R² of 0.82'));
+  assert.ok(Array.isArray(report.recommendations));
+});
+
+test('environmental anomaly explanation: returns structured explanation with caching', async () => {
+  const rawAnomaly = {
+    metric: 'pm2_5',
+    observed_value: 48.0,
+    baseline_value: 15.0,
+    deviation: 33.0,
+    unit: 'µg/m³',
+    observed_at: '2026-10-18T10:00:00Z',
+    severity: 'warning',
+  };
+  const region = { name: 'Tokyo' };
+  const result = await service.generateEnvironmentalAnomalyExplanation(rawAnomaly, region, { userId: 10 });
+  assert.ok(result);
+  assert.ok(result.whatChanged);
+  assert.ok(result.recommendations);
+  assert.equal(generationCount, 1);
+});
+

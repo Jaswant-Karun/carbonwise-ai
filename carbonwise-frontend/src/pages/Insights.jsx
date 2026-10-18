@@ -25,12 +25,29 @@ const impactBadge = (impact) => {
   );
 };
 
+import AiInsightsPanel from '../components/AiInsightsPanel';
+
 const Insights = () => {
+  const [activeTab, setActiveTab] = useState('environmental'); // 'environmental' or 'personal'
+  const [regions, setRegions] = useState([]);
+  const [selectedRegionId, setSelectedRegionId] = useState('');
   const [insights, setInsights] = useState([]);
   const [prediction, setPrediction] = useState(null);
   const [totalEmissions, setTotalEmissions] = useState(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [loadingPrediction, setLoadingPrediction] = useState(false);
+
+  React.useEffect(() => {
+    api.get('/environment/regions')
+      .then((res) => {
+        const list = res.data || [];
+        setRegions(list);
+        if (list.length > 0 && !selectedRegionId) {
+          setSelectedRegionId(String(list[0].id));
+        }
+      })
+      .catch((err) => console.warn('Could not load regions in Insights:', err.message));
+  }, []);
 
   const fetchInsights = async () => {
     setLoadingInsights(true);
@@ -57,14 +74,75 @@ const Insights = () => {
 
   return (
     <Layout>
-      <h1
-        style={{ fontFamily: 'Outfit, sans-serif', fontSize: '2rem', marginBottom: '8px' }}
-      >
-        AI Insights
-      </h1>
-      <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>
-        Gemini AI analyzes your activity data to surface personalized environmental insights.
-      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+        <div>
+          <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '2rem', marginBottom: '8px' }}>
+            AI Environmental Insights
+          </h1>
+          <p style={{ color: 'var(--text-muted)' }}>
+            Gemini AI acts as an explanation assistant for verified climate telemetry and personal footprint data.
+          </p>
+        </div>
+
+        {/* Tab Toggle */}
+        <div style={{ display: 'flex', gap: '8px', background: 'rgba(15, 23, 42, 0.8)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setActiveTab('environmental')}
+            style={{
+              fontSize: '0.82rem',
+              padding: '8px 16px',
+              background: activeTab === 'environmental' ? 'var(--primary)' : 'transparent',
+              color: activeTab === 'environmental' ? '#090d16' : '#94a3b8',
+              border: 0,
+              fontWeight: 700,
+            }}
+          >
+            🌍 Regional Climate Insights
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setActiveTab('personal')}
+            style={{
+              fontSize: '0.82rem',
+              padding: '8px 16px',
+              background: activeTab === 'personal' ? 'var(--primary)' : 'transparent',
+              color: activeTab === 'personal' ? '#090d16' : '#94a3b8',
+              border: 0,
+              fontWeight: 700,
+            }}
+          >
+            👤 Personal Footprint Insights
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'environmental' ? (
+        <div style={{ display: 'grid', gap: '20px' }}>
+          <div className="tracker-card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <span style={{ fontSize: '0.88rem', color: '#f1f5f9', fontWeight: 600 }}>Select Monitored Region:</span>
+            <select
+              value={selectedRegionId}
+              onChange={(e) => setSelectedRegionId(e.target.value)}
+              className="region-selector-clean"
+              style={{ minWidth: '220px' }}
+            >
+              {regions.map((reg) => (
+                <option key={reg.id} value={reg.id}>
+                  {reg.name} {reg.country ? `(${reg.country})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <AiInsightsPanel
+            regionId={selectedRegionId}
+            regionName={regions.find((r) => String(r.id) === String(selectedRegionId))?.name}
+          />
+        </div>
+      ) : (
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
         {/* Personalized Insights */}
@@ -197,6 +275,7 @@ const Insights = () => {
           )}
         </div>
       </div>
+      )}
 
       {/* Info Cards */}
       <div
