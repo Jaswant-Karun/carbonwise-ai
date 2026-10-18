@@ -19,6 +19,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/activities', require('./routes/activityRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/intelligence', require('./routes/intelligenceRoutes'));
@@ -27,6 +28,10 @@ app.use('/api/coach', require('./routes/coachRoutes'));
 app.use('/api/forecast', require('./routes/forecastRoutes'));
 app.use('/api/impact', require('./routes/impactRoutes'));
 app.use('/api/environment', require('./routes/environmentRoutes'));
+
+// Start background environmental data ingestion scheduler
+const { startScheduler } = require('./services/environmentScheduler');
+startScheduler();
 
 const PORT = process.env.PORT || 5000;
 
