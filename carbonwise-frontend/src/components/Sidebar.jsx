@@ -24,6 +24,7 @@ const navItems = [
   { path: '/live-climate', label: 'Live Monitoring', icon: CloudSun },
   { path: '/intelligence', label: 'Climate Trends', icon: TrendingUp },
   { path: '/forecast', label: 'Anomalies & Forecast', icon: AlertTriangle },
+  { path: '/alerts', label: 'Air Quality & Alerts', icon: Bell },
   { path: '/activities', label: 'Carbon Footprint', icon: History },
   { path: '/simulator', label: 'What-If Simulator', icon: BrainCircuit },
   { path: '/action-plan', label: 'Sustainability Goals', icon: Target },
