@@ -8,6 +8,12 @@ const {
 } = require('../services/environmentService');
 const { getRegionalClimateTrends } = require('../services/climateTrendsService');
 const { getStructuredRegionalForecast, CMIP6_PROJECTIONS } = require('../services/climateForecastService');
+const {
+  fetchOpenAqMeasurements,
+  evaluateAirQualityThresholds,
+  storeAirQualityAlert,
+  updateAlertStatusWithHistory,
+} = require('../services/airQualityService');
 
 const getOwnedRegion = async (userId, regionId) => {
   const result = await db.query(
@@ -177,19 +183,51 @@ const getRegionAnomalies = async (req, res) => {
 
 const listAlerts = async (req, res) => {
   try {
-    const result = await db.query(
-      `SELECT a.id, a.metric, a.severity, a.status, a.observed_value, a.baseline_value,
-              a.threshold_value, a.deviation, a.anomaly_category, a.anomaly_type,
-              a.detection_method, a.data_source, a.confidence_score, a.duration_hours,
-              a.is_persistent, a.explanation, a.observed_at, a.updated_at, a.created_at,
-              r.name AS region_name
-       FROM environment_alerts a
-       JOIN environment_regions r ON r.id = a.region_id
-       WHERE a.user_id = $1
-       ORDER BY a.created_at DESC
-       LIMIT 100`,
-      [req.user.id],
-    );
+    const { regionId, category, severity, status, startDate, endDate } = req.query;
+    const conditions = ['a.user_id = $1'];
+    const params = [req.user.id];
+    let paramIndex = 2;
+
+    if (regionId) {
+      conditions.push(`a.region_id = $${paramIndex++}`);
+      params.push(regionId);
+    }
+    if (category && category !== 'all') {
+      conditions.push(`a.anomaly_category = $${paramIndex++}`);
+      params.push(category);
+    }
+    if (severity && severity !== 'all') {
+      conditions.push(`a.severity = $${paramIndex++}`);
+      params.push(severity);
+    }
+    if (status && status !== 'all') {
+      conditions.push(`a.status = $${paramIndex++}`);
+      params.push(status);
+    }
+    if (startDate) {
+      conditions.push(`a.observed_at >= $${paramIndex++}`);
+      params.push(startDate);
+    }
+    if (endDate) {
+      conditions.push(`a.observed_at <= $${paramIndex++}`);
+      params.push(endDate);
+    }
+
+    const query = `
+      SELECT a.id, a.metric, a.severity, a.status, a.observed_value, a.baseline_value,
+             a.threshold_value, a.deviation, a.anomaly_category, a.anomaly_type,
+             a.detection_method, a.data_source, a.confidence_score, a.duration_hours,
+             a.is_persistent, a.explanation, a.observed_at, a.evidence,
+             a.resolution_history, a.source_url, a.updated_at, a.created_at,
+             r.name AS region_name
+      FROM environment_alerts a
+      JOIN environment_regions r ON r.id = a.region_id
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY a.created_at DESC
+      LIMIT 100
+    `;
+
+    const result = await db.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error('Environment alert list failed:', error.code || 'database_error');
@@ -201,14 +239,14 @@ const updateAlert = async (req, res) => {
   const allowed = new Set(['open', 'acknowledged', 'resolved']);
   if (!allowed.has(req.body?.status)) return res.status(400).json({ message: 'Invalid alert status.' });
   try {
-    const result = await db.query(
-      `UPDATE environment_alerts SET status = $1
-       WHERE id = $2 AND user_id = $3
-       RETURNING id, metric, severity, status, explanation, observed_at`,
-      [req.body.status, req.params.alertId, req.user.id],
+    const updated = await updateAlertStatusWithHistory(
+      req.params.alertId,
+      req.user.id,
+      req.body.status,
+      req.body.note || ''
     );
-    if (!result.rows[0]) return res.status(404).json({ message: 'Environmental alert not found.' });
-    res.json(result.rows[0]);
+    if (!updated) return res.status(404).json({ message: 'Environmental alert not found.' });
+    res.json(updated);
   } catch (error) {
     console.error('Environment alert update failed:', error.code || 'database_error');
     res.status(500).json({ message: 'Unable to update environmental alert.' });
@@ -311,8 +349,61 @@ const getClimateProjections = async (req, res) => {
   }
 };
 
+const getAirQuality = async (req, res) => {
+  try {
+    const region = await getOwnedRegion(req.user.id, req.params.regionId);
+    if (!region) return res.status(404).json({ message: 'Environmental region not found.' });
+
+    // 1. Fetch live OpenAQ ground telemetry
+    const openAqData = await fetchOpenAqMeasurements(
+      Number(region.latitude),
+      Number(region.longitude)
+    );
+
+    // 2. Evaluate thresholds and trigger air quality alerts if exceeded
+    const evaluations = [];
+    const triggeredAlerts = [];
+
+    for (const m of openAqData.measurements || []) {
+      const evaluation = evaluateAirQualityThresholds(m.pollutant, m.value, m.unit);
+      evaluations.push({
+        ...m,
+        evaluation,
+      });
+
+      if (evaluation.isExceeded) {
+        const stored = await storeAirQualityAlert(req.user.id, region.id, evaluation, {
+          stationId: m.stationId,
+          stationName: m.stationName,
+          sourceUrl: m.sourceUrl,
+          observedAt: m.observedAt,
+        });
+        if (stored?.alert) triggeredAlerts.push(stored.alert);
+      }
+    }
+
+    res.json({
+      region,
+      status: openAqData.status,
+      provider: openAqData.provider,
+      stationId: openAqData.stationId,
+      stationName: openAqData.stationName,
+      sourceUrl: openAqData.sourceUrl,
+      attribution: openAqData.attribution,
+      message: openAqData.message,
+      measurements: evaluations,
+      triggeredAlerts,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Air quality query failed:', error);
+    res.status(500).json({ message: 'Unable to query air quality telemetry.' });
+  }
+};
+
 module.exports = {
   createRegion,
+  getAirQuality,
   getClimateForecasts,
   getClimateProjections,
   getClimateTrends,

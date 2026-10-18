@@ -2,6 +2,7 @@ const express = require('express');
 const { protect } = require('../middlewares/authMiddleware');
 const {
   createRegion,
+  getAirQuality,
   getClimateForecasts,
   getClimateProjections,
   getClimateTrends,
@@ -31,6 +32,7 @@ router.get('/regions/:regionId/anomalies', protect, getRegionAnomalies);
 router.get('/regions/:regionId/trends', protect, getClimateTrends);
 router.get('/regions/:regionId/forecasts', protect, getClimateForecasts);
 router.get('/regions/:regionId/climate-projections', protect, getClimateProjections);
+router.get('/regions/:regionId/air-quality', protect, getAirQuality);
 router.post('/regions/:regionId/refresh', protect, refreshRegion);
 
 // Alerts endpoints
