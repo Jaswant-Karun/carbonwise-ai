@@ -229,7 +229,10 @@ const initDb = async () => {
         ADD COLUMN IF NOT EXISTS confidence_score DECIMAL(5, 2) DEFAULT 1.0,
         ADD COLUMN IF NOT EXISTS duration_hours INTEGER DEFAULT 1,
         ADD COLUMN IF NOT EXISTS is_persistent BOOLEAN DEFAULT FALSE,
-        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS evidence JSONB DEFAULT '{}'::jsonb,
+        ADD COLUMN IF NOT EXISTS resolution_history JSONB DEFAULT '[]'::jsonb,
+        ADD COLUMN IF NOT EXISTS source_url VARCHAR(300)
     `);
     await db.query(`
       INSERT INTO environment_sources (name, provider, metric, unit)
@@ -241,12 +244,19 @@ const initDb = async () => {
         ('Open-Meteo Weather', 'open-meteo', 'surface_pressure', 'hPa'),
         ('Open-Meteo Air Quality', 'open-meteo', 'pm2_5', 'µg/m³'),
         ('Open-Meteo Air Quality', 'open-meteo', 'pm10', 'µg/m³'),
-        ('Open-Meteo Air Quality', 'open-meteo', 'us_aqi', 'AQI')
+        ('Open-Meteo Air Quality', 'open-meteo', 'us_aqi', 'AQI'),
+        ('OpenAQ Air Quality', 'openaq', 'pm2_5', 'µg/m³'),
+        ('OpenAQ Air Quality', 'openaq', 'pm10', 'µg/m³'),
+        ('OpenAQ Air Quality', 'openaq', 'no2', 'µg/m³'),
+        ('OpenAQ Air Quality', 'openaq', 'o3', 'µg/m³'),
+        ('OpenAQ Air Quality', 'openaq', 'so2', 'µg/m³'),
+        ('OpenAQ Air Quality', 'openaq', 'co', 'mg/m³')
       ON CONFLICT (provider, metric) DO UPDATE SET enabled = TRUE
     `);
     await db.query('CREATE INDEX IF NOT EXISTS environment_observations_region_metric_time_idx ON environment_observations (region_id, metric, observed_at DESC)');
     await db.query('CREATE INDEX IF NOT EXISTS environment_alerts_user_status_created_idx ON environment_alerts (user_id, status, created_at DESC)');
     await db.query('CREATE INDEX IF NOT EXISTS idx_environment_alerts_dedup ON environment_alerts (user_id, region_id, metric, anomaly_category, status)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_environment_alerts_category_severity_status ON environment_alerts (user_id, anomaly_category, severity, status, created_at DESC)');
     await db.query('CREATE INDEX IF NOT EXISTS idx_environment_observations_observed_at ON environment_observations (observed_at DESC)');
     await db.query('CREATE INDEX IF NOT EXISTS idx_environment_ingestion_runs_started_at ON environment_ingestion_runs (started_at DESC)');
     console.log('✅ Database tables initialized successfully');
