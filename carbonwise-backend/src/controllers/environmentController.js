@@ -6,6 +6,8 @@ const {
   summarizeRegion,
   validateRegion,
 } = require('../services/environmentService');
+const { getRegionalClimateTrends } = require('../services/climateTrendsService');
+const { getStructuredRegionalForecast, CMIP6_PROJECTIONS } = require('../services/climateForecastService');
 
 const getOwnedRegion = async (userId, regionId) => {
   const result = await db.query(
@@ -251,8 +253,69 @@ const getOverview = async (req, res) => {
   }
 };
 
+const getClimateTrends = async (req, res) => {
+  try {
+    const region = await getOwnedRegion(req.user.id, req.params.regionId);
+    if (!region) return res.status(404).json({ message: 'Environmental region not found.' });
+
+    const resolution = req.query.resolution || 'daily';
+    const metric = req.query.metric || 'temperature';
+    const includeReference = req.query.includeReference !== 'false';
+
+    const trends = await getRegionalClimateTrends(req.user.id, region.id, {
+      resolution,
+      metric,
+      includeReference,
+    });
+
+    res.json(trends);
+  } catch (error) {
+    console.error('Climate trends query failed:', error);
+    res.status(500).json({ message: 'Unable to compute climate trends.' });
+  }
+};
+
+const getClimateForecasts = async (req, res) => {
+  try {
+    const region = await getOwnedRegion(req.user.id, req.params.regionId);
+    if (!region) return res.status(404).json({ message: 'Environmental region not found.' });
+
+    const metric = req.query.metric || 'temperature';
+    const horizon = parseInt(req.query.horizon, 10) || 7;
+
+    const forecasts = await getStructuredRegionalForecast(req.user.id, region.id, {
+      metric,
+      horizon,
+    });
+
+    res.json(forecasts);
+  } catch (error) {
+    console.error('Climate forecast query failed:', error);
+    res.status(500).json({ message: 'Unable to compute climate forecasts.' });
+  }
+};
+
+const getClimateProjections = async (req, res) => {
+  try {
+    const region = await getOwnedRegion(req.user.id, req.params.regionId);
+    if (!region) return res.status(404).json({ message: 'Environmental region not found.' });
+
+    res.json({
+      region,
+      projections: CMIP6_PROJECTIONS,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Climate projections query failed:', error);
+    res.status(500).json({ message: 'Unable to load climate projections.' });
+  }
+};
+
 module.exports = {
   createRegion,
+  getClimateForecasts,
+  getClimateProjections,
+  getClimateTrends,
   getOverview,
   getRegionAnomalies,
   getSummary,
@@ -262,3 +325,4 @@ module.exports = {
   searchLocationSuggestions,
   updateAlert,
 };
+
