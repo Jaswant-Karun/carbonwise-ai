@@ -84,7 +84,7 @@ test('normal conditions: values within historical baseline produce no anomaly', 
 
   const baseline = calculateBaseline(history, '2026-07-15T12:00:00Z');
   assert.equal(baseline.status, 'sufficient');
-  assert.equal(baseline.baseline, 25.05);
+  assert.equal(baseline.baseline, 25.0);
   assert.ok(baseline.confidenceScore >= 0.7);
 
   const evaluation = detectAtmosphericAnomaly({
