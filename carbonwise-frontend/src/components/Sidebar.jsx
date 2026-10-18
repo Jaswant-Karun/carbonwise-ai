@@ -22,12 +22,14 @@ import { AuthContext } from '../context/AuthContext';
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: Gauge },
   { path: '/live-climate', label: 'Live Monitoring', icon: CloudSun },
-  { path: '/intelligence', label: 'Climate Trends', icon: TrendingUp },
-  { path: '/forecast', label: 'Anomalies & Forecast', icon: AlertTriangle },
+  { path: '/climate-trends', label: 'Climate Trends', icon: TrendingUp },
   { path: '/alerts', label: 'Air Quality & Alerts', icon: Bell },
-  { path: '/activities', label: 'Carbon Footprint', icon: History },
+  { path: '/carbon-intelligence', label: 'Carbon Intelligence', icon: Sparkles },
+  { path: '/activities', label: 'Activity Log', icon: History },
   { path: '/simulator', label: 'What-If Simulator', icon: BrainCircuit },
-  { path: '/action-plan', label: 'Sustainability Goals', icon: Target },
+  { path: '/action-plan', label: 'Adaptive Eco-Coach', icon: Target },
+  { path: '/carbon-forecast', label: 'Carbon Forecast', icon: Activity },
+  { path: '/impact', label: 'Impact Tracker', icon: Leaf },
   { path: '/reports', label: 'Reports', icon: FileText },
   { path: '/profile', label: 'Settings', icon: Settings },
 ];
