@@ -3,12 +3,15 @@ const { protect } = require('../middlewares/authMiddleware');
 const {
   createRegion,
   getAirQuality,
+  getAlertAiExplanation,
   getClimateForecasts,
   getClimateProjections,
   getClimateTrends,
   getOverview,
+  getRegionAiInsights,
   getRegionAnomalies,
   getSummary,
+  getTrendAiReport,
   listAlerts,
   listRegions,
   refreshRegion,
@@ -33,10 +36,13 @@ router.get('/regions/:regionId/trends', protect, getClimateTrends);
 router.get('/regions/:regionId/forecasts', protect, getClimateForecasts);
 router.get('/regions/:regionId/climate-projections', protect, getClimateProjections);
 router.get('/regions/:regionId/air-quality', protect, getAirQuality);
+router.get('/regions/:regionId/ai-insights', protect, getRegionAiInsights);
+router.get('/regions/:regionId/ai-trend-report', protect, getTrendAiReport);
 router.post('/regions/:regionId/refresh', protect, refreshRegion);
 
 // Alerts endpoints
 router.get('/alerts', protect, listAlerts);
+router.get('/alerts/:alertId/ai-explain', protect, getAlertAiExplanation);
 router.patch('/alerts/:alertId', protect, updateAlert);
 
 module.exports = router;

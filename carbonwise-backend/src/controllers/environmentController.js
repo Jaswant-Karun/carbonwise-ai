@@ -406,15 +406,108 @@ const getAirQuality = async (req, res) => {
   }
 };
 
+const getRegionAiInsights = async (req, res) => {
+  try {
+    const region = await getOwnedRegion(req.user.id, req.params.regionId);
+    if (!region) return res.status(404).json({ message: 'Region not found.' });
+
+    const summary = await summarizeRegion(region.id);
+    const anomaliesRes = await db.query(
+      `SELECT id, metric, observed_value, baseline_value, deviation, anomaly_category, severity, explanation
+       FROM environment_alerts
+       WHERE region_id = $1 AND user_id = $2 AND status = 'open'
+       ORDER BY created_at DESC LIMIT 5`,
+      [region.id, req.user.id],
+    );
+
+    const airQualityData = await fetchOpenAqMeasurements(region.latitude, region.longitude);
+
+    const insights = await generateRegionalAiInsights({
+      region,
+      metrics: summary.metrics || [],
+      anomalies: anomaliesRes.rows,
+      alerts: anomaliesRes.rows,
+      airQuality: airQualityData,
+    }, { userId: req.user.id });
+
+    res.json({
+      region,
+      insights,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Regional AI insights error:', error);
+    res.status(500).json({ message: 'Unable to generate regional AI insights.' });
+  }
+};
+
+const getAlertAiExplanation = async (req, res) => {
+  try {
+    const alertRes = await db.query(
+      `SELECT a.*, r.name AS region_name, r.latitude, r.longitude
+       FROM environment_alerts a
+       JOIN environment_regions r ON r.id = a.region_id
+       WHERE a.id = $1 AND a.user_id = $2`,
+      [req.params.alertId, req.user.id],
+    );
+    const alert = alertRes.rows[0];
+    if (!alert) return res.status(404).json({ message: 'Alert not found.' });
+
+    const explanation = await generateEnvironmentalAnomalyExplanation(alert, {
+      name: alert.region_name,
+      latitude: alert.latitude,
+      longitude: alert.longitude,
+    }, { userId: req.user.id });
+
+    res.json({ alertId: alert.id, explanation });
+  } catch (error) {
+    console.error('Alert AI explanation error:', error);
+    res.status(500).json({ message: 'Unable to explain environmental alert.' });
+  }
+};
+
+const getTrendAiReport = async (req, res) => {
+  try {
+    const region = await getOwnedRegion(req.user.id, req.params.regionId);
+    if (!region) return res.status(404).json({ message: 'Region not found.' });
+
+    const parameter = req.query.parameter || 'temperature_2m';
+    const timeRange = req.query.timeRange || 'annual';
+
+    const trendsData = await getRegionalClimateTrends(region.id, {
+      parameter,
+      timeRange,
+      latitude: region.latitude,
+      longitude: region.longitude,
+    });
+
+    const report = await generateEnvironmentalTrendReport(trendsData, region, { userId: req.user.id });
+
+    res.json({
+      region,
+      parameter,
+      timeRange,
+      report,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Trend AI report error:', error);
+    res.status(500).json({ message: 'Unable to generate trend AI report.' });
+  }
+};
+
 module.exports = {
   createRegion,
   getAirQuality,
+  getAlertAiExplanation,
   getClimateForecasts,
   getClimateProjections,
   getClimateTrends,
   getOverview,
+  getRegionAiInsights,
   getRegionAnomalies,
   getSummary,
+  getTrendAiReport,
   listAlerts,
   listRegions,
   refreshRegion,
