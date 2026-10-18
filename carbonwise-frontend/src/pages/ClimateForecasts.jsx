@@ -37,11 +37,13 @@ import SummaryCard from '../components/SummaryCard';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
+const round = (val, dec = 1) => (val == null || Number.isNaN(Number(val)) ? '—' : Number(Number(val).toFixed(dec)));
+
 const ClimateForecasts = () => {
   const [regions, setRegions] = useState([]);
   const [selectedRegionId, setSelectedRegionId] = useState('');
   const [horizon, setHorizon] = useState('7'); // 7 or 14 days
-  const [metric, setMetric] = useState('temperature'); // temperature | precipitation
+  const metric = 'temperature'; // temperature | precipitation
   const [selectedScenarioKey, setSelectedScenarioKey] = useState('SSP2-4.5');
   const [data, setData] = useState(null);
   const [status, setStatus] = useState('loading');
@@ -59,7 +61,7 @@ const ClimateForecasts = () => {
         } else if (isMounted) {
           setStatus('empty');
         }
-      } catch (err) {
+      } catch {
         if (isMounted) {
           setError('Unable to load environmental regions.');
           setStatus('error');
