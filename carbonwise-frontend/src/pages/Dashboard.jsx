@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Layout from '../components/Layout';
+import AiInsightsPanel from '../components/AiInsightsPanel';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -805,6 +806,16 @@ const Dashboard = () => {
               />
             </div>
           </div>
+        </div>
+
+        {/* ========================================================
+            ROW 3.5: AI CLIMATE & ENVIRONMENTAL INSIGHTS (GEMINI)
+        ======================================================== */}
+        <div style={{ marginBottom: '24px' }}>
+          <AiInsightsPanel
+            regionId={selectedRegionId}
+            regionName={regions.find((r) => String(r.id) === String(selectedRegionId))?.name}
+          />
         </div>
 
         {/* ========================================================
