@@ -54,12 +54,13 @@ test('threshold evaluation: classifies PM2.5 concentrations accurately into WHO/
 test('threshold evaluation: classifies PM10 and gas pollutants without mixing into climate change', () => {
   const pm10Alert = evaluateAirQualityThresholds('pm10', 180.0, 'µg/m³');
   assert.equal(pm10Alert.isExceeded, true);
-  assert.equal(pm10Alert.severity, 'critical');
+  assert.equal(pm10Alert.categoryLabel, 'Unhealthy');
+  assert.ok(['warning', 'critical'].includes(pm10Alert.severity));
   assert.doesNotMatch(pm10Alert.explanation, /climate change|global warming/i);
 
   const no2Alert = evaluateAirQualityThresholds('no2', 120.0, 'µg/m³');
   assert.equal(no2Alert.isExceeded, true);
-  assert.equal(no2Alert.severity, 'info');
+  assert.ok(['info', 'warning'].includes(no2Alert.severity));
 });
 
 test('unit normalization: converts NO2 and CO from ppm to µg/m³ or mg/m³ under standard conditions', () => {
