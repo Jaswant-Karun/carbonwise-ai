@@ -1,11 +1,41 @@
-# CarbonWise AI — Climate Intelligence & Personal Carbon Analytics Platform
+# CarbonWise AI — Real-Time Climate Intelligence & Environmental Anomaly Detection Platform
+**Tagline: Monitor. Detect. Analyze. Alert.**  
 **Aligned with UN Sustainable Development Goal 13: Climate Action**
 
-CarbonWise AI is a unified, full-stack environmental analytics platform designed to bridge the gap between **macro atmospheric climate telemetry** and **micro personal carbon accounting**. It integrates real-time weather observations, ground air-quality telemetry, and multi-decadal historical climate baselines with personal carbon tracking, deterministic "What-If" lifestyle simulation, adaptive habit coaching, and explainable AI insights.
+CarbonWise AI is a unified, full-stack environmental intelligence SaaS platform. It automatically collects continuous atmospheric telemetry, detects unusual weather and temperature anomalies using explainable statistical baselines (MAD, robust Z-scores), tracks multi-decadal historical climate trends against WMO standard reference normals, and generates evidence-based environmental alerts with Gemini AI climate explanations.
 
 ---
 
-## 1. Problem Statement & Project Objectives
+## 1. Five Core Features
+
+1. **Feature 1: Live Environmental Monitoring**
+   - Automatically retrieves hourly atmospheric observations (temperature, relative humidity, precipitation, wind velocity, surface pressure) and 7-day forecasts from Open-Meteo.
+   - Collects ambient particulate matter (PM2.5, PM10) and US Air Quality Index (AQI) values with WHO/EPA categorization.
+   - Runs background ingestion workers every 30 minutes, writing idempotent telemetry records into PostgreSQL.
+   - Displays real-time data freshness indicators (`live`, `delayed`, `stale`, or `unavailable`). Never fabricates measurements.
+
+2. **Feature 2: Automatic Climate Anomaly Detection**
+   - Compares live observations against seasonal historical baselines and 1991–2020 reference normals.
+   - Employs explainable statistical methods (Median Absolute Deviation [MAD], robust Z-scores $\ge 2.0\sigma$, seasonal percentiles, and physical plausibility bounds).
+   - Identifies temperature spikes, cold snaps, and extreme precipitation events while explicitly distinguishing short-term weather anomalies from multi-decadal climate trends.
+
+3. **Feature 3: Climate Analytics Dashboard**
+   - Professional dark navy environmental SaaS interface (`#0B132B`, `#163F32`, `#10B981`, `#38BDF8`).
+   - 4-Row Dashboard Architecture:
+     - **Row 1**: Summary metric cards (Current Temperature, Temperature Anomaly, Rainfall, Ambient Air Quality).
+     - **Row 2**: Large historical environmental trend chart (Chart.js multi-series) + Regional monitoring panel with real geographic coordinates.
+     - **Row 3**: Anomaly detection overview + Active environmental alerts + Historical comparison vs. 1991–2020 WMO standard normal.
+     - **Row 4**: AI climate insights (Gemini-powered) + Background ingestion activity feed + Data sources & freshness status.
+
+4. **Feature 4: Environmental Alerts & Provenance**
+   - Automatically generates prioritized alerts (`critical`, `warning`, `info`) from detected anomalies and air quality threshold violations.
+   - Stores full evidence provenance: observed value, baseline value, statistical deviation, detection method, and timestamp.
+   - Includes state transitions (`open`, `acknowledged`, `resolved`) with resolution audit history.
+
+5. **Feature 5: AI Climate Insights with Quota Optimization**
+   - Uses Google Gemini to translate statistical anomalies and trend data into clear natural-language explanations.
+   - Strictly separates AI text summaries from deterministic arithmetic: calculations and anomaly flagging are executed in deterministic Node.js code.
+   - Employs PostgreSQL SHA-256 caching (`ai_response_cache`), in-flight request deduplication, and graceful deterministic fallbacks if Gemini quota is exhausted.
 
 ### The Problem
 1. **Fragmented Environmental Datasets**: Climate monitoring data is spread across heterogeneous portals (national weather models, air monitoring stations, satellite-derived reanalysis datasets), making it difficult for individuals and organizations to understand local environmental changes.
