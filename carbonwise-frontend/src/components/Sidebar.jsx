@@ -1,37 +1,28 @@
 import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  Activity,
   AlertTriangle,
-  BrainCircuit,
+  Bell,
   CloudSun,
   FileText,
   Gauge,
-  History,
   Leaf,
   LogOut,
   Settings,
   Sparkles,
-  Target,
   TrendingUp,
-  Wind,
-  Bell,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: Gauge },
-  { path: '/live-climate', label: 'Live Monitoring', icon: CloudSun },
-  { path: '/climate-trends', label: 'Climate Trends', icon: TrendingUp },
-  { path: '/alerts', label: 'Air Quality & Alerts', icon: Bell },
-  { path: '/carbon-intelligence', label: 'Carbon Intelligence', icon: Sparkles },
-  { path: '/activities', label: 'Activity Log', icon: History },
-  { path: '/simulator', label: 'What-If Simulator', icon: BrainCircuit },
-  { path: '/action-plan', label: 'Adaptive Eco-Coach', icon: Target },
-  { path: '/carbon-forecast', label: 'Carbon Forecast', icon: Activity },
-  { path: '/impact', label: 'Impact Tracker', icon: Leaf },
+  { path: '/live-monitoring', label: 'Live Monitoring', icon: CloudSun },
+  { path: '/climate-analytics', label: 'Climate Analytics', icon: TrendingUp },
+  { path: '/anomaly-detection', label: 'Anomaly Detection', icon: AlertTriangle },
+  { path: '/alerts', label: 'Environmental Alerts', icon: Bell },
+  { path: '/ai-insights', label: 'AI Insights', icon: Sparkles },
   { path: '/reports', label: 'Reports', icon: FileText },
-  { path: '/profile', label: 'Settings', icon: Settings },
+  { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
 const Sidebar = () => {
@@ -47,7 +38,7 @@ const Sidebar = () => {
           <div className="brand-title">
             CarbonWise <span className="brand-badge">AI</span>
           </div>
-          <span className="brand-subtitle">Track. Analyze. Reduce.</span>
+          <span className="brand-subtitle">Monitor. Detect. Analyze. Alert.</span>
         </div>
       </div>
 
@@ -57,12 +48,12 @@ const Sidebar = () => {
         </span>
         <div className="sidebar-profile-info">
           <strong>{user?.name || 'Climate Analyst'}</strong>
-          <span>Sustainability Workspace</span>
+          <span>Environmental Workspace</span>
         </div>
       </div>
 
       <nav className="sidebar-nav" aria-label="Primary navigation">
-        <span className="sidebar-label">Navigation</span>
+        <span className="sidebar-label">Environmental Intelligence</span>
         <ul>
           {navItems.map((item) => {
             const NavIcon = item.icon;
@@ -87,8 +78,8 @@ const Sidebar = () => {
           <div className="promo-glow-circle">
             <Leaf size={22} className="promo-leaf-icon" />
           </div>
-          <strong>Small actions big impact.</strong>
-          <p>Let's build a sustainable future.</p>
+          <strong>SDG-13 Climate Action</strong>
+          <p>Real-time environmental telemetry and automated anomaly intelligence.</p>
         </div>
 
         <button onClick={logout} className="logout-button" type="button">
