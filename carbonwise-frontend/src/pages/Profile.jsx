@@ -114,6 +114,9 @@ const Profile = () => {
             >
               🌍 CarbonWise Member
             </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '8px' }}>
+              Member since {joinDate}
+            </p>
           </div>
 
           {/* Sustainability Score */}

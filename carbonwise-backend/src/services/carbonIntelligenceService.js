@@ -25,7 +25,12 @@ const calculateActivityEmissions = (category, details) => {
 const round = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
 
 const parseActivity = (activity) => {
-  const date = typeof activity.date === 'string' ? activity.date.slice(0, 10) : '';
+  let date = '';
+  if (typeof activity.date === 'string') {
+    date = activity.date.slice(0, 10);
+  } else if (activity.date instanceof Date) {
+    date = activity.date.toISOString().slice(0, 10);
+  }
   const emissions = Number(activity.carbon_emissions);
   const category = typeof activity.activity_type === 'string'
     ? activity.activity_type.trim().toLowerCase()

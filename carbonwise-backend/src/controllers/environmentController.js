@@ -46,13 +46,49 @@ const searchLocationSuggestions = async (req, res) => {
 
 const listRegions = async (req, res) => {
   try {
-    const result = await db.query(
+    let result = await db.query(
       `SELECT id, name, latitude, longitude, country, admin1, timezone, last_synced_at, created_at
        FROM environment_regions
        WHERE user_id = $1
        ORDER BY created_at DESC`,
       [req.user.id],
     );
+
+    if (result.rows.length === 0) {
+      // Auto-seed primary monitoring region so the dashboard is immediately functional
+      const defaultRegion = {
+        name: 'New York, USA',
+        latitude: 40.7128,
+        longitude: -74.0060,
+        country: 'United States',
+        admin1: 'New York',
+        timezone: 'America/New_York',
+      };
+
+      const insertRes = await db.query(
+        `INSERT INTO environment_regions (user_id, name, latitude, longitude, country, admin1, timezone)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING id, name, latitude, longitude, country, admin1, timezone, created_at`,
+        [req.user.id, defaultRegion.name, defaultRegion.latitude, defaultRegion.longitude, defaultRegion.country, defaultRegion.admin1, defaultRegion.timezone],
+      );
+
+      const created = insertRes.rows[0];
+
+      try {
+        await ingestRegion(created);
+      } catch (ingestErr) {
+        console.warn('Initial telemetry ingestion deferred for default region:', ingestErr.message);
+      }
+
+      result = await db.query(
+        `SELECT id, name, latitude, longitude, country, admin1, timezone, last_synced_at, created_at
+         FROM environment_regions
+         WHERE user_id = $1
+         ORDER BY created_at DESC`,
+        [req.user.id],
+      );
+    }
+
     res.json(result.rows);
   } catch (error) {
     console.error('Environment region list failed:', error.code || 'database_error');
@@ -411,7 +447,7 @@ const getRegionAiInsights = async (req, res) => {
     const region = await getOwnedRegion(req.user.id, req.params.regionId);
     if (!region) return res.status(404).json({ message: 'Region not found.' });
 
-    const summary = await summarizeRegion(region.id);
+    const summary = await summarizeRegion(req.user.id, region.id);
     const anomaliesRes = await db.query(
       `SELECT id, metric, observed_value, baseline_value, deviation, anomaly_category, severity, explanation
        FROM environment_alerts

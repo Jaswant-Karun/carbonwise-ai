@@ -32,7 +32,7 @@ const categoryLabels = {
   data_quality: 'Sensor & Data Integrity',
 };
 
-const severityTones = {
+const _severityTones = {
   critical: 'rose',
   warning: 'amber',
   info: 'blue',

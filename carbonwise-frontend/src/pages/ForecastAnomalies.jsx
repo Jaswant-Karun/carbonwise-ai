@@ -80,7 +80,6 @@ const ForecastAnomalies = () => {
     return <Layout><div className="intelligence-state"><AlertTriangle size={34} /><h2>Forecast unavailable</h2><p>{error}</p><button className="btn state-button" type="button" onClick={fetchForecast}><RefreshCw size={16} /> Try again</button></div></Layout>;
   }
 
-  const actual = data?.forecast?.actual || [];
   const projected = data?.forecast?.projected || [];
   const insufficient = !data?.forecast?.sufficientData;
 
@@ -91,6 +90,26 @@ const ForecastAnomalies = () => {
         <div className="forecast-filters">
           <label>History<select value={period} onChange={(event) => setPeriod(event.target.value)}><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option></select></label>
           <label>Horizon<select value={horizon} onChange={(event) => setHorizon(event.target.value)}><option value="7">Next 7 days</option><option value="30">Next 30 days</option></select></label>
+        </div>
+      </div>
+
+      <div
+        style={{
+          background: 'rgba(16, 24, 39, 0.75)',
+          border: '1px solid rgba(59, 130, 246, 0.25)',
+          borderRadius: '12px',
+          padding: '12px 18px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          fontSize: '0.82rem',
+          color: '#94a3b8',
+        }}
+      >
+        <span style={{ fontSize: '1rem' }}>🛡️</span>
+        <div>
+          <strong style={{ color: '#f1f5f9' }}>Independent Telemetry Architecture:</strong> Personal footprint forecasting uses trailing moving averages and activity log anomaly detection. Atmospheric temperature excursions and ambient air quality alerts are processed via separate dedicated telemetry pipelines under <a href="/live-climate" style={{ color: '#38bdf8', textDecoration: 'underline' }}>Live Monitoring</a> and <a href="/alerts" style={{ color: '#38bdf8', textDecoration: 'underline' }}>Alerts</a>.
         </div>
       </div>
 

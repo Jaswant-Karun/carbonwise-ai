@@ -132,7 +132,7 @@ const updateAction = async (req, res) => {
     const status = validateStatus(req.body.status);
     const result = await db.query(
       `UPDATE coach_actions
-       SET status = $1, completed_at = CASE WHEN $1 = 'completed' THEN CURRENT_TIMESTAMP ELSE NULL END
+       SET status = $1::varchar, completed_at = CASE WHEN $1::varchar = 'completed' THEN CURRENT_TIMESTAMP ELSE NULL END
        WHERE id = $2 AND user_id = $3 RETURNING *`,
       [status, req.params.actionId, req.user.id],
     );

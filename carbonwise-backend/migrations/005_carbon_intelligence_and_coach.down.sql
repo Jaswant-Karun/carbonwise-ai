@@ -1,0 +1,7 @@
+-- Migration 005 Rollback
+DROP TABLE IF EXISTS impact_reports CASCADE;
+DROP TABLE IF EXISTS impact_baselines CASCADE;
+DROP TABLE IF EXISTS coach_goals CASCADE;
+DROP TABLE IF EXISTS coach_actions CASCADE;
+DROP TABLE IF EXISTS coach_plans CASCADE;
+DROP TABLE IF EXISTS scenarios CASCADE;

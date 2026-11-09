@@ -30,10 +30,6 @@ const ActivityTracker = () => {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
 
-  useEffect(() => {
-    fetchActivities();
-  }, []);
-
   const fetchActivities = async () => {
     setLoading(true);
     try {
@@ -44,6 +40,10 @@ const ActivityTracker = () => {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchActivities();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

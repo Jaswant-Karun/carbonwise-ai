@@ -148,6 +148,26 @@ const WhatIfSimulator = () => {
       {error && <div className="simulator-alert" role="alert"><AlertTriangle size={18} />{error}</div>}
       {notice && <div className="simulator-notice" role="status"><CheckCircle2 size={18} />{notice}</div>}
 
+      <div
+        style={{
+          background: 'rgba(16, 24, 39, 0.75)',
+          border: '1px solid rgba(59, 130, 246, 0.25)',
+          borderRadius: '12px',
+          padding: '12px 18px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          fontSize: '0.82rem',
+          color: '#94a3b8',
+        }}
+      >
+        <span style={{ fontSize: '1rem' }}>🔬</span>
+        <div>
+          <strong style={{ color: '#f1f5f9' }}>Data Separation Protocol:</strong> Modeled scenario savings are hypothetical calculations derived from your activity logs and standard emission factors. Simulated projections are strictly kept separate from real-world meteorological observations and verified ambient air quality measurements.
+        </div>
+      </div>
+
       <div className="simulator-layout">
         <form className="simulator-form chart-card" onSubmit={saveScenario}>
           <div className="chart-card-heading"><div><h3>Build a scenario</h3><p>All values use your activity history and existing emission factors.</p></div></div>

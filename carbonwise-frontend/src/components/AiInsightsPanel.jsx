@@ -20,7 +20,7 @@ const AiInsightsPanel = ({ regionId, regionName, className = '' }) => {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [expandedIndex, setExpandedIndex] = useState(0);
 
-  const fetchInsights = useCallback(async (forced = false) => {
+  const fetchInsights = useCallback(async (_forced = false) => {
     if (!regionId) return;
     setLoading(true);
     setError('');

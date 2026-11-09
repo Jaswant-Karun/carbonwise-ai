@@ -15,11 +15,28 @@ const categoryTotals = (activities) => activities.reduce((totals, activity) => {
   return totals;
 }, {});
 
-const buildImpactReport = ({ activities, currentPeriod = 30, baseline }) => {
+const buildImpactReport = ({ activities, currentPeriod = 30, baseline, today, currentStart, currentEnd }) => {
   const periodDays = normalizePeriod(currentPeriod);
-  const bounds = getPeriodBounds(periodDays);
   const parsed = activities.map(parseActivity);
   const valid = parsed.filter(Boolean);
+
+  let bounds;
+  if (currentStart && currentEnd) {
+    bounds = { currentStart, currentEnd, previousStart: baseline?.startDate, previousEnd: baseline?.endDate };
+  } else {
+    let referenceToday = today;
+    if (!referenceToday && valid.length > 0) {
+      const dates = valid.map((a) => a.date).sort();
+      const latestDate = dates[dates.length - 1];
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const defaultBounds = getPeriodBounds(periodDays, todayIso);
+      if (latestDate < defaultBounds.currentStart) {
+        referenceToday = latestDate;
+      }
+    }
+    bounds = getPeriodBounds(periodDays, referenceToday);
+  }
+
   const current = valid.filter((activity) => activity.date >= bounds.currentStart && activity.date <= bounds.currentEnd);
   const baselineStart = baseline?.startDate || bounds.previousStart;
   const baselineEnd = baseline?.endDate || bounds.previousEnd;
