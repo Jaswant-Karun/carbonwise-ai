@@ -254,6 +254,18 @@ const Dashboard = () => {
     };
   }, []);
 
+  if (loading) {
+    return (
+      <Layout>
+        <div className="dashboard-container" style={{ padding: '80px 20px', textAlign: 'center' }}>
+          <RefreshCw size={32} className="spin icon-mint" style={{ margin: '0 auto 16px' }} />
+          <h2 style={{ color: '#ffffff', fontSize: '1.25rem', marginBottom: '8px' }}>Initializing Environmental Telemetry...</h2>
+          <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Retrieving live weather observations from Open-Meteo & OpenAQ networks.</p>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="dashboard-container">
@@ -763,7 +775,7 @@ const Dashboard = () => {
               <div className="source-row">
                 <div className="source-info">
                   <strong>Open-Meteo Weather API</strong>
-                  <small>Weather, rain, wind, atmospheric pressure</small>
+                  <small>Weather, rain, wind, atmospheric pressure ({overview?.recentObservations?.length || 0} active telemetry channels)</small>
                 </div>
                 <span className="source-badge live">Operational</span>
               </div>
