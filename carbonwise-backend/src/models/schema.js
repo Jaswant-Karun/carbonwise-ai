@@ -197,6 +197,50 @@ const initDb = async () => {
     );
   `;
 
+  const createEmissionFactorsTable = `
+    CREATE TABLE IF NOT EXISTS emission_factors (
+      id SERIAL PRIMARY KEY,
+      category VARCHAR(50) NOT NULL,
+      activity_key VARCHAR(80) NOT NULL,
+      name VARCHAR(150) NOT NULL,
+      unit VARCHAR(30) NOT NULL,
+      factor_kg_co2e DECIMAL(12, 6) NOT NULL,
+      scope VARCHAR(20) NOT NULL DEFAULT 'Scope 3',
+      source VARCHAR(150) NOT NULL,
+      region VARCHAR(50) NOT NULL DEFAULT 'Global',
+      version VARCHAR(40) NOT NULL DEFAULT '2024.1',
+      methodology TEXT,
+      reduction_rate DECIMAL(5, 2) DEFAULT 0.15,
+      is_estimate BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT uq_category_activity_region UNIQUE (category, activity_key, region, version)
+    );
+  `;
+
+  const createActivityEmissionsTable = `
+    CREATE TABLE IF NOT EXISTS activity_emissions (
+      id SERIAL PRIMARY KEY,
+      activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      category VARCHAR(50) NOT NULL,
+      sub_type VARCHAR(80),
+      quantity DECIMAL(12, 4) NOT NULL,
+      unit VARCHAR(30) NOT NULL,
+      factor_value DECIMAL(12, 6) NOT NULL,
+      factor_source VARCHAR(150) NOT NULL,
+      factor_version VARCHAR(40) NOT NULL,
+      factor_region VARCHAR(50) NOT NULL,
+      emissions_kg DECIMAL(12, 4) NOT NULL,
+      emissions_tonnes DECIMAL(12, 6) NOT NULL,
+      scope VARCHAR(20) NOT NULL DEFAULT 'Scope 3',
+      methodology TEXT,
+      assumptions TEXT,
+      is_estimate BOOLEAN DEFAULT TRUE,
+      calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   try {
     await db.query(createUsersTable);
     await db.query(createActivitiesTable);
@@ -212,6 +256,8 @@ const initDb = async () => {
     await db.query(createEnvironmentObservationsTable);
     await db.query(createEnvironmentIngestionRunsTable);
     await db.query(createEnvironmentAlertsTable);
+    await db.query(createEmissionFactorsTable);
+    await db.query(createActivityEmissionsTable);
     await db.query(`
       ALTER TABLE environment_regions
         ADD COLUMN IF NOT EXISTS country VARCHAR(100),
@@ -259,6 +305,14 @@ const initDb = async () => {
     await db.query('CREATE INDEX IF NOT EXISTS idx_environment_alerts_category_severity_status ON environment_alerts (user_id, anomaly_category, severity, status, created_at DESC)');
     await db.query('CREATE INDEX IF NOT EXISTS idx_environment_observations_observed_at ON environment_observations (observed_at DESC)');
     await db.query('CREATE INDEX IF NOT EXISTS idx_environment_ingestion_runs_started_at ON environment_ingestion_runs (started_at DESC)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_activity_emissions_activity_id ON activity_emissions (activity_id)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_activity_emissions_user_category ON activity_emissions (user_id, category)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_emission_factors_lookup ON emission_factors (category, activity_key, region)');
+
+    // Centralized Emission Engine Factor Registry Seeding
+    const { seedEmissionFactors } = require('../services/emissionEngineService');
+    await seedEmissionFactors();
+
     console.log('✅ Database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database tables:', err.stack);

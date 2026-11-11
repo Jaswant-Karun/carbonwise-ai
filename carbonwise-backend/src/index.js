@@ -28,6 +28,7 @@ app.use('/api/coach', require('./routes/coachRoutes'));
 app.use('/api/forecast', require('./routes/forecastRoutes'));
 app.use('/api/impact', require('./routes/impactRoutes'));
 app.use('/api/environment', require('./routes/environmentRoutes'));
+app.use('/api/emissions', require('./routes/emissionRoutes'));
 
 // Start background environmental data ingestion scheduler
 const { startScheduler } = require('./services/environmentScheduler');

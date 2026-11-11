@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { calculateEmissions, recordActivityEmission } = require('../services/emissionEngineService');
 const { calculateActivityEmissions } = require('../services/carbonIntelligenceService');
 
 // @desc    Add a new activity
@@ -14,7 +15,20 @@ const addActivity = async (req, res) => {
       details.title = req.body.title;
     }
 
-    const carbon_emissions = calculateActivityEmissions(activity_type, details);
+    const calcResult = calculateEmissions({
+      category: activity_type,
+      details,
+      region: req.body.region || 'Global',
+    });
+
+    const carbon_emissions = calcResult.emissionsKg;
+    details.emissions_tonnes = calcResult.emissionsTonnes;
+    details.scope = calcResult.scope;
+    details.methodology = calcResult.methodology;
+    details.assumptions = calcResult.assumptions;
+    details.factor_used = calcResult.factorUsed;
+    details.is_estimate = true;
+
     const date = req.body.date ? req.body.date : new Date().toISOString().slice(0, 10);
 
     const newActivity = await db.query(
@@ -23,7 +37,16 @@ const addActivity = async (req, res) => {
       [req.user.id, activity_type, details, carbon_emissions, date]
     );
 
-    res.status(201).json(newActivity.rows[0]);
+    const activityRow = newActivity.rows[0];
+
+    // Connect activity log directly to its calculated emission record
+    await recordActivityEmission({
+      activityId: activityRow.id,
+      userId: req.user.id,
+      calculation: calcResult,
+    });
+
+    res.status(201).json(activityRow);
   } catch (error) {
     console.error('Add Activity Error:', error);
     res.status(error.statusCode || 500).json({ message: error.message || 'Server error adding activity' });
@@ -140,7 +163,20 @@ const updateActivity = async (req, res) => {
     }
 
     const date = req.body.date ? req.body.date : (current.date instanceof Date ? current.date.toISOString().slice(0, 10) : String(current.date).slice(0, 10));
-    const carbon_emissions = calculateActivityEmissions(activity_type, details);
+
+    const calcResult = calculateEmissions({
+      category: activity_type,
+      details,
+      region: req.body.region || 'Global',
+    });
+
+    const carbon_emissions = calcResult.emissionsKg;
+    details.emissions_tonnes = calcResult.emissionsTonnes;
+    details.scope = calcResult.scope;
+    details.methodology = calcResult.methodology;
+    details.assumptions = calcResult.assumptions;
+    details.factor_used = calcResult.factorUsed;
+    details.is_estimate = true;
 
     const updated = await db.query(
       `UPDATE activities
@@ -148,6 +184,14 @@ const updateActivity = async (req, res) => {
        WHERE id = $5 AND user_id = $6 RETURNING *`,
       [activity_type, details, carbon_emissions, date, req.params.id, req.user.id]
     );
+
+    // Update connected activity_emissions record
+    await db.query('DELETE FROM activity_emissions WHERE activity_id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+    await recordActivityEmission({
+      activityId: req.params.id,
+      userId: req.user.id,
+      calculation: calcResult,
+    });
 
     res.json(updated.rows[0]);
   } catch (error) {
