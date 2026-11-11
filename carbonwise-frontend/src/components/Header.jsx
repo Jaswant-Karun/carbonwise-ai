@@ -14,9 +14,34 @@ import api from '../services/api';
 
 const pageMeta = {
   '/dashboard': {
-    eyebrow: 'Real-Time Climate Intelligence',
-    title: 'Climate Intelligence & Anomaly Dashboard',
-    description: 'Continuous atmospheric observations, statistical anomaly detection, and climate alerts.',
+    eyebrow: 'Carbon & Climate Intelligence',
+    title: 'Executive Climate & Carbon Dashboard',
+    description: 'Unified command center for carbon emission accounting, predictive forecasting, and live environmental telemetry.',
+  },
+  '/activities': {
+    eyebrow: 'Data Capture & Tracking',
+    title: 'Activity Emission Log (Track)',
+    description: 'Log transport, electricity, diet, flights, and lifestyle emissions with automated carbon calculations.',
+  },
+  '/carbon-intelligence': {
+    eyebrow: 'Deep Emission Analytics',
+    title: 'Smart Carbon Intelligence (Analyze)',
+    description: 'Category breakdowns, historical variance, and deterministic reduction opportunities.',
+  },
+  '/carbon-forecast': {
+    eyebrow: 'Predictive Modeling',
+    title: 'Carbon Footprint Forecast (Predict)',
+    description: 'Statistical moving-average emission forecasting and unusual spike anomaly detection.',
+  },
+  '/action-plan': {
+    eyebrow: 'Adaptive Decarbonization',
+    title: 'Climate Action Plan (Reduce)',
+    description: 'Personalized 7-day adaptive sustainability goals and measurable reduction targets.',
+  },
+  '/impact': {
+    eyebrow: 'Target Verification',
+    title: 'Sustainability Impact Tracker',
+    description: 'Benchmark progress against historical baselines and verify tangible emission reductions.',
   },
   '/live-monitoring': {
     eyebrow: 'Continuous Telemetry',

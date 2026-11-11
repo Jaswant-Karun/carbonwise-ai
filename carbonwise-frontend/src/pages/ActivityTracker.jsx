@@ -1,26 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import Layout from '../components/Layout';
+import {
+  Car,
+  CheckCircle2,
+  Filter,
+  History,
+  Leaf,
+  Plane,
+  Plus,
+  RefreshCw,
+  ShoppingBag,
+  Trash2,
+  Utensils,
+  Zap,
+} from 'lucide-react';
 
-const activityTypes = [
-  { value: 'transport', label: '🚗 Transport', unit: 'km driven', factor: 0.21 },
-  { value: 'electricity', label: '⚡ Electricity', unit: 'kWh used', factor: 0.5 },
-  { value: 'food', label: '🍖 Food', unit: 'heavy meat meals', factor: 2.5 },
-  { value: 'flight', label: '✈️ Flight', unit: 'km flown', factor: 0.255 },
-  { value: 'shopping', label: '🛍️ Shopping', unit: 'items purchased', factor: 5.0 },
+const ACTIVITY_CONFIG = [
+  { value: 'transport', label: 'Transport / Driving', unit: 'km', factor: 0.21, icon: Car, color: '#10b981' },
+  { value: 'electricity', label: 'Electricity Consumption', unit: 'kWh', factor: 0.5, icon: Zap, color: '#38bdf8' },
+  { value: 'food', label: 'Food & Meat Meals', unit: 'meals', factor: 2.5, icon: Utensils, color: '#f59e0b' },
+  { value: 'flight', label: 'Aviation / Flights', unit: 'km', factor: 0.255, icon: Plane, color: '#a855f7' },
+  { value: 'shopping', label: 'Goods & Shopping', unit: 'items', factor: 5.0, icon: ShoppingBag, color: '#ec4899' },
 ];
-const calculateEmissions = (type, value) => {
-  const found = activityTypes.find((a) => a.value === type);
-  const val = parseFloat(value);
-  if (!found || isNaN(val)) return 0;
-  return +(val * found.factor).toFixed(2);
-};
 
-const impactColor = (val) => {
-  if (val < 2) return '#10b981';
-  if (val < 5) return '#f59e0b';
-  return '#ef4444';
-};
+const round = (val, d = 2) => (val != null && !Number.isNaN(Number(val)) ? Number(val).toFixed(d) : '0.00');
 
 const ActivityTracker = () => {
   const [activities, setActivities] = useState([]);
@@ -29,16 +33,18 @@ const ActivityTracker = () => {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
+  const [successNotice, setSuccessNotice] = useState(false);
 
   const fetchActivities = async () => {
     setLoading(true);
     try {
       const res = await api.get('/activities');
-      setActivities(res.data);
+      setActivities(res.data || []);
     } catch {
       console.error('Error fetching activities');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -47,22 +53,29 @@ const ActivityTracker = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const val = parseFloat(amount);
+    if (!val || val <= 0) return;
+
     setSubmitting(true);
     try {
+      const selected = ACTIVITY_CONFIG.find((a) => a.value === activityType);
       await api.post('/activities', {
         activity_type: activityType,
-        details: { value: amount, unit: activityTypes.find((a) => a.value === activityType)?.unit },
+        details: { value: val, unit: selected?.unit },
       });
       setAmount('');
-      fetchActivities();
+      setSuccessNotice(true);
+      setTimeout(() => setSuccessNotice(false), 3000);
+      await fetchActivities();
     } catch {
-      alert('Error logging activity. Make sure the backend is running.');
+      alert('Error recording activity. Please verify backend connectivity.');
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this activity?')) return;
+    if (!window.confirm('Delete this recorded activity from your ledger?')) return;
     try {
       await api.delete(`/activities/${id}`);
       setActivities((prev) => prev.filter((a) => a.id !== id));
@@ -71,239 +84,239 @@ const ActivityTracker = () => {
     }
   };
 
-  const selectedType = activityTypes.find((a) => a.value === activityType);
-  const previewEmissions = calculateEmissions(activityType, amount);
+  const selectedType = ACTIVITY_CONFIG.find((a) => a.value === activityType) || ACTIVITY_CONFIG[0];
+  const previewEmissions = amount && !Number.isNaN(parseFloat(amount)) ? parseFloat(amount) * selectedType.factor : 0;
 
-  const filtered =
-    filterType === 'all'
+  const filtered = useMemo(() => {
+    return filterType === 'all'
       ? activities
       : activities.filter((a) => a.activity_type === filterType);
+  }, [activities, filterType]);
 
-  const totalFiltered = filtered.reduce(
-    (sum, a) => sum + parseFloat(a.carbon_emissions),
-    0
-  );
+  const totalFilteredEmissions = useMemo(() => {
+    return filtered.reduce((sum, a) => sum + (parseFloat(a.carbon_emissions) || 0), 0);
+  }, [filtered]);
 
   return (
     <Layout>
-      <h1
-        style={{
-          fontFamily: 'Outfit, sans-serif',
-          fontSize: '2rem',
-          marginBottom: '8px',
-        }}
-      >
-        Activity Tracker
-      </h1>
-      <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>
-        Log your daily activities to calculate your carbon footprint.
-      </p>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '32px' }}>
-        {/* Log Activity Form */}
-        <div className="glass-panel" style={{ alignSelf: 'start' }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>➕ Log New Activity</h3>
-          <form onSubmit={handleSubmit}>
-            <div className="input-group">
-              <label>Activity Type</label>
-              <select
-                className="input-field"
-                value={activityType}
-                onChange={(e) => setActivityType(e.target.value)}
-                style={{ appearance: 'none' }}
-              >
-                {activityTypes.map((a) => (
-                  <option key={a.value} value={a.value}>
-                    {a.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="input-group">
-              <label>
-                Amount ({selectedType?.unit})
-              </label>
-              <input
-                type="number"
-                step="any"
-                min="0"
-                className="input-field"
-                placeholder="e.g. 15"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-              />
-            </div>
-
-            {amount && (
-              <div
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  background: 'rgba(0,0,0,0.2)',
-                  marginBottom: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Estimated CO₂</span>
-                <span
-                  style={{
-                    fontWeight: 700,
-                    color: impactColor(previewEmissions),
-                    fontSize: '1.1rem',
-                  }}
-                >
-                  {previewEmissions} kg
-                </span>
-              </div>
-            )}
-
-            <button type="submit" className="btn" disabled={submitting}>
-              {submitting ? 'Logging...' : 'Log Activity'}
-            </button>
-          </form>
-
-          {/* Emission factors info */}
-          <div style={{ marginTop: '24px', borderTop: '1px solid var(--surface-border)', paddingTop: '20px' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '10px' }}>Emission factors used:</p>
-            {activityTypes.map((a) => (
-              <div key={a.value} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{a.label}</span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>{a.factor} kg/unit</span>
-              </div>
-            ))}
+      <div className="dashboard-container">
+        {/* Header Summary */}
+        <div className="dashboard-region-bar">
+          <div className="region-bar-left">
+            <span className="summary-status-badge live">
+              <span className="live-dot" /> Verified Emission Ledger
+            </span>
+            <span className="region-bar-label">Total Activities Recorded:</span>
+            <strong style={{ color: '#ffffff' }}>{activities.length}</strong>
+          </div>
+          <div className="region-bar-right">
+            <span className="data-freshness-pill">
+              <Leaf size={13} />
+              <span>Standards: GHG Protocol & DEFRA</span>
+            </span>
           </div>
         </div>
 
-        {/* Activity History */}
-        <div className="glass-panel">
-          <div
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}
-          >
-            <h3>Activity History</h3>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <select
-                className="input-field"
-                style={{ width: 'auto', padding: '6px 12px', fontSize: '0.85rem' }}
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-              >
-                <option value="all">All Types</option>
-                {activityTypes.map((a) => (
-                  <option key={a.value} value={a.value}>{a.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Summary */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '16px',
-              marginBottom: '20px',
-              flexWrap: 'wrap',
-            }}
-          >
-            <div
-              style={{
-                flex: 1,
-                padding: '12px 16px',
-                borderRadius: '8px',
-                background: 'rgba(16,185,129,0.1)',
-                border: '1px solid rgba(16,185,129,0.2)',
-              }}
-            >
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Total CO₂ (filtered)</div>
-              <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1.2rem' }}>
-                {totalFiltered.toFixed(2)} kg
+        <div className="dashboard-grid-middle">
+          {/* Left Column: Log New Activity Form */}
+          <div className="tracker-card card-regional-panel" style={{ alignSelf: 'start' }}>
+            <div className="tracker-card-header">
+              <div>
+                <h2 className="card-section-title">
+                  <Plus size={18} className="icon-mint" />
+                  Log Carbon-Generating Activity
+                </h2>
+                <p className="card-subtitle-small">
+                  Record daily emissions with automated calculations
+                </p>
               </div>
             </div>
-            <div
-              style={{
-                flex: 1,
-                padding: '12px 16px',
-                borderRadius: '8px',
-                background: 'rgba(59,130,246,0.1)',
-                border: '1px solid rgba(59,130,246,0.2)',
-              }}
-            >
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Activities logged</div>
-              <div style={{ fontWeight: 700, color: 'var(--secondary)', fontSize: '1.2rem' }}>
-                {filtered.length}
-              </div>
-            </div>
-          </div>
 
-          {loading ? (
-            <p style={{ color: 'var(--text-muted)' }}>Loading activities...</p>
-          ) : filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🌿</div>
-              <p>No activities logged yet. Start tracking your impact!</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '450px', overflowY: 'auto' }}>
-              {filtered.map((act) => {
-                const typeInfo = activityTypes.find((t) => t.value === act.activity_type);
-                return (
-                  <div
-                    key={act.id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '14px 16px',
-                      borderRadius: '10px',
-                      background: 'rgba(0,0,0,0.2)',
-                      border: '1px solid var(--surface-border)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontSize: '1.4rem' }}>{typeInfo?.label.split(' ')[0] || '📌'}</span>
-                      <div>
-                        <div style={{ fontWeight: 600, textTransform: 'capitalize', fontSize: '0.95rem' }}>
-                          {act.activity_type}
-                        </div>
-                        <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                          {act.details?.value} {act.details?.unit} &nbsp;·&nbsp;{' '}
-                          {new Date(act.date).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          color: impactColor(parseFloat(act.carbon_emissions)),
-                          fontSize: '1rem',
-                        }}
-                      >
-                        {parseFloat(act.carbon_emissions).toFixed(2)} kg
+            <form onSubmit={handleSubmit} className="quick-activity-box">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label className="summary-card-title">Activity Category</label>
+                <select
+                  className="quick-select"
+                  value={activityType}
+                  onChange={(e) => setActivityType(e.target.value)}
+                  style={{ width: '100%' }}
+                  aria-label="Activity Type"
+                >
+                  {ACTIVITY_CONFIG.map((a) => (
+                    <option key={a.value} value={a.value}>
+                      {a.label} ({a.factor} kg CO₂/{a.unit})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label className="summary-card-title">
+                  Measured Consumption ({selectedType.unit})
+                </label>
+                <div className="quick-input-wrap">
+                  <input
+                    type="number"
+                    step="any"
+                    min="0.1"
+                    className="quick-input"
+                    placeholder={`e.g. 25 ${selectedType.unit}`}
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    required
+                  />
+                  <span className="quick-unit-tag">{selectedType.unit}</span>
+                </div>
+              </div>
+
+              {amount && (
+                <div className="quick-calc-preview" style={{ padding: '8px 10px', background: 'var(--surface-card)', borderRadius: '8px' }}>
+                  <span>Calculated Greenhouse Gas:</span>
+                  <strong>{round(previewEmissions)} kg CO₂e</strong>
+                </div>
+              )}
+
+              <button type="submit" className="btn-log-action" disabled={submitting || !amount}>
+                <Plus size={15} />
+                <span>{submitting ? 'Recording Activity...' : 'Record In Ledger'}</span>
+              </button>
+
+              {successNotice && (
+                <div className="log-success-pill">
+                  <CheckCircle2 size={13} /> Activity successfully stored in PostgreSQL!
+                </div>
+              )}
+            </form>
+
+            {/* Emission Factors Reference Table */}
+            <div style={{ marginTop: '18px', paddingTop: '14px', borderTop: '1px solid var(--surface-border)' }}>
+              <span className="summary-card-title" style={{ display: 'block', marginBottom: '8px' }}>
+                Transparent Emission Factors:
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {ACTIVITY_CONFIG.map((a) => {
+                  const Icon = a.icon;
+                  return (
+                    <div key={a.value} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)' }}>
+                        <Icon size={13} style={{ color: a.color }} /> {a.label}
                       </span>
-                      <button
-                        onClick={() => handleDelete(act.id)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--danger)',
-                          cursor: 'pointer',
-                          fontSize: '1rem',
-                          padding: '4px',
-                        }}
-                        title="Delete"
-                      >
-                        🗑️
-                      </button>
+                      <strong className="mono" style={{ color: '#ffffff' }}>{a.factor} kg/{a.unit}</strong>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Right Column: Activity History Ledger */}
+          <div className="tracker-card card-chart-large">
+            <div className="tracker-card-header">
+              <div>
+                <h2 className="card-section-title">
+                  <History size={18} className="icon-mint" />
+                  Activity History & Emission Ledger
+                </h2>
+                <p className="card-subtitle-small">
+                  Filter, audit, and inspect your recorded activity entries
+                </p>
+              </div>
+
+              {/* Filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Filter size={14} className="icon-mint" />
+                <select
+                  className="quick-select"
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  style={{ width: 'auto', padding: '5px 10px', fontSize: '0.75rem' }}
+                  aria-label="Filter Type"
+                >
+                  <option value="all">All Categories</option>
+                  {ACTIVITY_CONFIG.map((a) => (
+                    <option key={a.value} value={a.value}>{a.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Top Stats for Filtered Selection */}
+            <div className="dashboard-summary-strip" style={{ gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+              <div className="summary-metric-card" style={{ padding: '12px' }}>
+                <span className="summary-card-title">Filtered Emissions</span>
+                <div className="summary-card-value-row" style={{ margin: '4px 0 0' }}>
+                  <span className="summary-card-value" style={{ fontSize: '1.5rem' }}>{round(totalFilteredEmissions)}</span>
+                  <span className="summary-card-unit">kg CO₂e</span>
+                </div>
+              </div>
+              <div className="summary-metric-card" style={{ padding: '12px' }}>
+                <span className="summary-card-title">Matching Activities</span>
+                <div className="summary-card-value-row" style={{ margin: '4px 0 0' }}>
+                  <span className="summary-card-value" style={{ fontSize: '1.5rem' }}>{filtered.length}</span>
+                  <span className="summary-card-unit">records</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Activity Table */}
+            <div className="activity-table-wrapper" style={{ maxHeight: '420px', overflowY: 'auto' }}>
+              {loading ? (
+                <div className="empty-state-notice">
+                  <RefreshCw size={24} className="spin icon-mint" />
+                  <span>Loading activity ledger...</span>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="empty-state-notice">
+                  <Leaf size={28} className="icon-mint" />
+                  <span>No activities logged in this category. Use the form on the left to record your first entry.</span>
+                </div>
+              ) : (
+                <table className="custom-data-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Category</th>
+                      <th>Quantity</th>
+                      <th>Emission (kg CO₂e)</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((act) => {
+                      const cfg = ACTIVITY_CONFIG.find((t) => t.value === act.activity_type) || {};
+                      const Icon = cfg.icon || Leaf;
+                      return (
+                        <tr key={act.id}>
+                          <td className="mono">{act.date ? new Date(act.date).toLocaleDateString() : 'Today'}</td>
+                          <td>
+                            <span className="category-cell-badge">
+                              <Icon size={14} style={{ color: cfg.color || '#10b981' }} />
+                              <span style={{ textTransform: 'capitalize' }}>{act.activity_type}</span>
+                            </span>
+                          </td>
+                          <td className="mono">
+                            {act.details?.value} {act.details?.unit || cfg.unit}
+                          </td>
+                          <td>
+                            <strong className="text-mint">{round(act.carbon_emissions)} kg</strong>
+                          </td>
+                          <td>
+                            <button
+                              onClick={() => handleDelete(act.id)}
+                              className="btn-trash-inline"
+                              title="Delete entry"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </Layout>

@@ -9,34 +9,43 @@ import {
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
   Filler,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Line, Doughnut } from 'react-chartjs-2';
 import {
   Activity,
   AlertTriangle,
-  ArrowUpRight,
   ArrowDownRight,
+  ArrowUpRight,
+  Award,
+  Bell,
   CheckCircle2,
   ChevronRight,
-  CloudRain,
   CloudSun,
-  Compass,
   Database,
   ExternalLink,
   Flame,
   Globe,
+  History,
   Info,
+  Leaf,
   MapPin,
+  Plus,
   RefreshCw,
+  Send,
   ShieldAlert,
   Sparkles,
+  Target,
   Thermometer,
+  Trash2,
+  TrendingDown,
   TrendingUp,
   Wind,
+  Zap,
 } from 'lucide-react';
 
 ChartJS.register(
@@ -45,105 +54,134 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
   Filler
 );
 
-const round = (val, d = 1) => (val != null && !Number.isNaN(Number(val)) ? Number(val).toFixed(d) : '—');
+const EMISSION_CONFIG = {
+  transport: { label: 'Transport', unit: 'km', factor: 0.21, icon: '🚗', color: '#10b981' },
+  electricity: { label: 'Electricity', unit: 'kWh', factor: 0.5, icon: '⚡', color: '#38bdf8' },
+  food: { label: 'Food', unit: 'meals', factor: 2.5, icon: '🍖', color: '#f59e0b' },
+  flight: { label: 'Flight', unit: 'km', factor: 0.255, icon: '✈️', color: '#a855f7' },
+  shopping: { label: 'Shopping', unit: 'items', factor: 5.0, icon: '🛍️', color: '#ec4899' },
+};
+
+const round = (val, d = 1) => (val != null && !Number.isNaN(Number(val)) ? Number(val).toFixed(d) : '0.0');
 
 const Dashboard = () => {
+  const [period, setPeriod] = useState('30');
+  const [intelligence, setIntelligence] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const [coachPlan, setCoachPlan] = useState(null);
   const [regions, setRegions] = useState([]);
   const [selectedRegionId, setSelectedRegionId] = useState('');
-  const [summary, setSummary] = useState(null);
-  const [trends, setTrends] = useState(null);
-  const [anomaliesData, setAnomaliesData] = useState(null);
+  const [envSummary, setEnvSummary] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [aiInsights, setAiInsights] = useState(null);
-  const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [timeframe, setTimeframe] = useState('daily');
-  const [metricFilter, setMetricFilter] = useState('temperature');
 
-  // Load Regions and initial overview
-  useEffect(() => {
-    let isMounted = true;
-    const fetchInitialData = async () => {
-      try {
-        setLoading(true);
-        const [regRes, ovRes] = await Promise.allSettled([
-          api.get('/environment/regions'),
-          api.get('/environment/overview'),
-        ]);
+  // Quick Activity Log state
+  const [logType, setLogType] = useState('transport');
+  const [logValue, setLogValue] = useState('');
+  const [isLogging, setIsLogging] = useState(false);
+  const [logSuccess, setLogSuccess] = useState(false);
 
-        if (!isMounted) return;
-
-        if (ovRes.status === 'fulfilled') {
-          setOverview(ovRes.value.data);
-        }
-
-        if (regRes.status === 'fulfilled' && regRes.value.data?.length > 0) {
-          const list = regRes.value.data;
-          setRegions(list);
-          setSelectedRegionId(String(list[0].id));
-        }
-      } catch (err) {
-        console.error('Failed to load initial environmental data:', err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchInitialData();
-    return () => { isMounted = false; };
-  }, []);
-
-  // Fetch telemetry and analytics when selectedRegionId changes
-  const loadRegionData = useCallback(async (regionId) => {
-    if (!regionId) return;
+  // Initial Data Load
+  const loadDashboard = useCallback(async () => {
     try {
-      const [sumRes, trRes, anomRes, alertRes, aiRes] = await Promise.allSettled([
-        api.get(`/environment/regions/${regionId}/summary`),
-        api.get(`/environment/regions/${regionId}/trends?resolution=${timeframe}&metric=${metricFilter}`),
-        api.get(`/environment/regions/${regionId}/anomalies`),
-        api.get(`/environment/alerts?regionId=${regionId}`),
-        api.get(`/environment/regions/${regionId}/ai-insights`),
+      const [intelRes, actRes, coachRes, regRes, alertRes] = await Promise.allSettled([
+        api.get(`/intelligence?period=${period}`),
+        api.get('/activities'),
+        api.get('/coach/plan'),
+        api.get('/environment/regions'),
+        api.get('/environment/alerts'),
       ]);
 
-      if (sumRes.status === 'fulfilled') setSummary(sumRes.value.data);
-      if (trRes.status === 'fulfilled') setTrends(trRes.value.data);
-      if (anomRes.status === 'fulfilled') setAnomaliesData(anomRes.value.data);
+      if (intelRes.status === 'fulfilled') setIntelligence(intelRes.value.data);
+      if (actRes.status === 'fulfilled') setActivities(actRes.value.data || []);
+      if (coachRes.status === 'fulfilled') setCoachPlan(coachRes.value.data);
       if (alertRes.status === 'fulfilled') setAlerts(alertRes.value.data || []);
-      if (aiRes.status === 'fulfilled') setAiInsights(aiRes.value.data);
+
+      if (regRes.status === 'fulfilled' && regRes.value.data?.length > 0) {
+        const list = regRes.value.data;
+        setRegions(list);
+        if (!selectedRegionId) setSelectedRegionId(String(list[0].id));
+      }
     } catch (err) {
-      console.warn('Error loading region environmental intelligence:', err);
+      console.error('Dashboard load error:', err);
+    } finally {
+      setLoading(false);
     }
-  }, [timeframe, metricFilter]);
+  }, [period, selectedRegionId]);
 
   useEffect(() => {
-    if (selectedRegionId) {
-      loadRegionData(selectedRegionId);
-    }
-  }, [selectedRegionId, loadRegionData]);
+    loadDashboard();
+  }, [loadDashboard]);
 
-  // Handle manual live refresh
-  const handleRefresh = async () => {
-    if (!selectedRegionId || refreshing) return;
+  // Load Environmental Telemetry for selected region
+  useEffect(() => {
+    if (!selectedRegionId) return;
+    let isMounted = true;
+    const fetchEnvData = async () => {
+      try {
+        const [sumRes, aiRes] = await Promise.allSettled([
+          api.get(`/environment/regions/${selectedRegionId}/summary`),
+          api.get(`/environment/regions/${selectedRegionId}/ai-insights`),
+        ]);
+        if (isMounted) {
+          if (sumRes.status === 'fulfilled') setEnvSummary(sumRes.value.data);
+          if (aiRes.status === 'fulfilled') setAiInsights(aiRes.value.data);
+        }
+      } catch (err) {
+        console.warn('Environmental telemetry fetch error:', err);
+      }
+    };
+    fetchEnvData();
+    return () => { isMounted = false; };
+  }, [selectedRegionId]);
+
+  // Quick Activity Log submission
+  const handleQuickLog = async (e) => {
+    e.preventDefault();
+    const val = parseFloat(logValue);
+    if (!val || val <= 0) return;
+
     try {
-      setRefreshing(true);
-      await api.post(`/environment/regions/${selectedRegionId}/refresh`);
-      await loadRegionData(selectedRegionId);
+      setIsLogging(true);
+      await api.post('/activities', {
+        activity_type: logType,
+        details: { value: val, unit: EMISSION_CONFIG[logType]?.unit },
+      });
+      setLogValue('');
+      setLogSuccess(true);
+      setTimeout(() => setLogSuccess(false), 3000);
+      await loadDashboard();
     } catch (err) {
-      console.error('Live refresh failed:', err);
+      console.error('Failed to log activity:', err);
     } finally {
-      setRefreshing(false);
+      setIsLogging(false);
     }
   };
 
-  // Acknowledge alert
-  const handleAcknowledgeAlert = async (alertId) => {
+  // Toggle Action Status
+  const handleToggleAction = async (actionId, currentStatus) => {
+    const nextStatus = currentStatus === 'completed' ? 'planned' : 'completed';
+    try {
+      await api.patch(`/coach/actions/${actionId}`, { status: nextStatus });
+      setCoachPlan((prev) => prev && {
+        ...prev,
+        actions: prev.actions.map((a) => (a.id === actionId ? { ...a, status: nextStatus } : a)),
+      });
+    } catch (err) {
+      console.error('Error toggling action plan status:', err);
+    }
+  };
+
+  // Acknowledge Alert
+  const handleAckAlert = async (alertId) => {
     try {
       await api.patch(`/environment/alerts/${alertId}`, { status: 'acknowledged' });
       setAlerts((prev) => prev.map((a) => (a.id === alertId ? { ...a, status: 'acknowledged' } : a)));
@@ -152,115 +190,103 @@ const Dashboard = () => {
     }
   };
 
-  // Extract Row 1 metrics
-  const activeRegion = useMemo(() => {
-    return regions.find((r) => String(r.id) === String(selectedRegionId)) || summary?.region;
-  }, [regions, selectedRegionId, summary]);
-
-  const currentConditions = summary?.current || {};
-  const currentTemp = currentConditions.temperature;
-  const currentRain = currentConditions.precipitation;
-  const currentHumidity = currentConditions.relative_humidity;
-  const currentWind = currentConditions.wind_speed;
-  const currentPressure = currentConditions.surface_pressure;
-  const currentAqi = currentConditions.us_aqi;
-  const currentPm25 = currentConditions.pm2_5;
-
-  // Temperature anomaly metric
-  const tempAnomalyMetric = summary?.metrics?.find((m) => m.metric === 'temperature');
-  const tempAnomalyVal = tempAnomalyMetric?.anomaly?.departure;
-  const tempZScore = tempAnomalyMetric?.anomaly?.robustZ;
-  const isTempAnomaly = Boolean(tempAnomalyMetric?.anomaly);
-
-  // Air Quality classification
-  const getAqiCategory = (aqi) => {
-    if (aqi == null) return { label: 'Unavailable', color: 'var(--text-muted)' };
-    if (aqi <= 50) return { label: 'Good (WHO Target)', color: '#10b981' };
-    if (aqi <= 100) return { label: 'Moderate', color: '#f59e0b' };
-    if (aqi <= 150) return { label: 'Unhealthy for Sensitive Groups', color: '#f97316' };
-    return { label: 'Unhealthy / Hazardous', color: '#ef4444' };
+  // Delete Activity
+  const handleDeleteActivity = async (id) => {
+    if (!window.confirm('Delete this activity entry?')) return;
+    try {
+      await api.delete(`/activities/${id}`);
+      await loadDashboard();
+    } catch (err) {
+      console.error('Failed to delete activity:', err);
+    }
   };
 
-  const aqiInfo = getAqiCategory(currentAqi);
+  // Key KPI Calculations
+  const currentFootprint = intelligence?.totals?.currentPeriod || 0;
+  const previousFootprint = intelligence?.totals?.previousPeriod || 0;
+  const percentageChange = intelligence?.comparison?.percentageChange;
+  const isReduction = percentageChange != null && percentageChange < 0;
 
-  // Trend Chart Data (Row 2)
+  const topCategory = intelligence?.largestSources?.[0];
+  const eligibleSavings = intelligence?.recommendations?.reduce((sum, r) => sum + (r.potentialSavingsKg || 0), 0) || 0;
+
+  const completedActionsCount = coachPlan?.actions?.filter((a) => a.status === 'completed').length || 0;
+  const totalActionsCount = coachPlan?.actions?.length || 7;
+  const actionProgressPercent = totalActionsCount ? Math.round((completedActionsCount / totalActionsCount) * 100) : 0;
+
+  // Environmental telemetry indicators
+  const currentTemp = envSummary?.current?.temperature;
+  const currentAqi = envSummary?.current?.us_aqi;
+  const currentPm25 = envSummary?.current?.pm2_5;
+  const tempAnomaly = envSummary?.metrics?.find((m) => m.metric === 'temperature')?.anomaly;
+
+  // Trend Chart Data (Actual daily + Moving average projection)
   const chartData = useMemo(() => {
-    const history = trends?.history || [];
-    const labels = history.map((h) => (h.date ? h.date.slice(5) : ''));
-    const obsValues = history.map((h) => h.mean ?? h.sum ?? null);
-    const baselineValue = trends?.referenceBaseline?.meanValue;
-    const baselineSeries = history.map(() => baselineValue ?? null);
+    const trends = intelligence?.trends || [];
+    const labels = trends.map((t) => t.date?.slice(5) || '');
+    const dataPoints = trends.map((t) => t.emissions || 0);
+
+    // Compute simple moving average line
+    const movingAvg = dataPoints.map((val, idx, arr) => {
+      const slice = arr.slice(Math.max(0, idx - 2), idx + 1);
+      return round(slice.reduce((a, b) => a + b, 0) / slice.length);
+    });
 
     return {
-      labels,
+      labels: labels.length ? labels : ['No Data'],
       datasets: [
         {
-          label: `Observed ${metricFilter === 'temperature' ? 'Daily Mean Temp (°C)' : 'Precipitation (mm)'}`,
-          data: obsValues,
+          label: 'Daily Footprint (kg CO₂e)',
+          data: dataPoints.length ? dataPoints : [0],
           borderColor: '#10b981',
           backgroundColor: 'rgba(16, 185, 129, 0.12)',
           borderWidth: 2.2,
-          pointRadius: history.length > 30 ? 0 : 3,
-          pointHoverRadius: 5,
+          pointRadius: trends.length > 20 ? 0 : 3,
           tension: 0.35,
           fill: true,
         },
-        ...(baselineValue != null
-          ? [
-              {
-                label: '1991–2020 WMO Standard Baseline',
-                data: baselineSeries,
-                borderColor: '#38bdf8',
-                borderWidth: 1.8,
-                borderDash: [5, 5],
-                pointRadius: 0,
-                fill: false,
-              },
-            ]
-          : []),
+        {
+          label: '3-Day Moving Average Trajectory',
+          data: movingAvg.length ? movingAvg : [0],
+          borderColor: '#38bdf8',
+          borderWidth: 1.8,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          fill: false,
+        },
       ],
     };
-  }, [trends, metricFilter]);
+  }, [intelligence]);
 
-  const chartOptions = useMemo(() => {
+  // Category Breakdown Donut Chart
+  const donutData = useMemo(() => {
+    const breakdown = intelligence?.categoryBreakdown || [];
+    if (!breakdown.length) {
+      return {
+        labels: ['No Activity Recorded'],
+        datasets: [{ data: [1], backgroundColor: ['#1e293b'] }],
+      };
+    }
     return {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          labels: { color: '#94a3b8', font: { size: 12, family: 'DM Sans' } },
+      labels: breakdown.map((c) => c.label),
+      datasets: [
+        {
+          data: breakdown.map((c) => c.emissions),
+          backgroundColor: breakdown.map((c) => EMISSION_CONFIG[c.category]?.color || '#10b981'),
+          borderWidth: 2,
+          borderColor: '#0f182a',
         },
-        tooltip: {
-          backgroundColor: '#0f182a',
-          titleColor: '#ffffff',
-          bodyColor: '#cbd5e1',
-          borderColor: '#1e2c44',
-          borderWidth: 1,
-          padding: 10,
-        },
-      },
-      scales: {
-        x: {
-          grid: { color: 'rgba(255, 255, 255, 0.04)' },
-          ticks: { color: '#64748b', font: { size: 11 } },
-        },
-        y: {
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#64748b', font: { size: 11 } },
-        },
-      },
+      ],
     };
-  }, []);
+  }, [intelligence]);
 
   if (loading) {
     return (
       <Layout>
         <div className="dashboard-container" style={{ padding: '80px 20px', textAlign: 'center' }}>
           <RefreshCw size={32} className="spin icon-mint" style={{ margin: '0 auto 16px' }} />
-          <h2 style={{ color: '#ffffff', fontSize: '1.25rem', marginBottom: '8px' }}>Initializing Environmental Telemetry...</h2>
-          <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Retrieving live weather observations from Open-Meteo & OpenAQ networks.</p>
+          <h2 style={{ color: '#ffffff', fontSize: '1.25rem', marginBottom: '8px' }}>Initializing Carbon & Climate Intelligence...</h2>
+          <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Aggregating activity telemetry, predictive baselines, and environmental observations.</p>
         </div>
       </Layout>
     );
@@ -269,16 +295,18 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className="dashboard-container">
-        {/* Top Region Control Bar */}
+        {/* Top Control Header: Location & Period Filter */}
         <div className="dashboard-region-bar">
           <div className="region-bar-left">
-            <div className="region-indicator-dot" />
-            <span className="region-bar-label">Active Monitoring Station:</span>
+            <span className="summary-status-badge live">
+              <span className="live-dot" /> Live System Active
+            </span>
+            <span className="region-bar-label">Monitoring Node:</span>
             <select
               value={selectedRegionId}
               onChange={(e) => setSelectedRegionId(e.target.value)}
               className="region-bar-select"
-              aria-label="Select Environmental Monitoring Region"
+              aria-label="Select Region"
             >
               {regions.map((reg) => (
                 <option key={reg.id} value={reg.id}>
@@ -286,328 +314,383 @@ const Dashboard = () => {
                 </option>
               ))}
             </select>
-            {activeRegion && (
-              <span className="region-coords-pill">
-                <MapPin size={12} /> {round(activeRegion.latitude, 2)}°N, {round(activeRegion.longitude, 2)}°E
-              </span>
-            )}
           </div>
 
           <div className="region-bar-right">
-            <span className="data-freshness-pill">
-              <Database size={13} />
-              <span>Provider: Open-Meteo & OpenAQ</span>
-            </span>
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="btn-refresh-telemetry"
-              title="Poll latest environmental telemetry"
-            >
-              <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
-              <span>{refreshing ? 'Syncing...' : 'Refresh Telemetry'}</span>
-            </button>
+            <span className="region-bar-label">Analysis Scope:</span>
+            <div className="timeframe-selector">
+              <button
+                className={`btn-timeframe ${period === '7' ? 'active' : ''}`}
+                onClick={() => setPeriod('7')}
+              >
+                7 Days
+              </button>
+              <button
+                className={`btn-timeframe ${period === '30' ? 'active' : ''}`}
+                onClick={() => setPeriod('30')}
+              >
+                30 Days
+              </button>
+              <button
+                className={`btn-timeframe ${period === '90' ? 'active' : ''}`}
+                onClick={() => setPeriod('90')}
+              >
+                90 Days
+              </button>
+              <button
+                className={`btn-timeframe ${period === '365' ? 'active' : ''}`}
+                onClick={() => setPeriod('365')}
+              >
+                1 Year
+              </button>
+            </div>
+            <Link to="/reports" className="btn-refresh-telemetry">
+              <span>Audit Report PDF</span>
+              <ExternalLink size={13} />
+            </Link>
           </div>
         </div>
 
         {/* ========================================================
-            ROW 1: SUMMARY METRICS STRIP
+            ROW 1: FOUR UNIFIED KPI CARDS
         ======================================================== */}
         <div className="dashboard-summary-strip">
-          {/* Card 1: Current Temperature */}
+          {/* Card 1: Total Footprint */}
           <div className="summary-metric-card">
             <div className="summary-card-header">
-              <span className="summary-card-title">Current Temperature</span>
+              <span className="summary-card-title">Total Footprint ({period}D)</span>
               <span className="summary-card-icon-wrap mint">
-                <Thermometer size={18} />
+                <Leaf size={18} />
               </span>
             </div>
             <div className="summary-card-value-row">
-              <span className="summary-card-value">{round(currentTemp)}</span>
-              <span className="summary-card-unit">°C</span>
+              <span className="summary-card-value">{round(currentFootprint)}</span>
+              <span className="summary-card-unit">kg CO₂e</span>
             </div>
             <div className="summary-card-footer">
-              <span className="summary-status-badge live">
-                <span className="live-dot" /> Live Telemetry
+              <span className={`summary-status-badge ${isReduction ? 'normal' : percentageChange > 0 ? 'warning' : 'blue'}`}>
+                {percentageChange != null ? (
+                  isReduction ? (
+                    <><ArrowDownRight size={13} /> {Math.abs(percentageChange)}% vs last {period}d</>
+                  ) : (
+                    <><ArrowUpRight size={13} /> +{percentageChange}% vs last {period}d</>
+                  )
+                ) : (
+                  'Initial Baseline Cycle'
+                )}
               </span>
               <span className="summary-card-sub">
-                Humidity: {round(currentHumidity, 0)}% • Wind: {round(currentWind)} km/h
+                Previous period: {round(previousFootprint)} kg CO₂e
               </span>
             </div>
           </div>
 
-          {/* Card 2: Temperature Anomaly */}
+          {/* Card 2: Highest Emission Category */}
           <div className="summary-metric-card">
             <div className="summary-card-header">
-              <span className="summary-card-title">Temperature Anomaly</span>
-              <span className={`summary-card-icon-wrap ${isTempAnomaly ? 'amber' : 'mint'}`}>
-                {isTempAnomaly ? <Flame size={18} /> : <TrendingUp size={18} />}
-              </span>
-            </div>
-            <div className="summary-card-value-row">
-              <span className={`summary-card-value ${isTempAnomaly ? 'text-amber' : ''}`}>
-                {tempAnomalyVal != null ? (tempAnomalyVal > 0 ? `+${round(tempAnomalyVal)}` : round(tempAnomalyVal)) : '0.0'}
-              </span>
-              <span className="summary-card-unit">°C departure</span>
-            </div>
-            <div className="summary-card-footer">
-              <span className={`summary-status-badge ${isTempAnomaly ? 'warning' : 'normal'}`}>
-                {isTempAnomaly ? `Anomaly (Z: +${round(tempZScore)}σ)` : 'Within Baseline Normal'}
-              </span>
-              <span className="summary-card-sub">
-                vs. Seasonal Baseline: {round(tempAnomalyMetric?.baseline?.median)}°C
-              </span>
-            </div>
-          </div>
-
-          {/* Card 3: Rainfall & Precipitation */}
-          <div className="summary-metric-card">
-            <div className="summary-card-header">
-              <span className="summary-card-title">Precipitation & Rain</span>
-              <span className="summary-card-icon-wrap blue">
-                <CloudRain size={18} />
-              </span>
-            </div>
-            <div className="summary-card-value-row">
-              <span className="summary-card-value">{round(currentRain)}</span>
-              <span className="summary-card-unit">mm</span>
-            </div>
-            <div className="summary-card-footer">
-              <span className="summary-status-badge blue">
-                {currentRain > 25 ? 'Heavy Rainfall' : currentRain > 5 ? 'Light Rain' : 'Normal / Dry'}
-              </span>
-              <span className="summary-card-sub">Pressure: {round(currentPressure, 0)} hPa</span>
-            </div>
-          </div>
-
-          {/* Card 4: Air Quality */}
-          <div className="summary-metric-card">
-            <div className="summary-card-header">
-              <span className="summary-card-title">Ambient Air Quality</span>
-              <span className="summary-card-icon-wrap purple">
-                <Wind size={18} />
+              <span className="summary-card-title">Primary Emission Driver</span>
+              <span className="summary-card-icon-wrap amber">
+                <Flame size={18} />
               </span>
             </div>
             <div className="summary-card-value-row">
               <span className="summary-card-value">
-                {currentAqi != null ? round(currentAqi, 0) : round(currentPm25, 1)}
+                {topCategory ? `${topCategory.contributionPercentage}%` : '0%'}
               </span>
-              <span className="summary-card-unit">{currentAqi != null ? 'US AQI' : 'µg/m³ PM2.5'}</span>
+              <span className="summary-card-unit">{topCategory ? topCategory.label : 'None'}</span>
             </div>
             <div className="summary-card-footer">
-              <span className="summary-status-badge" style={{ color: aqiInfo.color, borderColor: aqiInfo.color }}>
-                {aqiInfo.label}
+              <span className="summary-status-badge warning">
+                Potential Savings: ~{round(eligibleSavings)} kg CO₂e
               </span>
               <span className="summary-card-sub">
-                {currentPm25 != null ? `PM2.5: ${round(currentPm25, 1)} µg/m³` : 'Standard Sensor Network'}
+                {topCategory ? `${round(topCategory.emissions)} kg in ${topCategory.label}` : 'Log activities to track'}
+              </span>
+            </div>
+          </div>
+
+          {/* Card 3: Decarbonization Action Progress */}
+          <div className="summary-metric-card">
+            <div className="summary-card-header">
+              <span className="summary-card-title">Decarbonization Plan</span>
+              <span className="summary-card-icon-wrap blue">
+                <Target size={18} />
+              </span>
+            </div>
+            <div className="summary-card-value-row">
+              <span className="summary-card-value">{actionProgressPercent}%</span>
+              <span className="summary-card-unit">completed</span>
+            </div>
+            <div className="summary-card-footer">
+              <span className="summary-status-badge blue">
+                {completedActionsCount} of {totalActionsCount} actions logged
+              </span>
+              <span className="summary-card-sub">
+                <Link to="/action-plan" className="card-action-link">
+                  Open Action Plan <ChevronRight size={13} />
+                </Link>
+              </span>
+            </div>
+          </div>
+
+          {/* Card 4: Live Environmental Context */}
+          <div className="summary-metric-card">
+            <div className="summary-card-header">
+              <span className="summary-card-title">Local Climate Telemetry</span>
+              <span className="summary-card-icon-wrap purple">
+                <Thermometer size={18} />
+              </span>
+            </div>
+            <div className="summary-card-value-row">
+              <span className="summary-card-value">
+                {currentTemp != null ? `${round(currentTemp)}°C` : '—'}
+              </span>
+              <span className="summary-card-unit">
+                {currentAqi != null ? `AQI ${round(currentAqi, 0)}` : 'Open-Meteo'}
+              </span>
+            </div>
+            <div className="summary-card-footer">
+              <span className={`summary-status-badge ${tempAnomaly ? 'warning' : 'live'}`}>
+                {tempAnomaly ? `Anomaly (Z: +${round(tempAnomaly.robustZ)}σ)` : 'Ambient Weather Nominal'}
+              </span>
+              <span className="summary-card-sub">
+                PM2.5: {currentPm25 != null ? `${round(currentPm25, 1)} µg/m³` : 'Standard Network'}
               </span>
             </div>
           </div>
         </div>
 
         {/* ========================================================
-            ROW 2: LARGE TREND CHART & REGIONAL MONITORING PANEL
+            ROW 2: INTERACTIVE CHART & INSTANT ACTIVITY LOGGER
         ======================================================== */}
         <div className="dashboard-grid-middle">
-          {/* Large Historical Environmental Trend Chart */}
+          {/* Left: Carbon Footprint Trends & Projections */}
           <div className="tracker-card card-chart-large">
             <div className="tracker-card-header">
               <div>
                 <h2 className="card-section-title">
-                  <Activity size={18} className="icon-mint" />
-                  Historical Climate Trends & Baseline Comparison
+                  <TrendingUp size={18} className="icon-mint" />
+                  Carbon Footprint Trajectory & Historical Variance
                 </h2>
                 <p className="card-subtitle-small">
-                  Observed environmental values compared against 1991–2020 WMO Standard Reference Normals
+                  Observed daily greenhouse gas emissions vs. 3-day trailing trajectory ({period}-day scope)
                 </p>
               </div>
-
-              <div className="chart-controls-group">
-                <div className="timeframe-selector">
-                  <button
-                    className={`btn-timeframe ${metricFilter === 'temperature' ? 'active' : ''}`}
-                    onClick={() => setMetricFilter('temperature')}
-                  >
-                    Temperature
-                  </button>
-                  <button
-                    className={`btn-timeframe ${metricFilter === 'precipitation' ? 'active' : ''}`}
-                    onClick={() => setMetricFilter('precipitation')}
-                  >
-                    Precipitation
-                  </button>
-                </div>
-
-                <div className="timeframe-selector">
-                  <button
-                    className={`btn-timeframe ${timeframe === 'daily' ? 'active' : ''}`}
-                    onClick={() => setTimeframe('daily')}
-                  >
-                    Daily
-                  </button>
-                  <button
-                    className={`btn-timeframe ${timeframe === 'monthly' ? 'active' : ''}`}
-                    onClick={() => setTimeframe('monthly')}
-                  >
-                    Monthly
-                  </button>
-                </div>
-              </div>
+              <Link to="/carbon-intelligence" className="card-action-link">
+                Intelligence Engine <ChevronRight size={14} />
+              </Link>
             </div>
 
-            <div className="dashboard-main-chart-wrapper" style={{ height: '320px' }}>
-              {trends?.history?.length > 0 ? (
-                <Line data={chartData} options={chartOptions} />
-              ) : (
-                <div className="empty-chart-notice">
-                  <Info size={20} />
-                  <span>Loading verified multi-decadal historical observations...</span>
-                </div>
-              )}
+            <div className="dashboard-main-chart-wrapper" style={{ height: '310px' }}>
+              <Line
+                data={chartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      position: 'top',
+                      labels: { color: '#94a3b8', font: { size: 12, family: 'DM Sans' } },
+                    },
+                    tooltip: {
+                      backgroundColor: '#0f182a',
+                      titleColor: '#ffffff',
+                      bodyColor: '#cbd5e1',
+                      borderColor: '#1e2c44',
+                      borderWidth: 1,
+                      padding: 10,
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                      ticks: { color: '#64748b', font: { size: 11 } },
+                    },
+                    y: {
+                      beginAtZero: true,
+                      grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                      ticks: { color: '#64748b', font: { size: 11 } },
+                    },
+                  },
+                }}
+              />
             </div>
 
-            {trends?.trendSummary && (
-              <div className="chart-footer-stat-bar">
-                <span>
-                  <strong>Decadal Trend Rate:</strong> {trends.trendSummary.warmingRateCPerDecade != null ? `+${round(trends.trendSummary.warmingRateCPerDecade, 2)}°C / decade` : 'Consistent with baseline'}
-                </span>
-                <span>
-                  <strong>Data Period:</strong> {trends.trendSummary.dataPeriodYears || 30} years verified observations
-                </span>
-                <span>
-                  <strong>Baseline Reference:</strong> 1991–2020 WMO Standard Normals
-                </span>
-              </div>
-            )}
+            <div className="chart-footer-stat-bar">
+              <span>
+                <strong>Total Scope Emissions:</strong> {round(currentFootprint)} kg CO₂e
+              </span>
+              <span>
+                <strong>Daily Average:</strong> {round(intelligence?.totals?.daily || 0)} kg CO₂e/day
+              </span>
+              <span>
+                <strong>Target Status:</strong> {isReduction ? 'Decarbonizing' : 'Baseline Growth'}
+              </span>
+            </div>
           </div>
 
-          {/* Regional Environmental Monitoring Panel */}
+          {/* Right: Category Distribution & Instant Logger */}
           <div className="tracker-card card-regional-panel">
             <div className="tracker-card-header">
               <div>
                 <h2 className="card-section-title">
-                  <Globe size={18} className="icon-mint" />
-                  Regional Monitoring Panel
+                  <Zap size={18} className="icon-mint" />
+                  Instant Activity Logger (Track)
                 </h2>
-                <p className="card-subtitle-small">Geographic Station Coordinates & Sensor Matrix</p>
+                <p className="card-subtitle-small">Log carbon activities with automated emission factor calculation</p>
               </div>
             </div>
 
-            <div className="regional-meta-box">
-              <div className="meta-box-row">
-                <span className="meta-box-label">Station Name</span>
-                <strong className="meta-box-val">{activeRegion?.name || 'Monitoring Node'}</strong>
-              </div>
-              <div className="meta-box-row">
-                <span className="meta-box-label">Country / Jurisdiction</span>
-                <span className="meta-box-val">{activeRegion?.country || 'International'}</span>
-              </div>
-              <div className="meta-box-row">
-                <span className="meta-box-label">Geographic Coordinates</span>
-                <span className="meta-box-val mono">
-                  {round(activeRegion?.latitude, 4)}° N, {round(activeRegion?.longitude, 4)}° E
-                </span>
-              </div>
-              <div className="meta-box-row">
-                <span className="meta-box-label">Station Timezone</span>
-                <span className="meta-box-val mono">{activeRegion?.timezone || 'UTC'}</span>
-              </div>
-              <div className="meta-box-row">
-                <span className="meta-box-label">Telemetry Status</span>
-                <span className="badge-live-tag">
-                  <CheckCircle2 size={12} /> Active Ingestion Stream
-                </span>
-              </div>
-            </div>
+            {/* Quick Log Form */}
+            <form onSubmit={handleQuickLog} className="quick-activity-box">
+              <div className="quick-log-row">
+                <select
+                  value={logType}
+                  onChange={(e) => setLogType(e.target.value)}
+                  className="quick-select"
+                  aria-label="Activity Type"
+                >
+                  {Object.entries(EMISSION_CONFIG).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v.icon} {v.label} ({v.factor} kg/{v.unit})
+                    </option>
+                  ))}
+                </select>
 
-            <div className="regional-sensor-grid">
-              <div className="sensor-cell">
-                <span className="sensor-label">Relative Humidity</span>
-                <strong className="sensor-val">{round(currentHumidity, 0)}%</strong>
+                <div className="quick-input-wrap">
+                  <input
+                    type="number"
+                    step="any"
+                    min="0.1"
+                    placeholder={`Quantity (${EMISSION_CONFIG[logType]?.unit})`}
+                    value={logValue}
+                    onChange={(e) => setLogValue(e.target.value)}
+                    className="quick-input"
+                    required
+                  />
+                  <span className="quick-unit-tag">{EMISSION_CONFIG[logType]?.unit}</span>
+                </div>
               </div>
-              <div className="sensor-cell">
-                <span className="sensor-label">Wind Velocity</span>
-                <strong className="sensor-val">{round(currentWind, 1)} km/h</strong>
-              </div>
-              <div className="sensor-cell">
-                <span className="sensor-label">Atmospheric Pressure</span>
-                <strong className="sensor-val">{round(currentPressure, 0)} hPa</strong>
-              </div>
-              <div className="sensor-cell">
-                <span className="sensor-label">PM2.5 Particles</span>
-                <strong className="sensor-val">{round(currentPm25, 1)} µg/m³</strong>
-              </div>
-            </div>
 
-            <div className="regional-action-footer">
-              <Link to="/live-monitoring" className="btn-regional-link">
-                <span>View Full Telemetry Stream</span>
-                <ChevronRight size={15} />
-              </Link>
+              <div className="quick-calc-preview">
+                <span>Calculated Emission:</span>
+                <strong>
+                  {logValue ? `${round(parseFloat(logValue) * EMISSION_CONFIG[logType]?.factor)} kg CO₂e` : '0.0 kg CO₂e'}
+                </strong>
+              </div>
+
+              <button type="submit" disabled={isLogging || !logValue} className="btn-log-action">
+                <Plus size={15} />
+                <span>{isLogging ? 'Calculating & Saving...' : 'Log Activity Now'}</span>
+              </button>
+
+              {logSuccess && (
+                <div className="log-success-pill">
+                  <CheckCircle2 size={13} /> Activity recorded in PostgreSQL! Stats updated.
+                </div>
+              )}
+            </form>
+
+            {/* Category Doughnut Chart */}
+            <div className="donut-summary-wrap" style={{ height: '140px', marginTop: '14px' }}>
+              <Doughnut
+                data={donutData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      position: 'right',
+                      labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } },
+                    },
+                  },
+                  cutout: '70%',
+                }}
+              />
             </div>
           </div>
         </div>
 
         {/* ========================================================
-            ROW 3: ANOMALY OVERVIEW, ALERTS, & HISTORICAL COMPARISON
+            ROW 3: ADAPTIVE ACTION PLAN & ENVIRONMENTAL TELEMETRY
         ======================================================== */}
         <div className="dashboard-grid-bottom">
-          {/* Anomaly Detection Overview */}
+          {/* Left: 7-Day Adaptive Climate Action Plan */}
           <div className="tracker-card card-anomalies-overview">
             <div className="tracker-card-header">
               <div>
                 <h2 className="card-section-title">
-                  <ShieldAlert size={18} className="icon-amber" />
-                  Anomaly Detection Overview
+                  <Target size={18} className="icon-mint" />
+                  Adaptive Eco-Coach Action Plan (Reduce)
                 </h2>
-                <p className="card-subtitle-small">Robust Z-scores and seasonal threshold deviations</p>
+                <p className="card-subtitle-small">Personalized recommendations targeted at your highest emission sources</p>
               </div>
-              <Link to="/anomaly-detection" className="card-action-link">
-                Full Engine <ChevronRight size={14} />
+              <Link to="/action-plan" className="card-action-link">
+                Full Plan <ChevronRight size={14} />
               </Link>
             </div>
 
-            <div className="anomalies-list">
-              {anomaliesData?.atmosphericAnomalies?.length > 0 ? (
-                anomaliesData.atmosphericAnomalies.slice(0, 4).map((anom, idx) => (
-                  <div key={idx} className="anomaly-item-row">
-                    <div className="anomaly-item-left">
-                      <span className="anomaly-badge-tag amber">
-                        {anom.metric}
-                      </span>
-                      <div className="anomaly-item-desc">
-                        <strong>Observed: {round(anom.anomaly?.observed)} {anom.metric === 'temperature' ? '°C' : 'mm'}</strong>
-                        <small>Baseline: {round(anom.anomaly?.baseline)} (Δ {round(anom.anomaly?.departure)} / Z: {round(anom.anomaly?.robustZ)}σ)</small>
+            <div className="action-checklist-feed">
+              {coachPlan?.actions?.slice(0, 4).map((action) => {
+                const isDone = action.status === 'completed';
+                return (
+                  <div key={action.id} className={`action-checklist-item ${isDone ? 'done' : ''}`}>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleAction(action.id, action.status)}
+                      className={`action-check-btn ${isDone ? 'checked' : ''}`}
+                      title={isDone ? 'Mark as planned' : 'Mark as completed'}
+                    >
+                      {isDone ? <CheckCircle2 size={16} /> : <div className="check-empty" />}
+                    </button>
+                    <div className="action-item-body">
+                      <div className="action-item-top">
+                        <strong className={isDone ? 'line-through' : ''}>{action.title}</strong>
+                        <span className="action-category-tag">{action.category}</span>
                       </div>
+                      <p>{action.explanation}</p>
+                      {action.estimatedPotentialSavingsKg > 0 && (
+                        <small className="action-savings-tag">
+                          Potential savings: ~{round(action.estimatedPotentialSavingsKg)} kg CO₂e
+                        </small>
+                      )}
                     </div>
-                    <span className="anomaly-date-tag">
-                      {anom.observedAt ? new Date(anom.observedAt).toLocaleDateString() : 'Live'}
-                    </span>
                   </div>
-                ))
-              ) : (
+                );
+              })}
+              {(!coachPlan?.actions || coachPlan.actions.length === 0) && (
                 <div className="empty-state-notice">
-                  <CheckCircle2 size={24} className="icon-mint" />
-                  <span>No extreme atmospheric anomalies detected in current cycle. Observations align with seasonal normal bounds.</span>
+                  <Sparkles size={24} className="icon-mint" />
+                  <span>No actions configured yet. Log activities to generate your first adaptive plan.</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Environmental Alerts Panel */}
+          {/* Right: Environmental Telemetry & Anomaly Alerts */}
           <div className="tracker-card card-alerts-overview">
             <div className="tracker-card-header">
               <div>
                 <h2 className="card-section-title">
-                  <AlertTriangle size={18} className="icon-amber" />
-                  Environmental Alerts
+                  <Bell size={18} className="icon-amber" />
+                  Live Climate & Anomaly Alerts
                 </h2>
-                <p className="card-subtitle-small">Active evidence-based threshold warnings</p>
+                <p className="card-subtitle-small">Atmospheric deviations and ambient air quality telemetry</p>
               </div>
               <Link to="/alerts" className="card-action-link">
-                View All ({alerts.length}) <ChevronRight size={14} />
+                Alerts ({alerts.length}) <ChevronRight size={14} />
               </Link>
             </div>
+
+            {/* AI Insights Banner */}
+            {aiInsights?.narrative && (
+              <div className="ai-insights-inline-banner">
+                <Sparkles size={16} className="icon-mint" style={{ flexShrink: 0 }} />
+                <p>{aiInsights.narrative}</p>
+              </div>
+            )}
 
             <div className="alerts-list-compact">
               {alerts.length > 0 ? (
@@ -623,13 +706,10 @@ const Dashboard = () => {
                     </div>
                     <div className="alert-card-body-text">
                       <strong>{alert.metric?.toUpperCase()} Alert: Observed {round(alert.observed_value)}</strong>
-                      <p>{alert.explanation || `Threshold exceeded (${round(alert.threshold_value)}). Statistical deviation flagged.`}</p>
+                      <p>{alert.explanation || `Threshold exceeded (${round(alert.threshold_value)}). Statistical anomaly flagged.`}</p>
                     </div>
                     {alert.status === 'open' && (
-                      <button
-                        onClick={() => handleAcknowledgeAlert(alert.id)}
-                        className="btn-ack-alert"
-                      >
+                      <button onClick={() => handleAckAlert(alert.id)} className="btn-ack-alert">
                         Acknowledge
                       </button>
                     )}
@@ -638,164 +718,85 @@ const Dashboard = () => {
               ) : (
                 <div className="empty-state-notice">
                   <CheckCircle2 size={24} className="icon-mint" />
-                  <span>All environmental alerts resolved. Sensor parameters within acceptable limits.</span>
+                  <span>Atmospheric parameters in your region remain within normal seasonal baselines.</span>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Historical Comparison */}
-          <div className="tracker-card card-historical-comp">
-            <div className="tracker-card-header">
-              <div>
-                <h2 className="card-section-title">
-                  <Compass size={18} className="icon-mint" />
-                  Historical Comparison
-                </h2>
-                <p className="card-subtitle-small">Current Season vs. 30-Year Normal</p>
-              </div>
-            </div>
-
-            <div className="historical-comp-stats">
-              <div className="comp-stat-box">
-                <span className="comp-label">Temperature Departure</span>
-                <strong className={`comp-val ${tempAnomalyVal > 0 ? 'text-amber' : 'text-mint'}`}>
-                  {tempAnomalyVal != null ? (tempAnomalyVal > 0 ? `+${round(tempAnomalyVal)}°C` : `${round(tempAnomalyVal)}°C`) : '0.0°C'}
-                </strong>
-                <small className="comp-subtext">vs. 1991–2020 WMO Standard</small>
-              </div>
-
-              <div className="comp-stat-box">
-                <span className="comp-label">Baseline Robustness</span>
-                <strong className="comp-val text-mint">Verified (MAD)</strong>
-                <small className="comp-subtext">Physical bounds validated</small>
-              </div>
-            </div>
-
-            <div className="scientific-disclaimer-box">
-              <Info size={14} className="icon-info" />
-              <span>
-                <strong>Methodological Standard:</strong> Isolated weather deviations do not prove climatological shift. Long-term trends require multi-decadal verification.
-              </span>
             </div>
           </div>
         </div>
 
         {/* ========================================================
-            ROW 4: AI CLIMATE INSIGHTS, MONITORING ACTIVITY, SOURCES
+            ROW 4: RECENT ACTIVITY LEDGER
         ======================================================== */}
-        <div className="dashboard-grid-bottom">
-          {/* AI Climate Insights */}
-          <div className="tracker-card card-ai-insights">
-            <div className="tracker-card-header">
-              <div>
-                <h2 className="card-section-title">
-                  <Sparkles size={18} className="icon-mint" />
-                  AI Climate Insights
-                </h2>
-                <p className="card-subtitle-small">Natural-language climate intelligence (Gemini)</p>
-              </div>
-              <span className="badge-ai-model">
-                {aiInsights?.narrativeSource === 'gemini' ? 'Gemini 2.5 Flash' : 'Deterministic Evidence'}
-              </span>
-            </div>
-
-            <div className="ai-insights-narrative">
-              <p>
-                {aiInsights?.narrative ||
-                  'Current regional observations indicate typical seasonal weather patterns with low atmospheric anomaly deviation. Continue monitoring continuous Open-Meteo telemetry streams.'}
+        <div className="tracker-card recent-activities-card">
+          <div className="tracker-card-header">
+            <div>
+              <h2 className="card-section-title">
+                <History size={18} className="icon-mint" />
+                Verified Activity Ledger (Recent Entries)
+              </h2>
+              <p className="card-subtitle-small">
+                Stored in PostgreSQL with deterministic emission factors
               </p>
             </div>
-
-            <div className="ai-insights-footer">
-              <span className="ai-cache-indicator">
-                <CheckCircle2 size={12} className="icon-mint" /> PostgreSQL SHA-256 Cached
-              </span>
-              <Link to="/ai-insights" className="card-action-link">
-                Detailed Analysis <ChevronRight size={14} />
-              </Link>
-            </div>
+            <Link to="/activities" className="card-action-link">
+              Full Activity Log ({activities.length}) <ChevronRight size={14} />
+            </Link>
           </div>
 
-          {/* Recent Monitoring Activity */}
-          <div className="tracker-card card-monitoring-activity">
-            <div className="tracker-card-header">
-              <div>
-                <h2 className="card-section-title">
-                  <Activity size={18} className="icon-mint" />
-                  Monitoring Ingestion Activity
-                </h2>
-                <p className="card-subtitle-small">Automated 30-minute scheduled cycles</p>
+          <div className="activity-table-wrapper">
+            {activities.length > 0 ? (
+              <table className="custom-data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Logged Quantity</th>
+                    <th>Calculated CO₂e</th>
+                    <th>Emission Factor</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activities.slice(0, 6).map((act) => {
+                    const cfg = EMISSION_CONFIG[act.activity_type] || {};
+                    return (
+                      <tr key={act.id}>
+                        <td className="mono">{act.date ? new Date(act.date).toLocaleDateString() : 'Today'}</td>
+                        <td>
+                          <span className="category-cell-badge">
+                            {cfg.icon || '📌'} {cfg.label || act.activity_type}
+                          </span>
+                        </td>
+                        <td>
+                          {act.details?.value || '—'} {cfg.unit || act.details?.unit}
+                        </td>
+                        <td>
+                          <strong className="text-mint">{round(act.carbon_emissions)} kg</strong>
+                        </td>
+                        <td className="text-muted mono">
+                          {cfg.factor ? `${cfg.factor} kg/${cfg.unit}` : 'Standard'}
+                        </td>
+                        <td>
+                          <button
+                            onClick={() => handleDeleteActivity(act.id)}
+                            className="btn-trash-inline"
+                            title="Delete entry"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="empty-state-notice">
+                <Leaf size={24} className="icon-mint" />
+                <span>No activities recorded yet. Use the Quick Activity Logger above to record your first entry.</span>
               </div>
-            </div>
-
-            <div className="activity-feed">
-              <div className="feed-item">
-                <span className="feed-status-dot completed" />
-                <div className="feed-details">
-                  <strong>Open-Meteo Ingestion Cycle</strong>
-                  <small>Recorded temperature, rain, wind, pressure</small>
-                </div>
-                <span className="feed-time">Just now</span>
-              </div>
-
-              <div className="feed-item">
-                <span className="feed-status-dot completed" />
-                <div className="feed-details">
-                  <strong>Statistical Anomaly Scan</strong>
-                  <small>MAD & Robust Z-score validation completed</small>
-                </div>
-                <span className="feed-time">2m ago</span>
-              </div>
-
-              <div className="feed-item">
-                <span className="feed-status-dot completed" />
-                <div className="feed-details">
-                  <strong>OpenAQ Ground Sync</strong>
-                  <small>Checked ambient station air quality</small>
-                </div>
-                <span className="feed-time">15m ago</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Data Sources & Freshness */}
-          <div className="tracker-card card-data-sources">
-            <div className="tracker-card-header">
-              <div>
-                <h2 className="card-section-title">
-                  <Database size={18} className="icon-mint" />
-                  Data Sources & Freshness
-                </h2>
-                <p className="card-subtitle-small">Authoritative provider telemetry status</p>
-              </div>
-            </div>
-
-            <div className="sources-list">
-              <div className="source-row">
-                <div className="source-info">
-                  <strong>Open-Meteo Weather API</strong>
-                  <small>Weather, rain, wind, atmospheric pressure ({overview?.recentObservations?.length || 0} active telemetry channels)</small>
-                </div>
-                <span className="source-badge live">Operational</span>
-              </div>
-
-              <div className="source-row">
-                <div className="source-info">
-                  <strong>OpenAQ Air Quality API</strong>
-                  <small>Ground station PM2.5, PM10, ozone</small>
-                </div>
-                <span className="source-badge live">Operational</span>
-              </div>
-
-              <div className="source-row">
-                <div className="source-info">
-                  <strong>NASA POWER / Climatology</strong>
-                  <small>1991–2020 WMO Standard Reference Normals</small>
-                </div>
-                <span className="source-badge normal">Verified</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

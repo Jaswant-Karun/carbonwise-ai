@@ -1,27 +1,30 @@
 import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  AlertTriangle,
+  Activity,
   Bell,
   CloudSun,
   FileText,
   Gauge,
+  History,
   Leaf,
   LogOut,
   Settings,
   Sparkles,
-  TrendingUp,
+  Target,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: Gauge },
-  { path: '/live-monitoring', label: 'Live Monitoring', icon: CloudSun },
-  { path: '/climate-analytics', label: 'Climate Analytics', icon: TrendingUp },
-  { path: '/anomaly-detection', label: 'Anomaly Detection', icon: AlertTriangle },
+  { path: '/dashboard', label: 'Executive Dashboard', icon: Gauge },
+  { path: '/activities', label: 'Activity Log (Track)', icon: History },
+  { path: '/carbon-intelligence', label: 'Carbon Intelligence', icon: Sparkles },
+  { path: '/carbon-forecast', label: 'Emission Forecast', icon: Activity },
+  { path: '/action-plan', label: 'Action Plan (Reduce)', icon: Target },
+  { path: '/impact', label: 'Impact & Baselines', icon: Leaf },
+  { path: '/live-monitoring', label: 'Live Telemetry', icon: CloudSun },
   { path: '/alerts', label: 'Environmental Alerts', icon: Bell },
-  { path: '/ai-insights', label: 'AI Insights', icon: Sparkles },
-  { path: '/reports', label: 'Reports', icon: FileText },
+  { path: '/reports', label: 'Compliance Reports', icon: FileText },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -38,7 +41,7 @@ const Sidebar = () => {
           <div className="brand-title">
             CarbonWise <span className="brand-badge">AI</span>
           </div>
-          <span className="brand-subtitle">Monitor. Detect. Analyze. Alert.</span>
+          <span className="brand-subtitle">Track. Analyze. Predict. Reduce.</span>
         </div>
       </div>
 
@@ -47,13 +50,13 @@ const Sidebar = () => {
           {user?.name?.charAt(0)?.toUpperCase() || 'C'}
         </span>
         <div className="sidebar-profile-info">
-          <strong>{user?.name || 'Climate Analyst'}</strong>
-          <span>Environmental Workspace</span>
+          <strong>{user?.name || 'Sustainability Lead'}</strong>
+          <span>Carbon & Climate Workspace</span>
         </div>
       </div>
 
       <nav className="sidebar-nav" aria-label="Primary navigation">
-        <span className="sidebar-label">Environmental Intelligence</span>
+        <span className="sidebar-label">Platform Modules</span>
         <ul>
           {navItems.map((item) => {
             const NavIcon = item.icon;
@@ -79,7 +82,7 @@ const Sidebar = () => {
             <Leaf size={22} className="promo-leaf-icon" />
           </div>
           <strong>SDG-13 Climate Action</strong>
-          <p>Real-time environmental telemetry and automated anomaly intelligence.</p>
+          <p>Automated carbon intelligence, predictive modeling, and live environmental telemetry.</p>
         </div>
 
         <button onClick={logout} className="logout-button" type="button">
