@@ -12,11 +12,11 @@ const ACTION_CATALOG = {
       title: 'Reduce unnecessary electricity usage & standby power',
       explanation: 'Unplug idle chargers, switch off power strips, and turn off lighting and displays when rooms are vacant.',
       target: 'Eliminate standby loads and cut unneeded lighting daily.',
-      reductionRate: 0.12,
-      defaultReductionKg: 8.5,
+      reductionRate: 0.15,
+      defaultReductionKg: 10.0,
       impactLevel: 'high',
       rationale: 'Avoids passive phantom electrical loads across workspace and home.',
-      calcFormula: (emissions) => `12% reduction of recent electricity footprint (${emissions} kg CO₂e) through standby power elimination`,
+      calcFormula: (emissions) => `15% reduction of recent electricity footprint (${emissions} kg CO₂e) through standby power elimination`,
     },
     {
       actionType: 'ac_efficiency',
@@ -49,7 +49,7 @@ const ACTION_CATALOG = {
       defaultReductionKg: 25.0,
       impactLevel: 'high',
       rationale: 'Transitioning to renewable electricity tariffs permanently abates scope 2 grid intensity.',
-      calcFormula: (emissions) => `40% potential decarbonization of electricity footprint (${emissions} kg CO₂e) via zero-carbon tariff`,
+      calcFormula: (emissions) => `40% potential reduction of electricity footprint (${emissions} kg CO₂e) via zero-carbon tariff`,
     },
   ],
 
@@ -386,7 +386,11 @@ const generateAllRecommendations = ({ intelligence, completedHistory = [] }) => 
     return counts;
   }, {});
 
-  const categoryMap = intelligence.categories || {};
+  const categoryMap = {};
+  (intelligence.categoryBreakdown || []).forEach((item) => {
+    categoryMap[item.category] = item;
+  });
+
   const totalEmissions = intelligence.totals?.currentPeriod || 0;
   const recommendations = [];
 
@@ -438,11 +442,19 @@ const generateAllRecommendations = ({ intelligence, completedHistory = [] }) => 
     });
   });
 
-  // Sort: High impact first, then by largest potential savings
+  // Sort: Prioritize categories with actual recorded emissions first, then high impact, then largest emission contributor, then potential savings
   recommendations.sort((a, b) => {
+    const aHasData = (a.categoryEmissionsKg || 0) > 0 ? 1 : 0;
+    const bHasData = (b.categoryEmissionsKg || 0) > 0 ? 1 : 0;
+    if (aHasData !== bHasData) return bHasData - aHasData;
+
     const impactWeight = { high: 3, medium: 2, low: 1 };
-    const diff = (impactWeight[b.impactLevel] || 0) - (impactWeight[a.impactLevel] || 0);
-    if (diff !== 0) return diff;
+    const impactDiff = (impactWeight[b.impactLevel] || 0) - (impactWeight[a.impactLevel] || 0);
+    if (impactDiff !== 0) return impactDiff;
+
+    const catEmissionsDiff = (b.categoryEmissionsKg || 0) - (a.categoryEmissionsKg || 0);
+    if (catEmissionsDiff !== 0) return catEmissionsDiff;
+
     return (b.estimatedPotentialSavingsKg || 0) - (a.estimatedPotentialSavingsKg || 0);
   });
 
