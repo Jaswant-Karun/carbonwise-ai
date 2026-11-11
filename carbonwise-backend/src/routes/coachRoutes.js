@@ -8,6 +8,8 @@ const router = express.Router();
 router.use(protect);
 router.post('/plans', createPlan);
 router.get('/plans', getPlans);
+router.post('/plan', createPlan);
+router.get('/plan', getPlans);
 router.get('/plans/:id', getPlan);
 router.patch('/actions/:actionId', updateAction);
 router.get('/goals', getGoals);

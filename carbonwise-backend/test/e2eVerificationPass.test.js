@@ -2,9 +2,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const jwt = require('jsonwebtoken');
 const db = require('../src/config/db');
+const { app } = require('../src/index');
 
 const API_BASE = 'http://localhost:5000/api';
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+
+let localServer;
+let startedLocal = false;
 
 const apiRequest = async (path, { method = 'GET', body = null, token = null } = {}) => {
   const headers = { 'Content-Type': 'application/json' };
@@ -21,6 +25,19 @@ const apiRequest = async (path, { method = 'GET', body = null, token = null } = 
 };
 
 test('CarbonWise AI - End-to-End Verification Pass', async (t) => {
+  // Ensure server is listening
+  try {
+    const probe = await fetch('http://localhost:5000/api/health');
+    if (!probe.ok) throw new Error();
+  } catch {
+    await new Promise((resolve) => {
+      localServer = app.listen(5000, () => {
+        startedLocal = true;
+        resolve();
+      });
+    });
+  }
+
   let user1Token;
   let user2Token;
   let user1Id;
@@ -273,5 +290,8 @@ test('CarbonWise AI - End-to-End Verification Pass', async (t) => {
   t.after(async () => {
     if (user1Id) await db.query('DELETE FROM users WHERE id = $1', [user1Id]);
     if (user2Id) await db.query('DELETE FROM users WHERE id = $1', [user2Id]);
+    if (startedLocal && localServer) {
+      await new Promise((resolve) => localServer.close(resolve));
+    }
   });
 });

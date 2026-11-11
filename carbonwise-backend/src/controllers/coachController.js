@@ -110,6 +110,27 @@ const getPlans = async (req, res) => {
       const actions = await db.query('SELECT * FROM coach_actions WHERE plan_id = $1 AND user_id = $2 ORDER BY day_number ASC', [plan.id, req.user.id]);
       result.push(serializePlan(plan, actions.rows));
     }
+    if (result.length === 0) {
+      const activities = await getActivities(req.user.id);
+      const plan = buildCoachPlan({ activities });
+      const planResult = await db.query(
+        `INSERT INTO coach_plans (user_id, period_days, narrative, narrative_source)
+         VALUES ($1, 7, NULL, 'deterministic') RETURNING *`,
+        [req.user.id],
+      );
+      const planRow = planResult.rows[0];
+      for (const action of plan.actions) {
+        await db.query(
+          `INSERT INTO coach_actions
+            (plan_id, user_id, day_number, category, title, explanation, suggested_target, estimated_potential_savings_kg)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [planRow.id, req.user.id, action.dayNumber, action.category, action.title, action.explanation,
+            action.suggestedTarget, action.estimatedPotentialSavingsKg],
+        );
+      }
+      const actionResult = await db.query('SELECT * FROM coach_actions WHERE plan_id = $1 ORDER BY day_number ASC', [planRow.id]);
+      result.push(serializePlan(planRow, actionResult.rows));
+    }
     res.json(result);
   } catch (error) {
     sendError(res, error, 'Unable to fetch coach plans');
