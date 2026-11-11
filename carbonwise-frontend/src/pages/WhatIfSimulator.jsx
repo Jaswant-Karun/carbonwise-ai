@@ -159,12 +159,12 @@ const WhatIfSimulator = () => {
           alignItems: 'center',
           gap: '12px',
           fontSize: '0.82rem',
-          color: '#94a3b8',
+          color: '#4A5568',
         }}
       >
         <span style={{ fontSize: '1rem' }}>🔬</span>
         <div>
-          <strong style={{ color: '#f1f5f9' }}>Data Separation Protocol:</strong> Modeled scenario savings are hypothetical calculations derived from your activity logs and standard emission factors. Simulated projections are strictly kept separate from real-world meteorological observations and verified ambient air quality measurements.
+          <strong style={{ color: '#183247' }}>Data Separation Protocol:</strong> Modeled scenario savings are hypothetical calculations derived from your activity logs and standard emission factors. Simulated projections are strictly kept separate from real-world meteorological observations and verified ambient air quality measurements.
         </div>
       </div>
 

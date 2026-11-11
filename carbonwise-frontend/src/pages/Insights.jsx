@@ -122,7 +122,7 @@ const Insights = () => {
       {activeTab === 'environmental' ? (
         <div style={{ display: 'grid', gap: '20px' }}>
           <div className="tracker-card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-            <span style={{ fontSize: '0.88rem', color: '#f1f5f9', fontWeight: 600 }}>Select Monitored Region:</span>
+            <span style={{ fontSize: '0.88rem', color: '#183247', fontWeight: 700 }}>Select Monitored Region:</span>
             <select
               value={selectedRegionId}
               onChange={(e) => setSelectedRegionId(e.target.value)}

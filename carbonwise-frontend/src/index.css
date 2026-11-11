@@ -3305,7 +3305,7 @@ h1, h2, h3, h4, h5, h6 {
 .select-dropdown {
   background: var(--surface-soft);
   border: 1px solid var(--surface-border);
-  color: #f1f5f9;
+  color: #183247;
   font-size: 0.8rem;
   font-weight: 500;
   padding: 7px 12px;
@@ -3364,7 +3364,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .telemetry-banner-content strong {
-  color: #f8fafc;
+  color: #183247;
 }
 
 .telemetry-banner-content a {
@@ -3562,7 +3562,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .kpi-dual-values strong {
   font-size: 1.1rem;
-  color: #f1f5f9;
+  color: #183247;
 }
 
 .kpi-divider-v {
@@ -3774,7 +3774,7 @@ h1, h2, h3, h4, h5, h6 {
 .cat-icon-title strong {
   display: block;
   font-size: 0.88rem;
-  color: #f1f5f9;
+  color: #183247;
 }
 
 .cat-run-rate {
@@ -3944,7 +3944,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .outlook-footer-stat strong {
-  color: #f1f5f9;
+  color: #183247;
 }
 
 /* What-If Simulator Component Styles */
@@ -4011,7 +4011,7 @@ h1, h2, h3, h4, h5, h6 {
 .whatif-panel-title {
   font-size: 0.92rem;
   font-weight: 700;
-  color: #f1f5f9;
+  color: #183247;
   margin: 0 0 6px;
 }
 
@@ -4032,7 +4032,7 @@ h1, h2, h3, h4, h5, h6 {
 .slider-title {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #f1f5f9;
+  color: #183247;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -4157,7 +4157,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .comp-val {
-  color: #f1f5f9;
+  color: #183247;
 }
 
 .comp-val.simulated {
@@ -5653,7 +5653,7 @@ h1, h2, h3, h4, h5, h6 {
 .select-region {
   background: var(--surface-soft);
   border: 1px solid var(--surface-border);
-  color: #f1f5f9;
+  color: #183247;
   font-size: 0.82rem;
   font-weight: 600;
   padding: 8px 12px;

@@ -257,8 +257,8 @@ const AlertsDashboard = () => {
         }}
       >
         <Info size={19} style={{ color: '#60a5fa', flexShrink: 0, marginTop: '2px' }} />
-        <div style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.5 }}>
-          <strong style={{ color: '#f1f5f9' }}>Data Sources & Scientific Transparency:</strong> Ground air quality measurements are retrieved via the official <a href="https://openaq.org" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>OpenAQ API</a>. In adherence to meteorological standards, ambient particulate pollution and air quality indicators are evaluated separately from long-term climate change baselines. Official public health warnings and civil defense declarations are issued solely by designated governmental authorities.
+        <div style={{ fontSize: '0.82rem', color: '#4A5568', lineHeight: 1.5 }}>
+          <strong style={{ color: '#183247' }}>Data Sources & Scientific Transparency:</strong> Ground air quality measurements are retrieved via the official <a href="https://openaq.org" target="_blank" rel="noopener noreferrer" style={{ color: '#16845B', textDecoration: 'underline' }}>OpenAQ API</a>. In adherence to meteorological standards, ambient particulate pollution and air quality indicators are evaluated separately from long-term climate change baselines. Official public health warnings and civil defense declarations are issued solely by designated governmental authorities.
         </div>
       </div>
 
@@ -311,15 +311,15 @@ const AlertsDashboard = () => {
                     flexWrap: 'wrap',
                     gap: '10px',
                     padding: '12px 14px',
-                    background: 'rgba(15, 23, 42, 0.6)',
+                    background: '#F7F9F7',
                     borderRadius: '8px',
                     marginBottom: '16px',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    border: '1px solid #E4EBE6',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <MapPin size={16} style={{ color: 'var(--mint-strong)' }} />
-                    <span style={{ fontSize: '0.85rem', color: '#f1f5f9' }}>
+                    <MapPin size={16} style={{ color: '#16845B' }} />
+                    <span style={{ fontSize: '0.85rem', color: '#183247' }}>
                       Station: <strong>{airQualityData.stationName}</strong>
                     </span>
                     {airQualityData.sourceUrl && (
@@ -329,7 +329,7 @@ const AlertsDashboard = () => {
                         rel="noopener noreferrer"
                         style={{
                           fontSize: '0.78rem',
-                          color: '#38bdf8',
+                          color: '#16845B',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '4px',
@@ -340,7 +340,7 @@ const AlertsDashboard = () => {
                       </a>
                     )}
                   </div>
-                  <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#718096' }}>
                     {airQualityData.attribution}
                   </span>
                 </div>
@@ -361,22 +361,23 @@ const AlertsDashboard = () => {
                       <div
                         key={m.pollutant}
                         style={{
-                          background: 'rgba(13, 20, 34, 0.7)',
-                          border: `1px solid ${severity === 'critical' ? '#ef4444' : severity === 'warning' ? '#f59e0b' : 'rgba(255, 255, 255, 0.08)'}`,
+                          background: '#FFFFFF',
+                          border: `1px solid ${severity === 'critical' ? '#FECACA' : severity === 'warning' ? '#FDE68A' : '#E4EBE6'}`,
                           borderRadius: '12px',
                           padding: '14px 16px',
+                          boxShadow: '0 2px 8px rgba(24, 50, 71, 0.04)',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                          <strong style={{ fontSize: '0.92rem', color: '#f1f5f9' }}>{m.label}</strong>
+                          <strong style={{ fontSize: '0.92rem', color: '#183247' }}>{m.label}</strong>
                           <span
                             style={{
                               fontSize: '0.72rem',
                               padding: '2px 8px',
                               borderRadius: '12px',
-                              fontWeight: 600,
-                              background: severity === 'critical' ? '#ef444425' : severity === 'warning' ? '#f59e0b25' : '#10b98125',
-                              color: severity === 'critical' ? '#f87171' : severity === 'warning' ? '#fbbf24' : '#34d399',
+                              fontWeight: 700,
+                              background: severity === 'critical' ? '#FEE2E2' : severity === 'warning' ? '#FEF3C7' : '#DCFCE7',
+                              color: severity === 'critical' ? '#991B1B' : severity === 'warning' ? '#92400E' : '#166534',
                               border: '1px solid currentColor',
                             }}
                           >
@@ -385,13 +386,13 @@ const AlertsDashboard = () => {
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', margin: '8px 0 4px' }}>
-                          <span style={{ fontSize: '1.65rem', fontWeight: 800, color: '#ffffff' }}>
+                          <span style={{ fontSize: '1.65rem', fontWeight: 800, color: '#183247' }}>
                             {m.value}
                           </span>
-                          <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>{m.unit}</span>
+                          <span style={{ fontSize: '0.85rem', color: '#718096' }}>{m.unit}</span>
                         </div>
 
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#718096', display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
                           <span>Source raw: {m.originalValue} {m.originalUnit}</span>
                           {evalMatch?.guideline && (
                             <span>WHO limit: {evalMatch.guideline} {m.unit}</span>
@@ -399,7 +400,7 @@ const AlertsDashboard = () => {
                         </div>
 
                         {evalMatch?.explanation && (
-                          <p style={{ fontSize: '0.74rem', color: '#94a3b8', margin: '8px 0 0', lineHeight: 1.4, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                          <p style={{ fontSize: '0.74rem', color: '#4A5568', margin: '8px 0 0', lineHeight: 1.4, borderTop: '1px solid #E4EBE6', paddingTop: '6px' }}>
                             {evalMatch.explanation}
                           </p>
                         )}
@@ -412,20 +413,20 @@ const AlertsDashboard = () => {
               /* Requirement 9: Show 'Data unavailable' when no station exists rather than treating missing data as clean air */
               <div
                 style={{
-                  background: 'rgba(239, 68, 68, 0.08)',
-                  border: '1px dashed rgba(239, 68, 68, 0.4)',
+                  background: '#FEF2F2',
+                  border: '1px dashed #FCA5A5',
                   borderRadius: '12px',
                   padding: '24px',
                   textAlign: 'center',
                 }}
               >
-                <AlertCircle size={32} style={{ color: '#f87171', margin: '0 auto 10px' }} />
-                <h4 style={{ color: '#f1f5f9', marginBottom: '6px' }}>
+                <AlertCircle size={32} style={{ color: '#DC2626', margin: '0 auto 10px' }} />
+                <h4 style={{ color: '#991B1B', fontWeight: 700, fontSize: '1.05rem', marginBottom: '6px' }}>
                   {airQualityData?.status === 'auth_required'
                     ? 'OpenAQ API Authentication Required'
                     : 'Data Unavailable: No Ground Air-Quality Station within 25 km'}
                 </h4>
-                <p style={{ color: '#94a3b8', fontSize: '0.85rem', maxWidth: '620px', margin: '0 auto 12px' }}>
+                <p style={{ color: '#4A5568', fontSize: '0.85rem', maxWidth: '620px', margin: '0 auto 14px', lineHeight: 1.5 }}>
                   {airQualityData?.message ||
                     'No active OpenAQ ground sensor station is registered within a 25 km radius of this location. In accordance with environmental safety standards, missing telemetry is explicitly flagged as data unavailable and is never assumed to represent clean air.'}
                 </p>
@@ -434,10 +435,10 @@ const AlertsDashboard = () => {
                     href="https://openaq.org"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn"
-                    style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.78rem', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                   >
-                    Explore OpenAQ Station Map <ExternalLink size={13} style={{ marginLeft: '4px' }} />
+                    Explore OpenAQ Station Map <ExternalLink size={13} />
                   </a>
                 </div>
               </div>
@@ -449,8 +450,8 @@ const AlertsDashboard = () => {
       {/* Filter Bar */}
       <section className="tracker-card" style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-          <Filter size={17} style={{ color: 'var(--mint-strong)' }} />
-          <strong style={{ fontSize: '0.92rem', color: '#f1f5f9' }}>Alert Filtering & Classification</strong>
+          <Filter size={17} style={{ color: '#16845B' }} />
+          <strong style={{ fontSize: '0.98rem', fontWeight: 700, color: '#183247' }}>Alert Filtering & Classification</strong>
         </div>
 
         <div
@@ -598,21 +599,22 @@ const AlertsDashboard = () => {
                             fontSize: '0.72rem',
                             fontWeight: 600,
                             background: isAirQuality
-                              ? 'rgba(16, 185, 129, 0.15)'
+                              ? '#DCFCE7'
                               : isDataQuality
-                              ? 'rgba(239, 68, 68, 0.15)'
-                              : 'rgba(59, 130, 246, 0.15)',
+                              ? '#FEE2E2'
+                              : '#DBEAFE',
                             color: isAirQuality
-                              ? '#34d399'
+                              ? '#166534'
                               : isDataQuality
-                              ? '#f87171'
-                              : '#60a5fa',
+                              ? '#991B1B'
+                              : '#1E40AF',
+                            border: `1px solid ${isAirQuality ? '#BBF7D0' : isDataQuality ? '#FECACA' : '#BFDBFE'}`,
                           }}
                         >
                           {categoryLabels[alert.anomaly_category] || alert.anomaly_category}
                         </span>
 
-                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f1f5f9' }}>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#183247' }}>
                           {alert.region_name} · {alert.metric?.toUpperCase()}
                         </span>
 
@@ -620,8 +622,8 @@ const AlertsDashboard = () => {
                           <span
                             style={{
                               fontSize: '0.7rem',
-                              color: '#94a3b8',
-                              background: 'rgba(255, 255, 255, 0.05)',
+                              color: '#718096',
+                              background: '#F0F4F2',
                               padding: '2px 6px',
                               borderRadius: '4px',
                             }}
@@ -637,44 +639,45 @@ const AlertsDashboard = () => {
                             fontSize: '0.74rem',
                             padding: '3px 8px',
                             borderRadius: '6px',
-                            fontWeight: 600,
+                            fontWeight: 700,
                             background:
                               alert.status === 'open'
-                                ? 'rgba(245, 158, 11, 0.2)'
+                                ? '#FEF3C7'
                                 : alert.status === 'acknowledged'
-                                ? 'rgba(59, 130, 246, 0.2)'
-                                : 'rgba(16, 185, 129, 0.2)',
+                                ? '#DBEAFE'
+                                : '#DCFCE7',
                             color:
                               alert.status === 'open'
-                                ? '#fbbf24'
+                                ? '#92400E'
                                 : alert.status === 'acknowledged'
-                                ? '#60a5fa'
-                                : '#34d399',
+                                ? '#1E40AF'
+                                : '#166534',
+                            border: `1px solid ${alert.status === 'open' ? '#FDE68A' : alert.status === 'acknowledged' ? '#BFDBFE' : '#BBF7D0'}`,
                           }}
                         >
                           Status: {alert.status}
                         </span>
 
-                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#718096' }}>
                           {alert.observed_at ? new Date(alert.observed_at).toLocaleString() : 'Recent'}
                         </span>
                       </div>
                     </div>
 
                     {/* Explanation */}
-                    <p style={{ fontSize: '0.84rem', color: '#cbd5e1', lineHeight: 1.5, margin: '6px 0 10px' }}>
+                    <p style={{ fontSize: '0.84rem', color: '#4A5568', lineHeight: 1.5, margin: '6px 0 10px' }}>
                       {alert.explanation}
                     </p>
 
                     {/* Evidence & Scientific Attribution Strip */}
                     <div
                       style={{
-                        background: 'rgba(15, 23, 42, 0.5)',
-                        border: '1px solid rgba(255, 255, 255, 0.04)',
+                        background: '#F7F9F7',
+                        border: '1px solid #E4EBE6',
                         borderRadius: '8px',
                         padding: '10px 12px',
                         fontSize: '0.78rem',
-                        color: '#94a3b8',
+                        color: '#4A5568',
                         display: 'flex',
                         flexWrap: 'wrap',
                         alignItems: 'center',
@@ -684,20 +687,20 @@ const AlertsDashboard = () => {
                     >
                       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                         <span>
-                          Observed Value: <strong style={{ color: '#f1f5f9' }}>{alert.observed_value}</strong>
+                          Observed Value: <strong style={{ color: '#183247' }}>{alert.observed_value}</strong>
                         </span>
                         {alert.baseline_value != null && (
                           <span>
-                            Baseline: <strong style={{ color: '#f1f5f9' }}>{alert.baseline_value}</strong>
+                            Baseline: <strong style={{ color: '#183247' }}>{alert.baseline_value}</strong>
                           </span>
                         )}
                         {alert.threshold_value != null && (
                           <span>
-                            Guideline Limit: <strong style={{ color: '#f1f5f9' }}>{alert.threshold_value}</strong>
+                            Guideline Limit: <strong style={{ color: '#183247' }}>{alert.threshold_value}</strong>
                           </span>
                         )}
                         <span>
-                          Source: <strong style={{ color: '#f1f5f9' }}>{alert.data_source || 'Ground Telemetry'}</strong>
+                          Source: <strong style={{ color: '#183247' }}>{alert.data_source || 'Ground Telemetry'}</strong>
                         </span>
                       </div>
 
@@ -849,17 +852,17 @@ const AlertsDashboard = () => {
         >
           <div
             style={{
-              background: '#0e1626',
-              border: '1px solid #1e2c44',
+              background: '#FFFFFF',
+              border: '1px solid #E4EBE6',
               borderRadius: '16px',
               padding: '24px',
               maxWidth: '480px',
               width: '100%',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+              boxShadow: '0 20px 40px rgba(24, 50, 71, 0.15)',
             }}
           >
-            <h3 style={{ color: '#f1f5f9', marginBottom: '8px' }}>Resolve Environmental Alert</h3>
-            <p style={{ color: '#94a3b8', fontSize: '0.84rem', marginBottom: '16px', lineHeight: 1.5 }}>
+            <h3 style={{ color: '#183247', fontWeight: 700, fontSize: '1.15rem', marginBottom: '8px' }}>Resolve Environmental Alert</h3>
+            <p style={{ color: '#4A5568', fontSize: '0.84rem', marginBottom: '16px', lineHeight: 1.5 }}>
               Record the scientific verification, mitigation action, or justification for resolving alert #{resolutionModal.alertId}. This will be added to the immutable resolution audit history.
             </p>
 
@@ -872,10 +875,10 @@ const AlertsDashboard = () => {
                 placeholder="e.g., Air quality index verified nominal via subsequent hourly ground station telemetry."
                 style={{
                   width: '100%',
-                  background: '#090d16',
-                  border: '1px solid var(--surface-border)',
+                  background: '#F7F9F7',
+                  border: '1px solid #E4EBE6',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: '#183247',
                   padding: '10px',
                   fontSize: '0.84rem',
                   outline: 0,
@@ -887,14 +890,14 @@ const AlertsDashboard = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <button
                 type="button"
-                className="text-button"
+                className="btn btn-outline-secondary"
                 onClick={() => setResolutionModal({ isOpen: false, alertId: null, targetStatus: 'resolved', note: '' })}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="btn"
+                className="btn btn-primary"
                 onClick={() => handleUpdateStatus(resolutionModal.alertId, resolutionModal.targetStatus, resolutionModal.note)}
                 disabled={actionInProgress === resolutionModal.alertId}
               >

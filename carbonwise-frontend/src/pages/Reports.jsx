@@ -1239,13 +1239,13 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
             }}
           >
             <Info size={18} style={{ color: '#60a5fa', flexShrink: 0, marginTop: '2px' }} />
-            <div style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.5 }}>
-              <strong style={{ color: '#f1f5f9' }}>Reporting Integrity Architecture:</strong> All statistical trends, decadal warming rates, and baseline comparisons are computed deterministically from verified Open-Meteo and NASA POWER datasets. Gemini translates verified data into structured executive briefs without fabricating figures.
+            <div style={{ fontSize: '0.82rem', color: '#4A5568', lineHeight: 1.5 }}>
+              <strong style={{ color: '#183247' }}>Reporting Integrity Architecture:</strong> All statistical trends, decadal warming rates, and baseline comparisons are computed deterministically from verified Open-Meteo and NASA POWER datasets. Gemini translates verified data into structured executive briefs without fabricating figures.
             </div>
           </div>
 
           <div className="tracker-card" style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '1.05rem', color: '#f1f5f9', marginBottom: '14px' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#183247', marginBottom: '14px' }}>
               Configure Regional Climate Intelligence Report
             </h3>
 
@@ -1320,10 +1320,11 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
             <div
               className="tracker-card"
               style={{
-                background: 'linear-gradient(145deg, rgba(14, 22, 38, 0.95), rgba(9, 13, 22, 0.98))',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
+                background: '#FFFFFF',
+                border: '1px solid #C6E7D6',
                 borderRadius: '16px',
                 padding: '24px',
+                boxShadow: '0 4px 16px rgba(24, 50, 71, 0.04)',
               }}
             >
               <div
@@ -1333,7 +1334,7 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                   alignItems: 'flex-start',
                   flexWrap: 'wrap',
                   gap: '12px',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderBottom: '1px solid #E4EBE6',
                   paddingBottom: '16px',
                   marginBottom: '20px',
                 }}
@@ -1342,46 +1343,43 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                     <span
                       style={{
-                        background: 'rgba(16, 185, 129, 0.15)',
-                        color: 'var(--mint-strong)',
-                        padding: '2px 8px',
+                        background: '#DCFCE7',
+                        color: '#166534',
+                        padding: '3px 9px',
                         borderRadius: '6px',
                         fontSize: '0.72rem',
                         fontWeight: 700,
                         textTransform: 'uppercase',
-                        border: '1px solid currentColor',
+                        border: '1px solid #BBF7D0',
                       }}
                     >
                       Executive Intelligence Summary
                     </span>
-                    <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                    <span style={{ fontSize: '0.78rem', color: '#718096' }}>
                       Generated {new Date(climateReport.generatedAt).toLocaleString()}
                     </span>
                   </div>
-                  <h3 style={{ fontSize: '1.25rem', color: '#f1f5f9', margin: '4px 0' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#183247', margin: '4px 0' }}>
                     {climateReport.report.summary || `${climateReport.region?.name} Climate Assessment`}
                   </h3>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                    Target Region: <strong style={{ color: '#f1f5f9' }}>{climateReport.region?.name}</strong> · Parameter: <strong style={{ color: '#f1f5f9' }}>{climateReport.parameter}</strong> ({climateReport.timeRange})
+                  <div style={{ fontSize: '0.8rem', color: '#718096' }}>
+                    Target Region: <strong style={{ color: '#183247' }}>{climateReport.region?.name}</strong> · Parameter: <strong style={{ color: '#183247' }}>{climateReport.parameter}</strong> ({climateReport.timeRange})
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  className="btn"
+                  className="btn btn-outline-secondary"
                   onClick={handleCopyReport}
                   style={{
                     fontSize: '0.78rem',
                     padding: '8px 14px',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    color: '#f1f5f9',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
                   }}
                 >
-                  {copied ? <Check size={14} style={{ color: '#34d399' }} /> : <Copy size={14} />}
+                  {copied ? <Check size={14} style={{ color: '#16845B' }} /> : <Copy size={14} />}
                   {copied ? 'Copied to Clipboard' : 'Copy Executive Brief'}
                 </button>
               </div>

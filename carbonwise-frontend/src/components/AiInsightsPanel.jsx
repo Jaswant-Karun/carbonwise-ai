@@ -92,10 +92,10 @@ const AiInsightsPanel = ({ regionId, regionName, className = '' }) => {
             <Sparkles size={17} style={{ color: '#38bdf8' }} />
           </div>
           <div>
-            <h3 style={{ fontSize: '1.02rem', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>
+            <h3 style={{ fontSize: '1.02rem', fontWeight: 700, color: '#183247', margin: 0 }}>
               AI Climate & Environmental Insights
             </h3>
-            <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+            <span style={{ fontSize: '0.74rem', color: '#718096' }}>
               {regionName ? `Context: ${regionName}` : 'Regional Telemetry'} · Powered by Gemini Assistant
             </span>
           </div>
@@ -201,14 +201,14 @@ const AiInsightsPanel = ({ regionId, regionName, className = '' }) => {
                         textTransform: 'uppercase',
                         padding: '2px 6px',
                         borderRadius: '4px',
-                        background: isWarning ? '#f59e0b20' : isInfo ? '#38bdf820' : '#10b98120',
-                        color: isWarning ? '#fbbf24' : isInfo ? '#38bdf8' : '#34d399',
-                        border: '1px solid currentColor',
+                        background: isWarning ? '#FEF3C7' : isInfo ? '#DBEAFE' : '#DCFCE7',
+                        color: isWarning ? '#92400E' : isInfo ? '#1E40AF' : '#166534',
+                        border: `1px solid ${isWarning ? '#FDE68A' : isInfo ? '#BFDBFE' : '#BBF7D0'}`,
                       }}
                     >
                       {item.severity || 'Normal'}
                     </span>
-                    <strong style={{ fontSize: '0.86rem', color: '#f1f5f9' }}>{item.title}</strong>
+                    <strong style={{ fontSize: '0.86rem', color: '#183247' }}>{item.title}</strong>
                   </div>
 
                   <button
@@ -216,7 +216,7 @@ const AiInsightsPanel = ({ regionId, regionName, className = '' }) => {
                     style={{
                       background: 'transparent',
                       border: 0,
-                      color: '#94a3b8',
+                      color: '#718096',
                       cursor: 'pointer',
                       padding: '2px',
                     }}
@@ -226,7 +226,7 @@ const AiInsightsPanel = ({ regionId, regionName, className = '' }) => {
                   </button>
                 </div>
 
-                <p style={{ fontSize: '0.81rem', color: '#cbd5e1', margin: '6px 0 0', lineHeight: 1.45 }}>
+                <p style={{ fontSize: '0.81rem', color: '#4A5568', margin: '6px 0 0', lineHeight: 1.45 }}>
                   {item.whatChanged}
                 </p>
 
