@@ -112,11 +112,22 @@ const validateActions = (actions) => {
   });
 };
 
-const buildCoachPlan = ({ activities, completedHistory = [], previousActions = [] }) => {
+const buildCoachPlan = ({ activities, completedHistory = [], previousActions = [], today }) => {
   const parsedActivities = activities.map(parseActivity);
-  const bounds = getPeriodBounds(30);
+  const valid = parsedActivities.filter(Boolean);
+  let referenceToday = today;
+  if (!referenceToday && valid.length > 0) {
+    const dates = valid.map((a) => a.date).sort();
+    const latestDate = dates[dates.length - 1];
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const defaultBounds = getPeriodBounds(30, todayIso);
+    if (latestDate < defaultBounds.currentStart) {
+      referenceToday = latestDate;
+    }
+  }
+  const bounds = getPeriodBounds(30, referenceToday);
   const intelligence = buildIntelligence({
-    activities: activities.filter((activity) => parseActivity(activity)),
+    activities,
     periodDays: 30,
     ...bounds,
   });

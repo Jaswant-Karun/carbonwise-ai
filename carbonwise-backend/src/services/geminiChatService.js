@@ -2,7 +2,7 @@ const crypto = require('node:crypto');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const db = require('../config/db');
 
-const MODEL_ID = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL_ID = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 const PROMPT_VERSION = '2026-10-11-v2';
 const REQUEST_TIMEOUT_MS = Math.min(Math.max(Number(process.env.GEMINI_TIMEOUT_MS) || 12000, 3000), 30000);
 const MAX_OUTPUT_TOKENS = Math.min(Math.max(Number(process.env.GEMINI_MAX_OUTPUT_TOKENS) || 320, 64), 800);
@@ -128,7 +128,9 @@ const generateCached = async ({ userId, task, input, dataVersion, prompt, maxOut
       console.info(`[gemini] task=${task} cache_hit=false latency_ms=${Date.now() - started}`);
       return response;
     } catch (error) {
-      console.warn(`[gemini] task=${task} error=${isQuotaError(error) ? 'quota' : error.code === 'ETIMEDOUT' ? 'timeout' : 'request'}`);
+      const errorType = isQuotaError(error) ? 'quota' : error.code === 'ETIMEDOUT' ? 'timeout' : 'request';
+      const cleanReason = (error?.message || '').replace(/AIza[0-9A-Za-z-_]{35}/g, '[REDACTED]').replace(/\n/g, ' ').slice(0, 120);
+      console.warn(`[gemini] task=${task} error=${errorType}${cleanReason ? ` reason="${cleanReason}"` : ''}`);
       return fallback || fallbackText(task);
     }
   })().finally(() => inFlight.delete(key));
