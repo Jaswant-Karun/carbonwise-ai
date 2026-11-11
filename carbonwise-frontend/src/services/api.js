@@ -10,6 +10,7 @@ import {
   demoRegionalSummary,
   demoActionPlan,
   demoGoals,
+  demoAirQualityData,
 } from './demoFallbackData';
 
 const api = axios.create({
@@ -124,6 +125,9 @@ const resolveFallbackData = (config) => {
       return { data: [demoActionPlan], status: 200 };
     }
     return { data: demoActionPlan, status: 200 };
+  }
+  if (url.includes('/air-quality')) {
+    return { data: demoAirQualityData, status: 200 };
   }
   if (url.includes('/environment/regions') && !url.includes('/summary') && !url.includes('/ai-insights')) {
     return { data: demoRegions, status: 200 };

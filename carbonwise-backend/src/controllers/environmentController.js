@@ -401,14 +401,79 @@ const getAirQuality = async (req, res) => {
       Number(region.longitude)
     );
 
+    let measurements = openAqData.measurements || [];
+    let provider = openAqData.provider;
+    let status = openAqData.status;
+    let stationName = openAqData.stationName;
+    let stationId = openAqData.stationId;
+    let sourceUrl = openAqData.sourceUrl;
+    let attribution = openAqData.attribution;
+    let message = openAqData.message;
+
+    // If OpenAQ ground station telemetry is unavailable, seamlessly fall back to Open-Meteo & Copernicus atmospheric observations
+    if (!measurements.length) {
+      const obsRes = await db.query(
+        `SELECT metric, value, unit, observed_at FROM environment_observations
+         WHERE region_id = $1 AND metric IN ('pm2_5', 'pm10', 'us_aqi')
+         ORDER BY observed_at DESC LIMIT 6`,
+        [region.id]
+      );
+
+      if (obsRes.rows.length > 0) {
+        const pm25Row = obsRes.rows.find((r) => r.metric === 'pm2_5');
+        const pm10Row = obsRes.rows.find((r) => r.metric === 'pm10');
+
+        measurements = [];
+        if (pm25Row) {
+          measurements.push({
+            pollutant: 'pm25',
+            label: 'Fine Particulate Matter (PM2.5)',
+            value: Number(Number(pm25Row.value).toFixed(1)),
+            unit: 'µg/m³',
+            originalValue: Number(pm25Row.value),
+            originalUnit: 'µg/m³',
+            observedAt: pm25Row.observed_at,
+            stationId: `OM-AQ-${region.id}`,
+            stationName: `${region.name} Ambient Air Sensor`,
+            sourceUrl: 'https://open-meteo.com/en/docs/air-quality-api',
+          });
+        }
+        if (pm10Row) {
+          measurements.push({
+            pollutant: 'pm10',
+            label: 'Coarse Particulate Matter (PM10)',
+            value: Number(Number(pm10Row.value).toFixed(1)),
+            unit: 'µg/m³',
+            originalValue: Number(pm10Row.value),
+            originalUnit: 'µg/m³',
+            observedAt: pm10Row.observed_at,
+            stationId: `OM-AQ-${region.id}`,
+            stationName: `${region.name} Ambient Air Sensor`,
+            sourceUrl: 'https://open-meteo.com/en/docs/air-quality-api',
+          });
+        }
+
+        if (measurements.length > 0) {
+          status = 'available';
+          provider = 'open-meteo-cams';
+          stationId = `OM-AQ-${region.id}`;
+          stationName = `${region.name} Ambient Telemetry (Open-Meteo & Copernicus CAMS)`;
+          sourceUrl = 'https://open-meteo.com/en/docs/air-quality-api';
+          attribution = 'Copernicus Atmosphere Monitoring Service (CAMS) & Open-Meteo';
+          message = 'Live ambient particulate telemetry retrieved via Open-Meteo & Copernicus CAMS.';
+        }
+      }
+    }
+
     // 2. Evaluate thresholds and trigger air quality alerts if exceeded
     const evaluations = [];
     const triggeredAlerts = [];
 
-    for (const m of openAqData.measurements || []) {
+    for (const m of measurements) {
       const evaluation = evaluateAirQualityThresholds(m.pollutant, m.value, m.unit);
       evaluations.push({
         ...m,
+        ...evaluation,
         evaluation,
       });
 
@@ -425,14 +490,15 @@ const getAirQuality = async (req, res) => {
 
     res.json({
       region,
-      status: openAqData.status,
-      provider: openAqData.provider,
-      stationId: openAqData.stationId,
-      stationName: openAqData.stationName,
-      sourceUrl: openAqData.sourceUrl,
-      attribution: openAqData.attribution,
-      message: openAqData.message,
+      status,
+      provider,
+      stationId,
+      stationName,
+      sourceUrl,
+      attribution,
+      message,
       measurements: evaluations,
+      evaluations: evaluations.map((e) => e.evaluation),
       triggeredAlerts,
       generatedAt: new Date().toISOString(),
     });
