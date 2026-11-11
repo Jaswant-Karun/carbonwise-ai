@@ -879,7 +879,6 @@ const AlertsDashboard = () => {
                   border: '1px solid rgba(255, 255, 255, 0.12)',
                   color: '#FFFFFF',
                   borderRadius: '8px',
-                  color: '#183247',
                   padding: '10px',
                   fontSize: '0.84rem',
                   outline: 0,

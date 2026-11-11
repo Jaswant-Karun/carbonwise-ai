@@ -1372,11 +1372,11 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
             <div
               className="tracker-card"
               style={{
-                background: '#FFFFFF',
-                border: '1px solid #C6E7D6',
+                background: '#0E1726',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
                 borderRadius: '16px',
                 padding: '24px',
-                boxShadow: '0 4px 16px rgba(24, 50, 71, 0.04)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
               }}
             >
               <div
@@ -1386,7 +1386,7 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                   alignItems: 'flex-start',
                   flexWrap: 'wrap',
                   gap: '12px',
-                  borderBottom: '1px solid #E4EBE6',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                   paddingBottom: '16px',
                   marginBottom: '20px',
                 }}
@@ -1395,27 +1395,27 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                     <span
                       style={{
-                        background: '#DCFCE7',
-                        color: '#166534',
+                        background: 'rgba(16, 185, 129, 0.15)',
+                        color: '#34D399',
                         padding: '3px 9px',
                         borderRadius: '6px',
                         fontSize: '0.72rem',
                         fontWeight: 700,
                         textTransform: 'uppercase',
-                        border: '1px solid #BBF7D0',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
                       }}
                     >
                       Executive Intelligence Summary
                     </span>
-                    <span style={{ fontSize: '0.78rem', color: '#718096' }}>
+                    <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>
                       Generated {new Date(climateReport.generatedAt).toLocaleString()}
                     </span>
                   </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#183247', margin: '4px 0' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', margin: '4px 0' }}>
                     {climateReport.report.summary || `${climateReport.region?.name} Climate Assessment`}
                   </h3>
-                  <div style={{ fontSize: '0.8rem', color: '#718096' }}>
-                    Target Region: <strong style={{ color: '#183247' }}>{climateReport.region?.name}</strong> · Parameter: <strong style={{ color: '#183247' }}>{climateReport.parameter}</strong> ({climateReport.timeRange})
+                  <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>
+                    Target Region: <strong style={{ color: '#FFFFFF' }}>{climateReport.region?.name}</strong> · Parameter: <strong style={{ color: '#FFFFFF' }}>{climateReport.parameter}</strong> ({climateReport.timeRange})
                   </div>
                 </div>
 
@@ -1431,58 +1431,58 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                     gap: '6px',
                   }}
                 >
-                  {copied ? <Check size={14} style={{ color: '#16845B' }} /> : <Copy size={14} />}
+                  {copied ? <Check size={14} style={{ color: '#34D399' }} /> : <Copy size={14} />}
                   {copied ? 'Copied to Clipboard' : 'Copy Executive Brief'}
                 </button>
               </div>
 
               <div style={{ display: 'grid', gap: '16px' }}>
-                <div style={{ background: '#F0F9FF', padding: '18px 20px', borderRadius: '12px', border: '1px solid #BAE6FD' }}>
-                  <h4 style={{ color: '#0369A1', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                <div style={{ background: 'rgba(56, 189, 248, 0.08)', padding: '18px 20px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+                  <h4 style={{ color: '#38BDF8', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
                     1. Observed Trend & Historical Trajectory
                   </h4>
-                  <p style={{ color: '#183247', fontSize: '0.9rem', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
+                  <p style={{ color: '#E2E8F0', fontSize: '0.9rem', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
                     {climateReport.report.whatChanged}
                   </p>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-                  <div style={{ background: '#F0FDF4', padding: '18px 20px', borderRadius: '12px', border: '1px solid #BBF7D0' }}>
-                    <h4 style={{ color: '#166534', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                  <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '18px 20px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                    <h4 style={{ color: '#34D399', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
                       2. Reference Baseline
                     </h4>
-                    <p style={{ color: '#183247', fontSize: '0.86rem', lineHeight: 1.55, margin: 0 }}>
+                    <p style={{ color: '#E2E8F0', fontSize: '0.86rem', lineHeight: 1.55, margin: 0 }}>
                       {climateReport.report.baselineUsed}
                     </p>
                   </div>
 
-                  <div style={{ background: '#FAF5FF', padding: '18px 20px', borderRadius: '12px', border: '1px solid #E9D5FF' }}>
-                    <h4 style={{ color: '#6B21A8', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                  <div style={{ background: 'rgba(168, 85, 247, 0.08)', padding: '18px 20px', borderRadius: '12px', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
+                    <h4 style={{ color: '#C084FC', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
                       3. Data Sources & Attribution
                     </h4>
-                    <p style={{ color: '#183247', fontSize: '0.86rem', lineHeight: 1.55, margin: 0 }}>
+                    <p style={{ color: '#E2E8F0', fontSize: '0.86rem', lineHeight: 1.55, margin: 0 }}>
                       {climateReport.report.dataSource}
                     </p>
                   </div>
                 </div>
 
-                <div style={{ background: '#FFFBEB', padding: '18px 20px', borderRadius: '12px', border: '1px solid #FDE68A' }}>
-                  <h4 style={{ color: '#92400E', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                <div style={{ background: 'rgba(245, 158, 11, 0.08)', padding: '18px 20px', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                  <h4 style={{ color: '#FBBF24', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
                     4. Methodological Limitations & Model Assumptions
                   </h4>
-                  <p style={{ color: '#183247', fontSize: '0.86rem', lineHeight: 1.55, margin: 0 }}>
+                  <p style={{ color: '#E2E8F0', fontSize: '0.86rem', lineHeight: 1.55, margin: 0 }}>
                     {climateReport.report.limitations}
                   </p>
                 </div>
 
                 {climateReport.report.recommendations?.length > 0 && (
-                  <div style={{ background: '#F0FDF4', padding: '20px', borderRadius: '12px', border: '1px solid #86EFAC' }}>
-                    <h4 style={{ color: '#166534', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Lightbulb size={18} style={{ color: '#16845B' }} /> 5. Practical Adaptation & Mitigation Recommendations
+                  <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                    <h4 style={{ color: '#34D399', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Lightbulb size={18} style={{ color: '#34D399' }} /> 5. Practical Adaptation & Mitigation Recommendations
                     </h4>
-                    <ul style={{ margin: 0, paddingLeft: '22px', display: 'grid', gap: '8px', color: '#183247', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                    <ul style={{ margin: 0, paddingLeft: '22px', display: 'grid', gap: '8px', color: '#E2E8F0', fontSize: '0.88rem', lineHeight: 1.5 }}>
                       {climateReport.report.recommendations.map((rec, i) => (
-                        <li key={i}><strong style={{ color: '#183247' }}>{rec}</strong></li>
+                        <li key={i}><strong style={{ color: '#FFFFFF' }}>{rec}</strong></li>
                       ))}
                     </ul>
                   </div>

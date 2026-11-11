@@ -348,17 +348,17 @@ const LiveClimateDashboard = () => {
     },
     scales: {
       x: {
-        grid: { color: '#E4EBE6' },
-        ticks: { color: '#718096', maxTicksLimit: 12, font: { size: 10 } },
-        title: { display: true, text: 'Observation Timestamp (UTC)', color: '#718096', font: { size: 10, weight: '600' } },
+        grid: { color: 'rgba(255, 255, 255, 0.06)' },
+        ticks: { color: '#94A3B8', maxTicksLimit: 12, font: { size: 10 } },
+        title: { display: true, text: 'Observation Timestamp (UTC)', color: '#94A3B8', font: { size: 10, weight: '600' } },
       },
       y: {
-        grid: { color: '#E4EBE6' },
-        ticks: { color: '#718096', font: { size: 10 } },
+        grid: { color: 'rgba(255, 255, 255, 0.06)' },
+        ticks: { color: '#94A3B8', font: { size: 10 } },
         title: {
           display: true,
           text: activeMetric ? `${activeMetric.label} (${activeMetric.unit})` : '',
-          color: '#183247',
+          color: '#FFFFFF',
           font: { size: 11, weight: '700' },
         },
       },

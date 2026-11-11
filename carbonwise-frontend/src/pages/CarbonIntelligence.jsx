@@ -213,8 +213,8 @@ const CarbonIntelligence = () => {
       },
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: '#718096', font: { size: 11 } } },
-      y: { beginAtZero: true, grid: { color: '#E4EBE6' }, ticks: { color: '#718096', font: { size: 11 } } },
+      x: { grid: { display: false }, ticks: { color: '#94A3B8', font: { size: 11 } } },
+      y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.06)' }, ticks: { color: '#94A3B8', font: { size: 11 } } },
     },
   };
 
