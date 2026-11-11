@@ -9,6 +9,7 @@ import {
   demoRegions,
   demoRegionalSummary,
   demoActionPlan,
+  demoGoals,
 } from './demoFallbackData';
 
 const api = axios.create({
@@ -74,7 +75,54 @@ const resolveFallbackData = (config) => {
   if (url.includes('/reports/monthly') || url.includes('/reports/analytics') || url.includes('/reports')) {
     return { data: demoDetailedReport, status: 200 };
   }
-  if (url.includes('/action-plans') || url.includes('/coach')) {
+  if (url.includes('/coach/goals')) {
+    if (method === 'post') {
+      try {
+        const body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+        const newGoal = {
+          id: Date.now(),
+          period: body?.period || 'weekly',
+          targetKg: Number(body?.targetKg) || 20,
+          category: body?.category || '',
+          status: 'active',
+          currentPeriodEmissionsKg: 0,
+          actualChangeKg: 0,
+          progressPercentage: 0,
+          isTargetAchieved: false,
+          verificationStatus: 'pending',
+          createdAt: new Date().toISOString(),
+        };
+        demoGoals.unshift(newGoal);
+        return { data: newGoal, status: 201 };
+      } catch {
+        return { data: demoGoals[0], status: 201 };
+      }
+    }
+    return { data: demoGoals, status: 200 };
+  }
+  if (url.includes('/coach/recommendations')) {
+    return { data: { recommendations: demoActionPlan.recommendations, highestImpactCategories: demoActionPlan.highestImpactCategories }, status: 200 };
+  }
+  if (url.includes('/coach/actions/')) {
+    try {
+      const body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+      const parts = url.split('/');
+      const actId = Number(parts[parts.length - 1]);
+      const action = demoActionPlan.actions.find((a) => a.id === actId);
+      if (action && body?.status) {
+        action.status = body.status;
+        if (body.status === 'completed') action.completedAt = new Date().toISOString();
+        return { data: action, status: 200 };
+      }
+    } catch {
+      // fallback
+    }
+    return { data: demoActionPlan.actions[0], status: 200 };
+  }
+  if (url.includes('/coach/plans') || url.includes('/coach/plan') || url.includes('/action-plans')) {
+    if (url.includes('/plans')) {
+      return { data: [demoActionPlan], status: 200 };
+    }
     return { data: demoActionPlan, status: 200 };
   }
   if (url.includes('/environment/regions') && !url.includes('/summary') && !url.includes('/ai-insights')) {

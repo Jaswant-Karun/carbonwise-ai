@@ -120,9 +120,12 @@ const ActionPlan = () => {
         api.get('/coach/recommendations').catch(() => ({ data: { recommendations: [] } })),
       ]);
 
-      const activePlan = plansRes.data[0] || null;
+      const rawPlans = plansRes.data;
+      const activePlan = Array.isArray(rawPlans) ? rawPlans[0] : (rawPlans?.actions ? rawPlans : null);
       setPlan(activePlan);
-      setGoals(goalsRes.data || []);
+
+      const rawGoals = goalsRes.data;
+      setGoals(Array.isArray(rawGoals) ? rawGoals : rawGoals?.goals || []);
 
       // Set recommendations from dedicated endpoint or from plan payload
       const allRecs = recsRes.data?.recommendations?.length
