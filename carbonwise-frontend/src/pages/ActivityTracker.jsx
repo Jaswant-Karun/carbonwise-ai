@@ -419,6 +419,7 @@ const ActivityTracker = () => {
       // Reset form
       setForm(defaultFormData(selectedCategory));
       await fetchActivities();
+      window.dispatchEvent(new CustomEvent('carbonwise:activity-recorded'));
     } catch (err) {
       alert(err.response?.data?.message || 'Error recording activity. Please verify inputs.');
     } finally {
@@ -454,6 +455,7 @@ const ActivityTracker = () => {
       setActivities((prev) => prev.map((a) => (a.id === editingActivity.id ? res.data : a)));
       setEditingActivity(null);
       setEditForm(null);
+      window.dispatchEvent(new CustomEvent('carbonwise:activity-recorded'));
     } catch (err) {
       alert(err.response?.data?.message || 'Error updating activity.');
     } finally {
@@ -467,6 +469,7 @@ const ActivityTracker = () => {
     try {
       await api.delete(`/activities/${id}`);
       setActivities((prev) => prev.filter((a) => a.id !== id));
+      window.dispatchEvent(new CustomEvent('carbonwise:activity-recorded'));
     } catch (err) {
       alert(err.response?.data?.message || 'Could not delete activity.');
     }

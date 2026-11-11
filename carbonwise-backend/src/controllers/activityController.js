@@ -19,6 +19,15 @@ const addActivity = async (req, res) => {
       details.title = String(req.body.title).slice(0, 200);
     }
 
+    // Reject negative quantities in details or root payload
+    const numericKeys = ['value', 'kwh', 'km', 'liters', 'quantity', 'foodWasteKg', 'generatorFuelLiters', 'facilityKwh', 'spendAmount', 'carbon_emissions', 'carbonEmissions'];
+    for (const key of numericKeys) {
+      const val = details[key] !== undefined ? details[key] : req.body[key];
+      if (val !== undefined && val !== null && Number(val) < 0) {
+        return res.status(400).json({ message: `Activity input '${key}' cannot be negative.` });
+      }
+    }
+
     const calcResult = calculateEmissions({
       category: activity_type,
       details,

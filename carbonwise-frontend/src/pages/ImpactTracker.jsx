@@ -43,6 +43,11 @@ const ImpactTracker = () => {
       setError(requestError.response?.data?.message || 'Unable to load your impact tracker.');
       setStatus('error');
     });
+    const handleSync = () => { load().catch(() => {}); };
+    window.addEventListener('carbonwise:activity-recorded', handleSync);
+    return () => {
+      window.removeEventListener('carbonwise:activity-recorded', handleSync);
+    };
   }, [period]);
 
   const createBaseline = async (event) => {

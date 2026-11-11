@@ -883,6 +883,19 @@ const calculateEmissions = ({
 }) => {
   const category = normalizeCategory(rawCategory);
 
+  // Validate non-negative quantities across all payload variants
+  const numericFields = ['value', 'kwh', 'km', 'liters', 'quantity', 'foodWasteKg', 'generatorFuelLiters', 'facilityKwh', 'spendAmount'];
+  for (const field of numericFields) {
+    if (details[field] !== undefined && details[field] !== null) {
+      const num = Number(details[field]);
+      if (Number.isFinite(num) && num < 0) {
+        const error = new Error(`Activity ${field} must be a non-negative number.`);
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+  }
+
   // If simple numeric value is passed directly in details (legacy support)
   const isSimplePayload =
     details.value !== undefined &&

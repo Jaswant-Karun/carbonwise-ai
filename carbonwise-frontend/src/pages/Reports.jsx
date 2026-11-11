@@ -150,6 +150,11 @@ const Reports = () => {
 
   useEffect(() => {
     fetchDetailedReport();
+    const handleSync = () => { fetchDetailedReport(); };
+    window.addEventListener('carbonwise:activity-recorded', handleSync);
+    return () => {
+      window.removeEventListener('carbonwise:activity-recorded', handleSync);
+    };
   }, [fetchDetailedReport]);
 
   // Load Regions for Climate Tab

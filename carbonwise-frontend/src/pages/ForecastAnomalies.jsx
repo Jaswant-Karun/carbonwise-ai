@@ -117,6 +117,11 @@ const ForecastAnomalies = () => {
 
   useEffect(() => {
     fetchForecast();
+    const handleSync = () => { fetchForecast(); };
+    window.addEventListener('carbonwise:activity-recorded', handleSync);
+    return () => {
+      window.removeEventListener('carbonwise:activity-recorded', handleSync);
+    };
   }, [period, horizon]);
 
   // Handle What-If Slider Changes

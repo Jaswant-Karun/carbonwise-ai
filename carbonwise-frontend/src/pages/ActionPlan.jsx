@@ -142,6 +142,11 @@ const ActionPlan = () => {
 
   useEffect(() => {
     loadData();
+    const handleSync = () => { loadData(); };
+    window.addEventListener('carbonwise:activity-recorded', handleSync);
+    return () => {
+      window.removeEventListener('carbonwise:activity-recorded', handleSync);
+    };
   }, []);
 
   // Regenerate 7-Day Plan
@@ -164,6 +169,7 @@ const ActionPlan = () => {
           ? 'Personalized Climate Action Plan regenerated with Gemini executive guidance.'
           : 'Climate Action Plan regenerated based on your latest activity history.'
       );
+      window.dispatchEvent(new CustomEvent('carbonwise:action-updated'));
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Unable to regenerate action plan.');
       setStatus('error');
@@ -186,6 +192,7 @@ const ActionPlan = () => {
         const updatedGoals = await api.get('/coach/goals');
         setGoals(updatedGoals.data || []);
       }
+      window.dispatchEvent(new CustomEvent('carbonwise:action-updated'));
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Unable to update action status.');
     }

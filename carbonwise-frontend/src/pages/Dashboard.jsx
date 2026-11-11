@@ -113,11 +113,16 @@ const Dashboard = () => {
 
     window.addEventListener('carbonwise:open-quick-add', handleOpenQuickAdd);
     window.addEventListener('carbonwise:date-range-change', handleDateRangeChange);
+    const handleSync = () => { loadDashboardData(); };
+    window.addEventListener('carbonwise:activity-recorded', handleSync);
+    window.addEventListener('carbonwise:action-updated', handleSync);
     return () => {
       window.removeEventListener('carbonwise:open-quick-add', handleOpenQuickAdd);
       window.removeEventListener('carbonwise:date-range-change', handleDateRangeChange);
+      window.removeEventListener('carbonwise:activity-recorded', handleSync);
+      window.removeEventListener('carbonwise:action-updated', handleSync);
     };
-  }, []);
+  }, [loadDashboardData]);
 
   // Primary Data Fetch
   const loadDashboardData = useCallback(async () => {
@@ -199,6 +204,7 @@ const Dashboard = () => {
       }, 1200);
 
       await loadDashboardData();
+      window.dispatchEvent(new CustomEvent('carbonwise:activity-recorded'));
     } catch (err) {
       console.error('Failed to add activity:', err);
     } finally {
@@ -212,6 +218,7 @@ const Dashboard = () => {
     try {
       await api.delete(`/activities/${id}`);
       await loadDashboardData();
+      window.dispatchEvent(new CustomEvent('carbonwise:activity-recorded'));
     } catch (err) {
       console.error('Failed to delete activity:', err);
     }

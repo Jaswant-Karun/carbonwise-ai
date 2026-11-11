@@ -168,6 +168,11 @@ const CarbonIntelligence = () => {
 
   useEffect(() => {
     fetchIntelligence();
+    const handleSync = () => { fetchIntelligence(); };
+    window.addEventListener('carbonwise:activity-recorded', handleSync);
+    return () => {
+      window.removeEventListener('carbonwise:activity-recorded', handleSync);
+    };
   }, [period]);
 
   const trendData = useMemo(() => ({
