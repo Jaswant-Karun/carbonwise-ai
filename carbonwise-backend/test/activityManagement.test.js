@@ -1,8 +1,16 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { calculateActivityEmissions, EMISSION_FACTORS } = require('../src/services/carbonIntelligenceService');
+const { calculateActivityEmissions } = require('../src/services/carbonIntelligenceService');
+const {
+  addActivity,
+  getActivities,
+  getActivity,
+  updateActivity,
+  deleteActivity,
+} = require('../src/controllers/activityController');
+const db = require('../src/config/db');
 
-test('Activity Management - Emission Calculation Engine', async (t) => {
+test('Activity Management - Emissions Engine and CRUD Operations', async (t) => {
   await t.test('Category A: Food and Diet calculations', () => {
     // Vegan meals
     const vegan = calculateActivityEmissions('food', { mealType: 'vegan', quantity: 3 });
@@ -221,17 +229,6 @@ test('Activity Management - Emission Calculation Engine', async (t) => {
     assert.equal(calculateActivityEmissions('flight', { value: 200 }), 51.0);
     assert.equal(calculateActivityEmissions('shopping', { value: 2 }), 10.0);
   });
-});
-
-test('Activity Management - Controller CRUD, Filtering, Search & Pagination', async (t) => {
-  const {
-    addActivity,
-    getActivities,
-    getActivity,
-    updateActivity,
-    deleteActivity,
-  } = require('../src/controllers/activityController');
-  const db = require('../src/config/db');
 
   const mockRes = () => {
     const res = {
