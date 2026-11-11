@@ -14,6 +14,22 @@ const inFlight = new Map();
 const rateWindows = new Map();
 let cacheTableReady;
 let keyValidationWarned = false;
+let circuitBreakerUntil = 0;
+let circuitBreakerReason = '';
+let circuitBreakerWarned = false;
+const CIRCUIT_BREAKER_COOLDOWN_MS = 5 * 60 * 1000; // 5-minute circuit breaker cooldown
+
+const fallbackText = (task) => ({
+  chat: 'I cannot reach the AI service right now. Review your highest-emission categories and choose one small reduction to try today.',
+  coach: 'Your plan is grounded in your recorded activity. Start with the first action and review your emissions again after seven days.',
+  impact: 'Your report shows recorded emissions and modeled opportunities. Use the comparison to choose a practical next step; it does not prove that an action caused a reduction.',
+  report: 'Your report is temporarily unavailable. Focus on the categories with the highest recorded emissions.',
+  insights: '[]',
+  prediction: 'The deterministic forecast is shown separately. Treat it as an estimate based on recorded history, not a guarantee.',
+  env_anomaly: 'Environmental anomaly explanation is temporarily unavailable. Review the observed deviation against seasonal baseline.',
+  env_trend: 'Climate trend report summary is temporarily unavailable. Review the numerical trend data directly.',
+  env_insights: 'Regional environmental insights are temporarily unavailable. Telemetry observations remain nominal.',
+}[task] || 'AI insights are temporarily unavailable. Please try again later.');
 
 const isValidGeminiApiKey = (key) => {
   if (typeof key !== 'string') return false;
@@ -131,6 +147,30 @@ const generateCached = async ({ userId, task, input, dataVersion, prompt, maxOut
     return fallback || fallbackText(task);
   }
 
+  // If circuit breaker is active from a recent API failure, immediately serve fallback without external roundtrips
+  if (Date.now() < circuitBreakerUntil) {
+    try {
+      await ensureCacheTable();
+      const key = cacheKey({ userId, task, input, dataVersion });
+      const existing = await db.query(
+        `SELECT response FROM ai_response_cache
+         WHERE user_id = $1 AND task = $2 AND cache_key = $3 AND expires_at > CURRENT_TIMESTAMP`,
+        [userId, task, key],
+      );
+      if (existing.rows[0]) {
+        return existing.rows[0].response;
+      }
+    } catch {
+      // Continue to deterministic fallback
+    }
+    return fallback || fallbackText(task);
+  } else if (circuitBreakerUntil > 0) {
+    // Cooldown elapsed; reset circuit breaker
+    circuitBreakerUntil = 0;
+    circuitBreakerReason = '';
+    circuitBreakerWarned = false;
+  }
+
   const key = cacheKey({ userId, task, input, dataVersion });
   if (inFlight.has(key)) {
     console.info(`[gemini] task=${task} joined_in_flight=true`);
@@ -164,9 +204,36 @@ const generateCached = async ({ userId, task, input, dataVersion, prompt, maxOut
       console.info(`[gemini] task=${task} cache_hit=false latency_ms=${Date.now() - started}`);
       return response;
     } catch (error) {
-      const errorType = isQuotaError(error) ? 'quota' : error.code === 'ETIMEDOUT' ? 'timeout' : 'request';
+      const isAuthOrInvalidKey = error?.status === 400 && /API_KEY_INVALID|API key not valid/i.test(error?.message || '');
+      const errorType = isQuotaError(error) ? 'quota' : error.code === 'ETIMEDOUT' ? 'timeout' : isAuthOrInvalidKey ? 'invalid_key' : 'request';
       const cleanReason = (error?.message || '').replace(/AIza[0-9A-Za-z-_]{35}/g, '[REDACTED]').replace(/\n/g, ' ').slice(0, 120);
-      console.warn(`[gemini] task=${task} error=${errorType}${cleanReason ? ` reason="${cleanReason}"` : ''}`);
+
+      // Trip circuit breaker for 5 minutes
+      circuitBreakerUntil = Date.now() + CIRCUIT_BREAKER_COOLDOWN_MS;
+      circuitBreakerReason = cleanReason;
+
+      if (!circuitBreakerWarned) {
+        console.warn(`[gemini] task=${task} error=${errorType}${cleanReason ? ` reason="${cleanReason}"` : ''}. Circuit breaker active for 5m; serving deterministic fallbacks.`);
+        circuitBreakerWarned = true;
+      }
+
+      // Persist deterministic fallback into cache table with 5-minute TTL so concurrent or repeated requests hit cache immediately
+      if (fallback) {
+        try {
+          await ensureCacheTable();
+          await db.query(
+            `INSERT INTO ai_response_cache (user_id, task, cache_key, response, data_version, expires_at)
+             VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP + ($6 * INTERVAL '1 millisecond'))
+             ON CONFLICT (user_id, task, cache_key) DO UPDATE SET response = EXCLUDED.response,
+               data_version = EXCLUDED.data_version, expires_at = EXCLUDED.expires_at,
+               last_accessed_at = CURRENT_TIMESTAMP`,
+            [userId, task, key, fallback, dataVersion || 'static', CIRCUIT_BREAKER_COOLDOWN_MS],
+          );
+        } catch {
+          // Non-blocking cache persistence failure
+        }
+      }
+
       return fallback || fallbackText(task);
     }
   })().finally(() => inFlight.delete(key));
@@ -413,18 +480,6 @@ const buildDeterministicImpactNarrative = (report = {}) => {
   const status = report.totals?.status || 'tracked';
   return `Your recorded emissions for this period are ${current} kg CO₂e compared to a baseline of ${baseline} kg CO₂e (status: ${status}). Use this comparison to track your progress and identify high-impact opportunities for further reductions.`;
 };
-
-const fallbackText = (task) => ({
-  chat: 'I cannot reach the AI service right now. Review your highest-emission categories and choose one small reduction to try today.',
-  coach: 'Your plan is grounded in your recorded activity. Start with the first action and review your emissions again after seven days.',
-  impact: 'Your report shows recorded emissions and modeled opportunities. Use the comparison to choose a practical next step; it does not prove that an action caused a reduction.',
-  report: 'Your report is temporarily unavailable. Focus on the categories with the highest recorded emissions.',
-  insights: '[]',
-  prediction: 'The deterministic forecast is shown separately. Treat it as an estimate based on recorded history, not a guarantee.',
-  env_anomaly: 'Environmental anomaly explanation is temporarily unavailable. Review the observed deviation against seasonal baseline.',
-  env_trend: 'Climate trend report summary is temporarily unavailable. Review the numerical trend data directly.',
-  env_insights: 'Regional environmental insights are temporarily unavailable. Telemetry observations remain nominal.',
-}[task] || 'AI insights are temporarily unavailable. Please try again later.');
 
 async function generateEcoPlan(activities, options = {}) {
   return generateCached({
@@ -804,6 +859,20 @@ module.exports._test = {
   generateCached,
   isQuotaError,
   isValidGeminiApiKey,
+  resetCircuitBreaker: () => {
+    circuitBreakerUntil = 0;
+    circuitBreakerReason = '';
+    circuitBreakerWarned = false;
+  },
+  getCircuitBreakerStatus: () => ({
+    isOpen: Date.now() < circuitBreakerUntil,
+    until: circuitBreakerUntil,
+    reason: circuitBreakerReason,
+  }),
+  tripCircuitBreaker: (durationMs = 300000) => {
+    circuitBreakerUntil = Date.now() + durationMs;
+    circuitBreakerWarned = true;
+  },
   summarizeAnomalyEvidence,
   summarizeTrendEvidence,
   summarizeRegionalEvidence,

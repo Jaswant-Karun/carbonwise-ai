@@ -5,6 +5,7 @@ const { addActivity, getActivities, getActivity } = require('../src/controllers/
 
 test('Database and Backend Integrity, Constraints & Indexes Verification', async (t) => {
   let testUserId;
+  let otherUserId;
 
   const userRes = await db.query(
     `INSERT INTO users (name, email, password) VALUES ('DB Integrity User', $1, 'hashedpass') RETURNING id`,
@@ -149,7 +150,7 @@ test('Database and Backend Integrity, Constraints & Indexes Verification', async
       `INSERT INTO users (name, email, password) VALUES ('Other User', $1, 'hashedpass') RETURNING id`,
       [`other_user_${Date.now()}@example.com`]
     );
-    const otherUserId = otherUserRes.rows[0].id;
+    otherUserId = otherUserRes.rows[0].id;
 
     // Create activity for testUserId
     const act = await db.query(
@@ -167,6 +168,9 @@ test('Database and Backend Integrity, Constraints & Indexes Verification', async
   });
 
   // Cleanup
-  await db.query(`DELETE FROM users WHERE id IN ($1, $2)`, [testUserId, testUserId + 1]);
+  const toDelete = [testUserId, otherUserId].filter(Boolean);
+  if (toDelete.length > 0) {
+    await db.query(`DELETE FROM users WHERE id = ANY($1::int[])`, [toDelete]);
+  }
 });
 

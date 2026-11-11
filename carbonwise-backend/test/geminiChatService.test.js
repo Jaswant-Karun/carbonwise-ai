@@ -238,3 +238,29 @@ test('buildDeterministicChatReply: returns grounded data-aware responses', () =>
   assert.ok(greetingReply.includes('CarbonWise AI'));
 });
 
+test('circuit breaker: immediately returns fallback when circuit is tripped without contacting Gemini', async () => {
+  const { resetCircuitBreaker, tripCircuitBreaker, getCircuitBreakerStatus } = service._test;
+  resetCircuitBreaker();
+  assert.equal(getCircuitBreakerStatus().isOpen, false);
+
+  tripCircuitBreaker(60000); // 1-minute test trip
+  assert.equal(getCircuitBreakerStatus().isOpen, true);
+
+  const initialGenCount = generationCount;
+  const result = await generateCached({
+    userId: 11,
+    task: 'env_insights',
+    input: { region: 'Tokyo' },
+    dataVersion: 'v1',
+    prompt: 'test prompt',
+    fallback: 'deterministic circuit fallback',
+  });
+
+  assert.equal(result, 'deterministic circuit fallback');
+  assert.equal(generationCount, initialGenCount); // Gemini was NOT called!
+
+  resetCircuitBreaker();
+  assert.equal(getCircuitBreakerStatus().isOpen, false);
+});
+
+
