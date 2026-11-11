@@ -1,29 +1,31 @@
 import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  Activity,
+  BarChart3,
   Bell,
+  CheckCircle2,
   CloudSun,
+  Compass,
   FileText,
-  Gauge,
-  History,
+  Flame,
+  LayoutDashboard,
   Leaf,
   LogOut,
   Settings,
   Sparkles,
-  Target,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const navItems = [
-  { path: '/dashboard', label: 'Overview', icon: Gauge },
-  { path: '/activities', label: 'Activity Logs', icon: History },
-  { path: '/carbon-intelligence', label: 'Carbon Emissions', icon: Sparkles },
-  { path: '/reports', label: 'Analytics & Reports', icon: FileText },
-  { path: '/carbon-forecast', label: 'AI Predictions', icon: Activity },
-  { path: '/action-plan', label: 'Climate Actions', icon: Target },
-  { path: '/live-climate', label: 'Environmental Intelligence', icon: CloudSun },
-  { path: '/alerts', label: 'Notifications', icon: Bell },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/carbon-intelligence', label: 'Emissions', icon: Flame },
+  { path: '/activities', label: 'Sources', icon: Compass },
+  { path: '/reports', label: 'Analytics', icon: BarChart3 },
+  { path: '/insights', label: 'AI Insights', icon: Sparkles },
+  { path: '/action-plan', label: 'Targets', icon: CheckCircle2 },
+  { path: '/carbon-forecast', label: 'Predictions', icon: BarChart3 },
+  { path: '/alerts', label: 'Alerts', icon: Bell },
+  { path: '/live-climate', label: 'Climate Intelligence', icon: CloudSun },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -33,24 +35,24 @@ const Sidebar = () => {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <span className="brand-mark">
-          <Leaf size={18} />
-        </span>
+        <div className="brand-mark-ai">
+          <span className="brand-ai-text">AI</span>
+        </div>
         <div className="brand-text">
           <div className="brand-title">
-            CarbonWise <span className="brand-badge">AI</span>
+            AI Carbon Tracker
           </div>
-          <span className="brand-subtitle">Track. Analyze. Predict. Reduce.</span>
+          <span className="brand-subtitle">Track. Analyze. Reduce.</span>
         </div>
       </div>
 
       <div className="sidebar-profile">
         <span className="sidebar-profile-avatar">
-          {user?.name?.charAt(0)?.toUpperCase() || 'C'}
+          {user?.name?.charAt(0)?.toUpperCase() || 'A'}
         </span>
         <div className="sidebar-profile-info">
           <strong>{user?.name || 'Sustainability Lead'}</strong>
-          <span>Carbon & Climate Workspace</span>
+          <span>CarbonWise AI Workspace</span>
         </div>
       </div>
 
@@ -80,8 +82,8 @@ const Sidebar = () => {
           <div className="promo-glow-circle">
             <Leaf size={18} className="promo-leaf-icon" />
           </div>
-          <strong>SDG-13 Climate Action</strong>
-          <p>AI carbon accounting, predictive modeling, and live environmental intelligence.</p>
+          <strong>Small actions big impact.</strong>
+          <p>Let's build a sustainable future.</p>
         </div>
 
         <button onClick={logout} className="logout-button" type="button" title="Sign out of CarbonWise AI">

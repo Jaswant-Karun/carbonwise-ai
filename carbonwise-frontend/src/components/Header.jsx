@@ -4,9 +4,10 @@ import {
   ChevronDown,
   Bell,
   CalendarDays,
-  Leaf,
+  Download,
+  FileSpreadsheet,
+  FileText,
   Plus,
-  MapPin,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
@@ -67,6 +68,8 @@ const Header = () => {
 
   const [alertCount, setAlertCount] = useState(0);
   const [dateRange, setDateRange] = useState('30d');
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -86,11 +89,9 @@ const Header = () => {
   }, []);
 
   const handleQuickAddClick = () => {
-    // If on /dashboard, dispatch event to open dashboard's Quick Add modal
     if (location.pathname === '/dashboard') {
       window.dispatchEvent(new CustomEvent('carbonwise:open-quick-add'));
     } else {
-      // Navigate to /activities with quick-add trigger
       navigate('/activities?action=new');
     }
   };
@@ -100,12 +101,36 @@ const Header = () => {
     window.dispatchEvent(new CustomEvent('carbonwise:date-range-change', { detail: val }));
   };
 
+  const handleExport = async (format) => {
+    setShowDownloadMenu(false);
+    setIsExporting(true);
+    try {
+      const endpoint = format === 'pdf' ? '/reports/pdf?filter=current_month' : '/reports/csv?filter=all';
+      const res = await api.get(endpoint, { responseType: 'blob' });
+      const mime = format === 'pdf' ? 'application/pdf' : 'text/csv;charset=utf-8;';
+      const blob = new Blob([res.data], { type: mime });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `carbonwise-${format === 'pdf' ? 'audit-report.pdf' : 'emissions.csv'}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      // Fallback: navigate directly to reports page for full export suite
+      navigate('/reports');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const initials = user?.name
     ?.split(' ')
     .map((part) => part[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase() || 'CW';
+    .toUpperCase() || 'AG';
 
   return (
     <header className="page-header">
@@ -121,7 +146,7 @@ const Header = () => {
       </div>
 
       <div className="header-actions">
-        {/* Date Range Selector */}
+        {/* Date Range Selector matching Image 1 */}
         <div className="header-date-range" title="Global Dashboard Timeframe Filter">
           <CalendarDays size={14} className="date-icon" />
           <select
@@ -130,12 +155,39 @@ const Header = () => {
             className="header-select"
             aria-label="Timeframe"
           >
-            <option value="7d">Last 7 Days</option>
+            <option value="7d">May 12 - Jun 12, 2024</option>
             <option value="30d">Last 30 Days</option>
             <option value="90d">Last 90 Days</option>
-            <option value="1y">Year to Date</option>
+            <option value="1y">Year to Date (2024)</option>
           </select>
           <ChevronDown size={13} className="chevron" />
+        </div>
+
+        {/* Download Report Button matching Image 1 */}
+        <div className="header-download-dropdown-wrapper">
+          <button
+            type="button"
+            className="header-btn-download"
+            onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+            disabled={isExporting}
+            title="Download Carbon Audit Reports"
+          >
+            <Download size={14} />
+            <span>{isExporting ? 'Exporting...' : 'Download Report'}</span>
+            <ChevronDown size={13} />
+          </button>
+          {showDownloadMenu && (
+            <div className="header-download-menu">
+              <button type="button" onClick={() => handleExport('pdf')}>
+                <FileText size={14} style={{ color: '#10B981' }} />
+                <span>Executive Audit Report (PDF)</span>
+              </button>
+              <button type="button" onClick={() => handleExport('csv')}>
+                <FileSpreadsheet size={14} style={{ color: '#38BDF8' }} />
+                <span>Emissions Ledger (CSV)</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Quick Add Activity Button */}
@@ -146,7 +198,7 @@ const Header = () => {
           title="Quickly record a new carbon activity"
         >
           <Plus size={15} />
-          <span>Quick Add Activity</span>
+          <span>Quick Add</span>
         </button>
 
         {/* Notification Icon with Count Badge */}
@@ -160,11 +212,11 @@ const Header = () => {
           {alertCount > 0 && <span className="notification-indicator">{alertCount}</span>}
         </Link>
 
-        {/* User Profile */}
+        {/* User Profile matching Image 1 (AG avatar pill) */}
         <Link to="/settings" className="header-profile-badge" aria-label="Platform Settings & Profile" title="Account Settings">
           <span className="header-avatar-circle">{initials}</span>
           <div className="header-profile-text">
-            <strong>{user?.name || 'Sustainability Lead'}</strong>
+            <strong>{user?.name || 'Administrator'}</strong>
             <small>{user?.email || 'Settings'}</small>
           </div>
         </Link>
