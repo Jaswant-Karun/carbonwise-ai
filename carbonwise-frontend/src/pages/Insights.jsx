@@ -1,12 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Sparkles,
+  TrendingUp,
+  AlertCircle,
+  RefreshCw,
+  Plus,
+  CheckCircle,
+  ArrowRight,
+  ShieldCheck,
+  Zap,
+  Globe,
+  Compass,
+  Brain,
+  Layers,
+  Leaf,
+} from 'lucide-react';
 import api from '../services/api';
 import Layout from '../components/Layout';
-//Added new Activity
+import AiInsightsPanel from '../components/AiInsightsPanel';
+
 const impactBadge = (impact) => {
   const styles = {
-    high: { bg: 'rgba(239,68,68,0.15)', color: '#ef4444', label: 'High Impact' },
-    medium: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b', label: 'Medium Impact' },
-    low: { bg: 'rgba(16,185,129,0.15)', color: '#10b981', label: 'Low Impact' },
+    high: { bg: 'rgba(239, 68, 68, 0.15)', color: '#F87171', border: 'rgba(239, 68, 68, 0.3)', label: 'High Impact' },
+    medium: { bg: 'rgba(245, 158, 11, 0.15)', color: '#FBBF24', border: 'rgba(245, 158, 11, 0.3)', label: 'Medium Impact' },
+    low: { bg: 'rgba(16, 185, 129, 0.15)', color: '#34D399', border: 'rgba(16, 185, 129, 0.3)', label: 'Low Impact' },
   };
   const s = styles[impact] || styles.low;
   return (
@@ -14,10 +32,13 @@ const impactBadge = (impact) => {
       style={{
         background: s.bg,
         color: s.color,
+        border: `1px solid ${s.border}`,
         padding: '3px 10px',
         borderRadius: '12px',
-        fontSize: '0.75rem',
-        fontWeight: 600,
+        fontSize: '0.72rem',
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        letterSpacing: '0.03em',
       }}
     >
       {s.label}
@@ -25,19 +46,21 @@ const impactBadge = (impact) => {
   );
 };
 
-import AiInsightsPanel from '../components/AiInsightsPanel';
-
 const Insights = () => {
-  const [activeTab, setActiveTab] = useState('environmental'); // 'environmental' or 'personal'
+  const [activeTab, setActiveTab] = useState('personal'); // Default to personal as requested
   const [regions, setRegions] = useState([]);
   const [selectedRegionId, setSelectedRegionId] = useState('');
   const [insights, setInsights] = useState([]);
   const [prediction, setPrediction] = useState(null);
+  const [predictionMetrics, setPredictionMetrics] = useState(null);
   const [totalEmissions, setTotalEmissions] = useState(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [loadingPrediction, setLoadingPrediction] = useState(false);
+  const [insightsError, setInsightsError] = useState('');
+  const [predictionError, setPredictionError] = useState('');
+  const [hasFetchedPersonal, setHasFetchedPersonal] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     api.get('/environment/regions')
       .then((res) => {
         const list = res.data || [];
@@ -47,60 +70,71 @@ const Insights = () => {
         }
       })
       .catch((err) => console.warn('Could not load regions in Insights:', err.message));
-  }, []);
+  }, [selectedRegionId]);
 
   const fetchInsights = async () => {
     setLoadingInsights(true);
+    setInsightsError('');
     try {
       const res = await api.get('/reports/insights');
-      setInsights(res.data.insights || []);
-      setTotalEmissions(res.data.totalEmissions);
+      const loaded = res.data?.insights || [];
+      setInsights(loaded);
+      setTotalEmissions(res.data?.totalEmissions || '0.00');
     } catch (err) {
-      alert(err.response?.data?.message || 'Error fetching insights. Is the backend running?');
+      console.warn('Insights request fallback:', err.message);
+      setInsightsError(err.response?.data?.message || 'Unable to load personalized insights. Please verify backend connection.');
+    } finally {
+      setLoadingInsights(false);
     }
-    setLoadingInsights(false);
   };
 
   const fetchPrediction = async () => {
     setLoadingPrediction(true);
+    setPredictionError('');
     try {
       const res = await api.get('/reports/predict');
-      setPrediction(res.data.prediction);
+      setPrediction(res.data?.prediction || '');
+      if (res.data?.avgDaily || res.data?.predictedMonthly) {
+        setPredictionMetrics({
+          avgDaily: res.data.avgDaily,
+          predictedMonthly: res.data.predictedMonthly,
+        });
+      }
     } catch (err) {
-      alert(err.response?.data?.message || 'Error fetching prediction. Is the backend running?');
+      console.warn('Prediction request fallback:', err.message);
+      setPredictionError(err.response?.data?.message || 'Unable to generate impact prediction. Please verify backend connection.');
+    } finally {
+      setLoadingPrediction(false);
     }
-    setLoadingPrediction(false);
   };
+
+  // Auto-fetch personal footprint data when tab becomes active
+  useEffect(() => {
+    if (activeTab === 'personal' && !hasFetchedPersonal) {
+      setHasFetchedPersonal(true);
+      fetchInsights();
+      fetchPrediction();
+    }
+  }, [activeTab, hasFetchedPersonal]);
 
   return (
     <Layout>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '2rem', marginBottom: '8px' }}>
-            AI Environmental Insights
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.35)', color: '#34D399', fontSize: '0.74rem', fontWeight: 700, padding: '4px 12px', borderRadius: '999px', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+            <Brain size={13} />
+            <span>AI Climate Intelligence & Modeling</span>
+          </div>
+          <h1 style={{ fontFamily: 'Manrope, sans-serif', fontSize: '1.95rem', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em', margin: '0 0 6px' }}>
+            AI Environmental & Footprint Insights
           </h1>
-          <p style={{ color: 'var(--text-muted)' }}>
-            Gemini AI acts as an explanation assistant for verified climate telemetry and personal footprint data.
+          <p style={{ color: '#94A3B8', fontSize: '0.88rem', margin: 0, maxWidth: '780px' }}>
+            Grounded numerical calculations, continuous telemetry synthesis, and explainable AI insights derived deterministically from your logged activities and global climate observations.
           </p>
         </div>
 
         {/* Tab Toggle */}
-        <div style={{ display: 'flex', gap: '8px', background: 'rgba(15, 23, 42, 0.8)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => setActiveTab('environmental')}
-            style={{
-              fontSize: '0.82rem',
-              padding: '8px 16px',
-              background: activeTab === 'environmental' ? 'var(--primary)' : 'transparent',
-              color: activeTab === 'environmental' ? '#090d16' : '#94a3b8',
-              border: 0,
-              fontWeight: 700,
-            }}
-          >
-            🌍 Regional Climate Insights
-          </button>
+        <div style={{ display: 'flex', gap: '6px', background: '#0E1726', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <button
             type="button"
             className="btn"
@@ -108,25 +142,46 @@ const Insights = () => {
             style={{
               fontSize: '0.82rem',
               padding: '8px 16px',
-              background: activeTab === 'personal' ? 'var(--primary)' : 'transparent',
-              color: activeTab === 'personal' ? '#090d16' : '#94a3b8',
+              background: activeTab === 'personal' ? '#10B981' : 'transparent',
+              color: activeTab === 'personal' ? '#080D1A' : '#94A3B8',
               border: 0,
+              borderRadius: '8px',
               fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
             }}
           >
             👤 Personal Footprint Insights
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setActiveTab('environmental')}
+            style={{
+              fontSize: '0.82rem',
+              padding: '8px 16px',
+              background: activeTab === 'environmental' ? '#10B981' : 'transparent',
+              color: activeTab === 'environmental' ? '#080D1A' : '#94A3B8',
+              border: 0,
+              borderRadius: '8px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            🌍 Regional Climate Telemetry
           </button>
         </div>
       </div>
 
       {activeTab === 'environmental' ? (
         <div style={{ display: 'grid', gap: '20px' }}>
-          <div className="tracker-card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-            <span style={{ fontSize: '0.88rem', color: '#183247', fontWeight: 700 }}>Select Monitored Region:</span>
+          <div className="tracker-card" style={{ background: '#0E1726', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '14px', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <span style={{ fontSize: '0.88rem', color: '#FFFFFF', fontWeight: 700 }}>Select Monitored Climate Region:</span>
             <select
               value={selectedRegionId}
               onChange={(e) => setSelectedRegionId(e.target.value)}
-              className="region-selector-clean"
+              className="select-region"
               style={{ minWidth: '220px' }}
             >
               {regions.map((reg) => (
@@ -143,165 +198,288 @@ const Insights = () => {
           />
         </div>
       ) : (
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-        {/* Personalized Insights */}
-        <div className="glass-panel">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: '24px' }}>
+          {/* Personalized Insights Panel */}
           <div
+            className="tracker-card"
             style={{
+              background: '#0E1726',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 4px 24px rgba(0, 0, 0, 0.35)',
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '20px',
+              flexDirection: 'column',
             }}
           >
-            <h3>🔍 Personalized Insights</h3>
-            <button
-              className="btn"
-              style={{ width: 'auto', padding: '8px 16px' }}
-              onClick={fetchInsights}
-              disabled={loadingInsights}
-            >
-              {loadingInsights ? 'Analyzing...' : '✨ Analyze'}
-            </button>
-          </div>
-
-          {totalEmissions && (
             <div
               style={{
-                padding: '12px 16px',
-                borderRadius: '8px',
-                background: 'rgba(16,185,129,0.1)',
-                border: '1px solid rgba(16,185,129,0.2)',
-                marginBottom: '20px',
                 display: 'flex',
                 justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '18px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                paddingBottom: '14px',
               }}
             >
-              <span style={{ color: 'var(--text-muted)' }}>Total Emissions Analyzed</span>
-              <span style={{ fontWeight: 700, color: 'var(--primary)' }}>
-                {totalEmissions} kg CO₂
-              </span>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>🔍</span> Personalized AI Insights
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>
+                  Targeted mitigation vectors derived from your logged activities
+                </span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ width: 'auto', padding: '7px 16px', fontSize: '0.8rem' }}
+                onClick={fetchInsights}
+                disabled={loadingInsights}
+              >
+                <RefreshCw size={13} className={loadingInsights ? 'animate-spin' : ''} style={{ marginRight: '6px' }} />
+                {loadingInsights ? 'Analyzing...' : '✨ Analyze'}
+              </button>
             </div>
-          )}
 
-          {insights.length === 0 && !loadingInsights && (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🤖</div>
-              <p>Click Analyze to generate AI insights from your logged activities.</p>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {insights.map((insight, i) => (
+            {totalEmissions && (
               <div
-                key={i}
                 style={{
-                  padding: '16px',
+                  padding: '12px 16px',
                   borderRadius: '10px',
-                  background: 'rgba(0,0,0,0.2)',
-                  border: '1px solid var(--surface-border)',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  marginBottom: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                 }}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: '8px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{insight.icon}</span>
-                    <h4 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1rem' }}>
-                      {insight.title}
-                    </h4>
-                  </div>
-                  {impactBadge(insight.impact)}
-                </div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                  {insight.description}
-                </p>
+                <span style={{ color: '#94A3B8', fontSize: '0.82rem', fontWeight: 600 }}>Total Footprint Evaluated:</span>
+                <span style={{ fontWeight: 800, color: '#34D399', fontSize: '1.05rem' }}>
+                  {totalEmissions} kg CO₂e
+                </span>
               </div>
-            ))}
-          </div>
-        </div>
+            )}
 
-        {/* Climate Impact Prediction */}
-        <div className="glass-panel">
+            {insightsError && (
+              <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '12px 16px', borderRadius: '10px', color: '#F87171', fontSize: '0.82rem', marginBottom: '16px' }}>
+                ⚠️ {insightsError}
+              </div>
+            )}
+
+            {loadingInsights && (
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94A3B8' }}>
+                <RefreshCw size={32} className="animate-spin text-emerald" style={{ margin: '0 auto 12px' }} />
+                <p style={{ fontSize: '0.88rem' }}>Evaluating activity entries across emission scopes...</p>
+              </div>
+            )}
+
+            {!loadingInsights && insights.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '50px 20px', color: '#94A3B8' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🤖</div>
+                <h4 style={{ color: '#FFFFFF', fontSize: '1rem', fontWeight: 700, margin: '0 0 6px' }}>No Activity Data Recorded Yet</h4>
+                <p style={{ fontSize: '0.84rem', maxWidth: '380px', margin: '0 auto 16px' }}>
+                  Click Analyze above to synthesize baseline insights, or log your personal energy and transport activities.
+                </p>
+                <Link to="/activity" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '8px 16px' }}>
+                  <Plus size={14} /> Log Your First Activity
+                </Link>
+              </div>
+            )}
+
+            {!loadingInsights && insights.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {insights.map((insight, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: '12px',
+                      background: '#111C31',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: '10px',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '1.35rem' }}>{insight.icon}</span>
+                        <h4 style={{ fontFamily: 'Manrope, sans-serif', fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF', margin: 0 }}>
+                          {insight.title}
+                        </h4>
+                      </div>
+                      {impactBadge(insight.impact)}
+                    </div>
+                    <p style={{ color: '#94A3B8', fontSize: '0.84rem', lineHeight: 1.55, margin: 0 }}>
+                      {insight.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Climate Impact Prediction Panel */}
           <div
+            className="tracker-card"
             style={{
+              background: '#0E1726',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 4px 24px rgba(0, 0, 0, 0.35)',
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '20px',
+              flexDirection: 'column',
             }}
           >
-            <h3>📈 Impact Prediction</h3>
-            <button
-              className="btn"
-              style={{ width: 'auto', padding: '8px 16px' }}
-              onClick={fetchPrediction}
-              disabled={loadingPrediction}
-            >
-              {loadingPrediction ? 'Predicting...' : '🔮 Predict'}
-            </button>
-          </div>
-
-          {!prediction && !loadingPrediction && (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🌍</div>
-              <p>
-                Click Predict to see how your current habits will impact the environment
-                over the next year.
-              </p>
-            </div>
-          )}
-
-          {prediction && (
             <div
               style={{
-                background: 'rgba(0,0,0,0.2)',
-                padding: '20px',
-                borderRadius: '10px',
-                lineHeight: 1.8,
-                whiteSpace: 'pre-wrap',
-                color: 'var(--text-muted)',
-                fontSize: '0.95rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '18px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                paddingBottom: '14px',
               }}
             >
-              {prediction}
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>📈</span> Forward Impact Prediction
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>
+                  Statistical run-rate trajectory and forward climate scenario
+                </span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ width: 'auto', padding: '7px 16px', fontSize: '0.8rem' }}
+                onClick={fetchPrediction}
+                disabled={loadingPrediction}
+              >
+                <RefreshCw size={13} className={loadingPrediction ? 'animate-spin' : ''} style={{ marginRight: '6px' }} />
+                {loadingPrediction ? 'Predicting...' : '🔮 Predict'}
+              </button>
             </div>
-          )}
+
+            {predictionMetrics && (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '12px',
+                  marginBottom: '18px',
+                }}
+              >
+                <div style={{ background: '#111C31', padding: '12px 16px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: '2px' }}>
+                    Daily Baseline
+                  </span>
+                  <strong style={{ fontSize: '1.25rem', color: '#38BDF8', fontWeight: 800 }}>
+                    {predictionMetrics.avgDaily} <small style={{ fontSize: '0.75rem', color: '#94A3B8' }}>kg/day</small>
+                  </strong>
+                </div>
+                <div style={{ background: '#111C31', padding: '12px 16px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: '2px' }}>
+                    30-Day Forward Total
+                  </span>
+                  <strong style={{ fontSize: '1.25rem', color: '#34D399', fontWeight: 800 }}>
+                    {predictionMetrics.predictedMonthly} <small style={{ fontSize: '0.75rem', color: '#94A3B8' }}>kg CO₂e</small>
+                  </strong>
+                </div>
+              </div>
+            )}
+
+            {predictionError && (
+              <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '12px 16px', borderRadius: '10px', color: '#F87171', fontSize: '0.82rem', marginBottom: '16px' }}>
+                ⚠️ {predictionError}
+              </div>
+            )}
+
+            {loadingPrediction && (
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94A3B8' }}>
+                <RefreshCw size={32} className="animate-spin text-emerald" style={{ margin: '0 auto 12px' }} />
+                <p style={{ fontSize: '0.88rem' }}>Generating statistical run-rate and scenario simulation...</p>
+              </div>
+            )}
+
+            {!loadingPrediction && !prediction && (
+              <div style={{ textAlign: 'center', padding: '50px 20px', color: '#94A3B8' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🌍</div>
+                <h4 style={{ color: '#FFFFFF', fontSize: '1rem', fontWeight: 700, margin: '0 0 6px' }}>Generate Your Forward Trajectory</h4>
+                <p style={{ fontSize: '0.84rem', maxWidth: '380px', margin: '0 auto 16px' }}>
+                  Click Predict above to forecast your annual emissions and review targeted reduction measures.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={fetchPrediction}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '8px 16px' }}
+                >
+                  <TrendingUp size={14} /> Calculate Forward Forecast
+                </button>
+              </div>
+            )}
+
+            {!loadingPrediction && prediction && (
+              <div
+                style={{
+                  background: '#111C31',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  lineHeight: 1.7,
+                  whiteSpace: 'pre-wrap',
+                  color: '#CBD5E1',
+                  fontSize: '0.88rem',
+                }}
+              >
+                {prediction}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       )}
 
-      {/* Info Cards */}
+      {/* Sustainable Benchmark Reference Strip */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '20px',
+          gap: '16px',
           marginTop: '32px',
         }}
       >
         {[
-          { icon: '🌲', title: '1 tree absorbs', value: '~20 kg CO₂/year' },
-          { icon: '🚗', title: 'Average car emits', value: '0.21 kg CO₂/km' },
-          { icon: '🌍', title: 'Global avg per person', value: '833 kg CO₂/month' },
-          { icon: '⚡', title: 'Avg electricity', value: '0.5 kg CO₂/kWh' },
+          { icon: '🌲', title: '1 Mature Tree Absorbs', value: '~20 kg CO₂ / year' },
+          { icon: '🚗', title: 'Passenger Vehicle Emits', value: '0.21 kg CO₂ / km' },
+          { icon: '🌍', title: 'Global Per-Capita Baseline', value: '350 kg CO₂ / month' },
+          { icon: '⚡', title: 'National Grid Average', value: '0.50 kg CO₂ / kWh' },
         ].map((card) => (
           <div
             key={card.title}
-            className="glass-panel"
-            style={{ textAlign: 'center', padding: '20px' }}
+            className="tracker-card"
+            style={{
+              background: '#0E1726',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '12px',
+              textAlign: 'center',
+              padding: '18px 16px',
+            }}
           >
-            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>{card.icon}</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '4px' }}>
+            <div style={{ fontSize: '1.8rem', marginBottom: '6px' }}>{card.icon}</div>
+            <div style={{ color: '#94A3B8', fontSize: '0.78rem', fontWeight: 600, marginBottom: '4px' }}>
               {card.title}
             </div>
-            <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1.1rem' }}>
+            <div style={{ fontWeight: 800, color: '#34D399', fontSize: '1.05rem' }}>
               {card.value}
             </div>
           </div>
