@@ -5689,14 +5689,14 @@ h1, h2, h3, h4, h5, h6 {
 .telemetry-page-title {
   font-size: 1.85rem;
   font-weight: 800;
-  color: #183247;
+  color: #FFFFFF;
   letter-spacing: -0.03em;
   margin: 0 0 6px;
 }
 
 .telemetry-page-subtitle {
   font-size: 0.88rem;
-  color: #718096;
+  color: #94A3B8;
   max-width: 760px;
   margin: 0;
   line-height: 1.5;
@@ -5710,9 +5710,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .select-region {
-  background: #FFFFFF;
-  border: 1px solid #E4EBE6;
-  color: #183247;
+  background: #0E1726;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
   font-size: 0.84rem;
   font-weight: 600;
   padding: 8px 14px;
@@ -5720,12 +5720,12 @@ h1, h2, h3, h4, h5, h6 {
   cursor: pointer;
   outline: none;
   min-width: 220px;
-  box-shadow: 0 1px 3px rgba(24, 50, 71, 0.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .select-region option {
-  background: #FFFFFF;
-  color: #183247;
+  background: #0E1726;
+  color: #FFFFFF;
 }
 
 .telemetry-message-banner {
@@ -5740,14 +5740,14 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Location Search Bar with Autocomplete */
 .telemetry-search-bar {
-  background: #FFFFFF;
-  border: 1px solid #E4EBE6;
+  background: #0E1726;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   padding: 14px 18px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: 0 2px 8px rgba(24, 50, 71, 0.03);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .search-input-wrap {
@@ -5760,26 +5760,26 @@ h1, h2, h3, h4, h5, h6 {
   flex: 1;
   background: transparent;
   border: none;
-  color: #183247;
+  color: #FFFFFF;
   font-size: 0.9rem;
   font-weight: 500;
   outline: none;
 }
 
 .search-input::placeholder {
-  color: #94A3B8;
+  color: #64748B;
 }
 
 .searching-indicator {
   font-size: 0.75rem;
-  color: #16845B;
+  color: #34D399;
   font-weight: 600;
 }
 
 .btn-custom-toggle {
-  background: #F7F9F7;
-  border: 1px solid #E4EBE6;
-  color: #183247;
+  background: #111C31;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
   font-size: 0.78rem;
   font-weight: 600;
   padding: 6px 12px;
@@ -5790,9 +5790,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-custom-toggle:hover {
-  background: #EAF6EF;
-  color: #16845B;
-  border-color: #C6E7D6;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34D399;
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
 .suggestions-dropdown {
@@ -5824,28 +5824,28 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: #FFFFFF;
-  border: 1px solid #E4EBE6;
+  background: #111C31;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  color: #183247;
+  color: #FFFFFF;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .suggestion-item:hover {
-  background: #F0FDF4;
-  border-color: #86EFAC;
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #34D399;
 }
 
 .suggestion-item strong {
-  color: #183247;
+  color: #FFFFFF;
   font-weight: 700;
 }
 
 .coord-tag {
   font-size: 0.74rem;
-  color: #16845B;
+  color: #34D399;
   font-family: var(--font-mono);
   font-weight: 600;
 }
@@ -5856,7 +5856,7 @@ h1, h2, h3, h4, h5, h6 {
   gap: 10px;
   margin-top: 8px;
   padding-top: 12px;
-  border-top: 1px solid #E4EBE6;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 @media (max-width: 768px) {
