@@ -95,6 +95,9 @@ const AIR_QUALITY_STANDARDS = {
   },
 };
 
+// Support both 'pm25' (OpenAQ / API param) and 'pm2_5' (standard key)
+AIR_QUALITY_STANDARDS.pm25 = AIR_QUALITY_STANDARDS.pm2_5;
+
 /**
  * Scientifically convert parts-per-million (ppm) to µg/m³ under standard conditions (25°C, 1 atm)
  * Molecular weights: NO2=46.01, O3=48.00, SO2=64.07, CO=28.01

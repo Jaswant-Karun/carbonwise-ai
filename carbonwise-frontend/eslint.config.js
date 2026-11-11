@@ -30,7 +30,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/context/**/*.{js,jsx}'],
+    files: ['**/context/**/*.{js,jsx}', 'src/context/**/*.{js,jsx}'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },
