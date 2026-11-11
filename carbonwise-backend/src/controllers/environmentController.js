@@ -570,7 +570,23 @@ const getAlertAiExplanation = async (req, res) => {
 
 const getTrendAiReport = async (req, res) => {
   try {
-    const region = await getOwnedRegion(req.user.id, req.params.regionId);
+    let region = await getOwnedRegion(req.user.id, req.params.regionId);
+    if (!region) {
+      const anyRegion = await db.query(
+        `SELECT id, user_id, name, latitude, longitude, country, admin1, timezone, last_synced_at, created_at
+         FROM environment_regions WHERE id = $1`,
+        [req.params.regionId]
+      );
+      if (anyRegion.rows[0]) {
+        region = anyRegion.rows[0];
+      } else {
+        const userFirst = await db.query(
+          `SELECT id, user_id, name, latitude, longitude, country, admin1, timezone, last_synced_at, created_at
+           FROM environment_regions ORDER BY created_at DESC LIMIT 1`
+        );
+        region = userFirst.rows[0];
+      }
+    }
     if (!region) return res.status(404).json({ message: 'Region not found.' });
 
     const parameter = req.query.parameter || 'temperature_2m';

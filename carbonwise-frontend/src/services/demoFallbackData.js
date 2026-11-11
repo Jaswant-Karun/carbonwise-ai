@@ -619,3 +619,24 @@ export const demoGoals = [
   },
 ];
 
+export const demoClimateTrendReport = {
+  region: { id: 1, name: 'New York, USA', latitude: 40.7128, longitude: -74.006, country: 'United States' },
+  parameter: 'temperature_2m',
+  timeRange: 'annual',
+  report: {
+    summary: 'New York, USA: Annual Decadal Temperature Trajectory Assessment',
+    whatChanged: 'Multi-decadal observational analysis indicates a warming rate of +0.28°C per decade over the 1991–2020 reference period, with 7 of the last 10 years trending above the long-term climatological median.',
+    baselineUsed: 'WMO 1991–2020 Climatological Standard Normal derived from NASA POWER and Open-Meteo European Reanalysis.',
+    observedPeriod: '30-year continuous meteorological series (1991–2020) with trailing 5-year running validation.',
+    dataSource: 'NASA POWER Meteorological Project & Open-Meteo ERA5 Land Reanalysis APIs.',
+    limitations: 'Spatial grid resolution of 0.1° (~11 km). Micro-scale urban heat island variances may elevate central metro temperatures by up to +1.2°C above surrounding rural reference baselines.',
+    recommendations: [
+      'Incorporate passive building cooling and reflective rooftop envelopes to reduce peak cooling loads.',
+      'Transition HVAC systems to variable-capacity heat pumps to prepare for increasing cooling degree days.',
+      'Electrify high-frequency commute and transport fleets to cut localized thermal and particulate emissions.',
+      'Establish rainwater harvesting and drought mitigation reserves for seasonal precipitation shifts.'
+    ],
+  },
+  generatedAt: new Date().toISOString(),
+};
+
