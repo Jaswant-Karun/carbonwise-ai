@@ -103,7 +103,6 @@ const Reports = () => {
   const [selectedFilter, setSelectedFilter] = useState('30d');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
-  const [appliedCustom, setAppliedCustom] = useState(false);
 
   // Rollups View Selector
   const [rollupView, setRollupView] = useState('daily'); // 'daily', 'weekly', 'monthly', 'annual'
@@ -460,6 +459,16 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
     const sorted = [...list].sort((a, b) => b.emissionsKg - a.emissionsKg);
     return sorted[0]?.emissionsKg > 0 ? sorted[0] : null;
   }, [reportData]);
+
+  if (loading && !reportData) {
+    return (
+      <Layout>
+        <div className="white-loading-container">
+          <LoadingState label="Compiling certified carbon emission audit report..." />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

@@ -210,7 +210,7 @@ const ActionPlan = () => {
         setNotice(`Action "${rec.title}" accepted into your active plan.`);
       }
       setNotice(`"${rec.title}" accepted into your climate plan.`);
-    } catch (requestError) {
+    } catch {
       setError('Unable to accept recommendation.');
     }
   };
@@ -223,7 +223,7 @@ const ActionPlan = () => {
         await updateActionStatus(existingAction.id, 'dismissed');
       }
       setNotice(`Action "${rec.title}" dismissed from active view.`);
-    } catch (requestError) {
+    } catch {
       setError('Unable to dismiss recommendation.');
     }
   };

@@ -67,27 +67,15 @@ const Header = () => {
 
   const [alertCount, setAlertCount] = useState(0);
   const [dateRange, setDateRange] = useState('30d');
-  const [selectedRegion, setSelectedRegion] = useState('New York, USA');
-  const [regions, setRegions] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
     const fetchHeaderData = async () => {
       try {
-        const [regRes, alertRes] = await Promise.allSettled([
-          api.get('/environment/regions'),
-          api.get('/environment/alerts'),
-        ]);
-
-        if (isMounted) {
-          if (regRes.status === 'fulfilled' && regRes.value.data?.length > 0) {
-            setRegions(regRes.value.data);
-            setSelectedRegion(regRes.value.data[0].name);
-          }
-          if (alertRes.status === 'fulfilled' && Array.isArray(alertRes.value.data)) {
-            const openAlerts = alertRes.value.data.filter((a) => a.status === 'open');
-            setAlertCount(openAlerts.length);
-          }
+        const alertRes = await api.get('/environment/alerts');
+        if (isMounted && Array.isArray(alertRes.data)) {
+          const openAlerts = alertRes.data.filter((a) => a.status === 'open');
+          setAlertCount(openAlerts.length);
         }
       } catch {
         // Fallback silently if offline

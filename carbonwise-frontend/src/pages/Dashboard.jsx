@@ -502,7 +502,7 @@ const Dashboard = () => {
             </div>
             <div className="saas-card-subinfo">
               <span className="saas-tonnes-tag">{round(currentFootprint / 1000, 3)} tonnes</span>
-              <span className={`saas-trend-badge ${isReduction ? 'positive' : 'negative'}`}>
+              <span className={`saas-trend-badge ${isReduction ? 'positive' : 'negative'}`} title={`Prior period: ${round(previousFootprint)} kg CO₂e`}>
                 {percentageChange != null ? (
                   isReduction ? (
                     <><ArrowDownRight size={12} /> {Math.abs(percentageChange)}% vs prior</>
