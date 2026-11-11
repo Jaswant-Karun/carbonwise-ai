@@ -7,12 +7,16 @@ const { calculateActivityEmissions } = require('../services/carbonIntelligenceSe
 const addActivity = async (req, res) => {
   try {
     const activity_type = req.body.activity_type || req.body.activityType;
-    const details = req.body.details || {};
+    if (!activity_type || typeof activity_type !== 'string' || !activity_type.trim()) {
+      return res.status(400).json({ message: 'Valid activity_type is required.' });
+    }
+
+    const details = req.body.details && typeof req.body.details === 'object' ? { ...req.body.details } : {};
     if (req.body.notes !== undefined) {
-      details.notes = req.body.notes;
+      details.notes = String(req.body.notes).slice(0, 1000);
     }
     if (req.body.title !== undefined) {
-      details.title = req.body.title;
+      details.title = String(req.body.title).slice(0, 200);
     }
 
     const calcResult = calculateEmissions({
@@ -28,6 +32,10 @@ const addActivity = async (req, res) => {
         : null);
 
     const carbon_emissions = explicitEmissions !== null ? explicitEmissions : calcResult.emissionsKg;
+    if (!Number.isFinite(carbon_emissions) || carbon_emissions < 0) {
+      return res.status(400).json({ message: 'Calculated or explicit emissions must be a non-negative finite number.' });
+    }
+
     if (explicitEmissions !== null) {
       calcResult.emissionsKg = explicitEmissions;
       calcResult.emissionsTonnes = Number((explicitEmissions / 1000).toFixed(4));
@@ -40,12 +48,37 @@ const addActivity = async (req, res) => {
     details.factor_used = calcResult.factorUsed;
     details.is_estimate = true;
 
-    const date = req.body.date ? req.body.date : new Date().toISOString().slice(0, 10);
+    // Validate and sanitize date
+    let dateStr;
+    if (req.body.date || req.body.activity_date) {
+      const parsedDate = new Date(req.body.date || req.body.activity_date);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ message: 'Invalid activity date provided.' });
+      }
+      dateStr = parsedDate.toISOString().slice(0, 10);
+    } else {
+      dateStr = new Date().toISOString().slice(0, 10);
+    }
+
+    // Optional Idempotency Protection (prevent double-submit)
+    const idempotencyKey = (req.headers && req.headers['x-idempotency-key']) || (req.body && (req.body.idempotency_key || req.body.idempotencyKey));
+    if (idempotencyKey) {
+      const existingKeyMatch = await db.query(
+        `SELECT a.* FROM activities a
+         WHERE a.user_id = $1 AND a.details->>'idempotency_key' = $2
+         LIMIT 1`,
+        [req.user.id, String(idempotencyKey)]
+      );
+      if (existingKeyMatch.rows.length > 0) {
+        return res.status(200).json(existingKeyMatch.rows[0]);
+      }
+      details.idempotency_key = String(idempotencyKey);
+    }
 
     const newActivity = await db.query(
       `INSERT INTO activities (user_id, activity_type, details, carbon_emissions, date)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [req.user.id, activity_type, details, carbon_emissions, date]
+      [req.user.id, activity_type, details, carbon_emissions, dateStr]
     );
 
     const activityRow = newActivity.rows[0];
@@ -165,15 +198,28 @@ const updateActivity = async (req, res) => {
 
     const current = existing.rows[0];
     const activity_type = req.body.activity_type || req.body.activityType || current.activity_type;
-    const details = req.body.details !== undefined ? req.body.details : current.details;
-    if (req.body.notes !== undefined) {
-      details.notes = req.body.notes;
-    }
-    if (req.body.title !== undefined) {
-      details.title = req.body.title;
+    if (!activity_type || typeof activity_type !== 'string' || !activity_type.trim()) {
+      return res.status(400).json({ message: 'Valid activity_type is required.' });
     }
 
-    const date = req.body.date ? req.body.date : (current.date instanceof Date ? current.date.toISOString().slice(0, 10) : String(current.date).slice(0, 10));
+    const details = req.body.details !== undefined && typeof req.body.details === 'object' ? { ...req.body.details } : current.details;
+    if (req.body.notes !== undefined) {
+      details.notes = String(req.body.notes).slice(0, 1000);
+    }
+    if (req.body.title !== undefined) {
+      details.title = String(req.body.title).slice(0, 200);
+    }
+
+    let dateStr;
+    if (req.body.date || req.body.activity_date) {
+      const parsedDate = new Date(req.body.date || req.body.activity_date);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ message: 'Invalid activity date provided.' });
+      }
+      dateStr = parsedDate.toISOString().slice(0, 10);
+    } else {
+      dateStr = current.date instanceof Date ? current.date.toISOString().slice(0, 10) : String(current.date).slice(0, 10);
+    }
 
     const calcResult = calculateEmissions({
       category: activity_type,
@@ -188,6 +234,10 @@ const updateActivity = async (req, res) => {
         : null);
 
     const carbon_emissions = explicitEmissions !== null ? explicitEmissions : calcResult.emissionsKg;
+    if (!Number.isFinite(carbon_emissions) || carbon_emissions < 0) {
+      return res.status(400).json({ message: 'Emissions must be a non-negative finite number.' });
+    }
+
     if (explicitEmissions !== null) {
       calcResult.emissionsKg = explicitEmissions;
       calcResult.emissionsTonnes = Number((explicitEmissions / 1000).toFixed(4));
@@ -204,7 +254,7 @@ const updateActivity = async (req, res) => {
       `UPDATE activities
        SET activity_type = $1, details = $2, carbon_emissions = $3, date = $4
        WHERE id = $5 AND user_id = $6 RETURNING *`,
-      [activity_type, details, carbon_emissions, date, req.params.id, req.user.id]
+      [activity_type, details, carbon_emissions, dateStr, req.params.id, req.user.id]
     );
 
     // Update connected activity_emissions record

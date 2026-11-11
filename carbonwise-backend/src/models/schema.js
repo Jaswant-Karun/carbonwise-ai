@@ -309,6 +309,31 @@ const initDb = async () => {
     await db.query('CREATE INDEX IF NOT EXISTS idx_activity_emissions_user_category ON activity_emissions (user_id, category)');
     await db.query('CREATE INDEX IF NOT EXISTS idx_emission_factors_lookup ON emission_factors (category, activity_key, region)');
 
+    // Module 9: Core Performance Indexes & Integrity Constraints
+    await db.query('CREATE INDEX IF NOT EXISTS idx_activities_user_date ON activities (user_id, date DESC)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_activities_user_type ON activities (user_id, activity_type)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_activities_date ON activities (date)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_activity_emissions_user_calculated ON activity_emissions (user_id, calculated_at DESC)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_activity_emissions_scope ON activity_emissions (scope)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_scenarios_user_created ON scenarios (user_id, created_at DESC)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_coach_plans_user_created ON coach_plans (user_id, created_at DESC)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_coach_actions_user_status ON coach_actions (user_id, status)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_coach_actions_plan_id ON coach_actions (plan_id)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_coach_goals_user_status ON coach_goals (user_id, status)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_impact_baselines_user ON impact_baselines (user_id, created_at DESC)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_impact_reports_user_month ON impact_reports (user_id, report_month DESC)');
+
+    await db.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'chk_activities_carbon_emissions_non_negative'
+        ) THEN
+          ALTER TABLE activities ADD CONSTRAINT chk_activities_carbon_emissions_non_negative CHECK (carbon_emissions >= 0);
+        END IF;
+      END $$;
+    `);
+
     // Centralized Emission Engine Factor Registry Seeding
     const { seedEmissionFactors } = require('../services/emissionEngineService');
     await seedEmissionFactors();
