@@ -313,6 +313,17 @@ const initDb = async () => {
     const { seedEmissionFactors } = require('../services/emissionEngineService');
     await seedEmissionFactors();
 
+    // Module 6: Climate Action Planner Schema Upgrades
+    await db.query(`
+      ALTER TABLE coach_actions DROP CONSTRAINT IF EXISTS coach_actions_status_check;
+      ALTER TABLE coach_actions ADD CONSTRAINT coach_actions_status_check CHECK (status IN ('recommended', 'planned', 'in_progress', 'completed', 'skipped', 'dismissed'));
+      ALTER TABLE coach_actions ADD COLUMN IF NOT EXISTS impact_level VARCHAR(20) DEFAULT 'high';
+      ALTER TABLE coach_actions ADD COLUMN IF NOT EXISTS reason TEXT;
+      ALTER TABLE coach_actions ADD COLUMN IF NOT EXISTS savings_calculation TEXT;
+      ALTER TABLE coach_actions ADD COLUMN IF NOT EXISTS action_type VARCHAR(80);
+      ALTER TABLE coach_goals ADD COLUMN IF NOT EXISTS target_reduction_pct DECIMAL(6, 2);
+    `);
+
     console.log('✅ Database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database tables:', err.stack);
