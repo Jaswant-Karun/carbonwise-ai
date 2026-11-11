@@ -19,9 +19,12 @@ const {
   getSummary,
   getActivityEmission,
 } = require('../src/controllers/emissionController');
+const { initDb } = require('../src/models/schema');
 const db = require('../src/config/db');
 
 test('Carbon Emission Calculation Engine - Comprehensive Verification', async (t) => {
+  await initDb();
+
   const mockRes = () => {
     const res = {
       statusCode: 200,
