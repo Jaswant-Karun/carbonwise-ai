@@ -6,17 +6,31 @@ const allowedPeriods = new Set([7, 30, 90, 365]);
 const getCarbonIntelligence = async (req, res) => {
   const requestedPeriod = Number.parseInt(req.query.period, 10);
   const periodDays = allowedPeriods.has(requestedPeriod) ? requestedPeriod : 30;
-  const bounds = getPeriodBounds(periodDays);
 
   try {
     const activitiesResult = await db.query(
       `SELECT activity_type, details, carbon_emissions, date
        FROM activities
        WHERE user_id = $1
-         AND date BETWEEN $2::date AND $3::date
        ORDER BY date ASC`,
-      [req.user.id, bounds.previousStart, bounds.currentEnd]
+      [req.user.id]
     );
+
+    let referenceToday;
+    if (activitiesResult.rows.length > 0) {
+      const dates = activitiesResult.rows
+        .map((r) => (r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date).slice(0, 10)))
+        .filter(Boolean)
+        .sort();
+      const latestDate = dates[dates.length - 1];
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const defaultBounds = getPeriodBounds(periodDays, todayIso);
+      if (latestDate < defaultBounds.currentStart) {
+        referenceToday = latestDate;
+      }
+    }
+
+    const bounds = getPeriodBounds(periodDays, referenceToday);
 
     const intelligence = buildIntelligence({
       activities: activitiesResult.rows,
