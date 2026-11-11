@@ -10,6 +10,18 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchUser = async () => {
+      const isDemo = localStorage.getItem('carbonwise_demo_mode') === 'true';
+      if (isDemo) {
+        setUser({
+          id: 999,
+          name: 'Sustainability Ambassador',
+          email: 'demo@carbonwise.ai',
+          role: 'demo_user',
+        });
+        setLoading(false);
+        return;
+      }
+
       const token = localStorage.getItem('token');
       if (token) {
         try {
@@ -27,23 +39,39 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
+    localStorage.removeItem('carbonwise_demo_mode');
     localStorage.setItem('token', res.data.token);
     setUser(res.data);
   };
 
   const register = async (name, email, password) => {
     const res = await api.post('/auth/register', { name, email, password });
+    localStorage.removeItem('carbonwise_demo_mode');
     localStorage.setItem('token', res.data.token);
     setUser(res.data);
   };
 
+  const loginAsDemo = () => {
+    const demoUser = {
+      id: 999,
+      name: 'Sustainability Ambassador',
+      email: 'demo@carbonwise.ai',
+      role: 'demo_user',
+    };
+    localStorage.setItem('token', 'demo-token-carbonwise-preview');
+    localStorage.setItem('carbonwise_demo_mode', 'true');
+    setUser(demoUser);
+    return demoUser;
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('carbonwise_demo_mode');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, loginAsDemo, logout }}>
       {!loading && children}
     </AuthContext.Provider>
   );
