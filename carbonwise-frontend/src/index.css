@@ -8014,3 +8014,70 @@ h1, h2, h3, h4, h5, h6 {
 .text-muted {
   color: #718096 !important;
 }
+
+/* ========================================================
+   CLIMATE ACTION PLANNER WHITE SAAS BUTTONS & ACCENTS
+======================================================== */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #16845B;
+  color: #FFFFFF !important;
+  border: 1px solid #16845B;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(22, 132, 91, 0.2);
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background: #106646;
+  border-color: #106646;
+}
+
+.btn-outline-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  color: #183247;
+  border: 1px solid #E4EBE6;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline-secondary:hover {
+  background: #F7F9F7;
+  border-color: #CBD5E1;
+}
+
+.btn-icon-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #FFFFFF;
+  border: 1px solid #E4EBE6;
+  color: #718096;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon-refresh:hover {
+  border-color: #16845B;
+  color: #16845B;
+}
+
+.btn-icon-refresh.spinning svg {
+  animation: cw-spin 0.8s linear infinite;
+}
