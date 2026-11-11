@@ -6278,14 +6278,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .telemetry-info-card {
-  background: #FFFFFF;
-  border: 1px solid #E4EBE6;
+  background: #0E1726;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 22px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: 0 4px 16px rgba(24, 50, 71, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .info-card-header {
@@ -6297,13 +6297,13 @@ h1, h2, h3, h4, h5, h6 {
 .info-card-header h3 {
   font-size: 1.05rem;
   font-weight: 800;
-  color: #183247;
+  color: #FFFFFF;
   margin: 0 0 2px;
 }
 
 .info-card-header p {
   font-size: 0.78rem;
-  color: #718096;
+  color: #94A3B8;
   margin: 0;
 }
 
@@ -6320,10 +6320,10 @@ h1, h2, h3, h4, h5, h6 {
 .baselines-table th {
   text-align: left;
   padding: 10px 12px;
-  color: #718096;
-  border-bottom: 2px solid #E4EBE6;
+  color: #94A3B8;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
   font-weight: 700;
-  background: #F8FAFC;
+  background: #111C31;
   font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -6331,27 +6331,29 @@ h1, h2, h3, h4, h5, h6 {
 
 .baselines-table td {
   padding: 10px 12px;
-  color: #183247;
-  border-bottom: 1px solid #F1F5F9;
+  color: #FFFFFF;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .baselines-table tr:hover td {
-  background: #F8FAFC;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .anomaly-tag-warning {
-  color: #B45309;
+  color: #FBBF24;
   font-weight: 700;
-  background: #FEF3C7;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
   padding: 2px 8px;
   border-radius: 4px;
   display: inline-block;
 }
 
 .anomaly-tag-normal {
-  color: #166534;
+  color: #34D399;
   font-weight: 700;
-  background: #DCFCE7;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   padding: 2px 8px;
   border-radius: 4px;
   display: inline-block;
@@ -6359,7 +6361,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Air Quality Spotlight */
 .aqi-spotlight-box {
-  border: 1px solid;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 16px 20px;
 }
@@ -6385,7 +6387,7 @@ h1, h2, h3, h4, h5, h6 {
 .aqi-number-group small {
   display: block;
   font-size: 0.74rem;
-  color: #718096;
+  color: #94A3B8;
   margin-top: 2px;
 }
 
@@ -6400,39 +6402,39 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: #F7F9F7;
-  border: 1px solid #E4EBE6;
+  background: #111C31;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px;
   font-size: 0.8rem;
 }
 
 .pollutant-row strong {
-  color: #183247;
+  color: #FFFFFF;
   font-weight: 700;
 }
 
 .pollutant-row span {
   display: block;
   font-size: 0.72rem;
-  color: #718096;
+  color: #94A3B8;
 }
 
 .attribution-link {
   font-size: 0.74rem;
-  color: #16845B;
+  color: #34D399;
   font-weight: 600;
 }
 
 /* Alerts Card */
 .telemetry-alerts-card {
-  background: #FFFFFF;
-  border: 1px solid #E4EBE6;
+  background: #0E1726;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 4px 16px rgba(24, 50, 71, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .alerts-card-header {
@@ -6453,13 +6455,13 @@ h1, h2, h3, h4, h5, h6 {
 .alerts-title-row h2 {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #183247;
+  color: #FFFFFF;
   margin: 0;
 }
 
 .alerts-subtitle {
   font-size: 0.82rem;
-  color: #718096;
+  color: #94A3B8;
   margin: 0;
 }
 
@@ -6468,22 +6470,22 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 14px;
   padding: 20px;
-  background: #F0FDF4;
-  border: 1px solid #BBF7D0;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
   border-radius: 12px;
 }
 
 .alerts-clean-state strong {
   display: block;
   font-size: 0.95rem;
-  color: #166534;
+  color: #34D399;
   margin-bottom: 2px;
   font-weight: 700;
 }
 
 .alerts-clean-state p {
   font-size: 0.82rem;
-  color: #4A5568;
+  color: #94A3B8;
   margin: 0;
 }
 
@@ -6494,8 +6496,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .alert-event-card {
-  background: #FFFBEB;
-  border: 1px solid #FCD34D;
+  background: #121A2B;
+  border: 1px solid rgba(245, 158, 11, 0.3);
   border-radius: 12px;
   padding: 14px 16px;
   border-left: 4px solid #F59E0B;
@@ -6517,27 +6519,27 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .alert-severity-tag.warning {
-  background: #FEF3C7;
-  color: #B45309;
-  border: 1px solid #FDE68A;
+  background: rgba(245, 158, 11, 0.2);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
 }
 
 .alert-severity-tag.critical {
-  background: #FEE2E2;
-  color: #DC2626;
-  border: 1px solid #FECACA;
+  background: rgba(239, 68, 68, 0.2);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
 }
 
 .alert-severity-tag.advisory {
-  background: #DBEAFE;
-  color: #1E40AF;
-  border: 1px solid #BFDBFE;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38BDF8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
 }
 
 .duration-tag {
   font-size: 0.7rem;
-  background: #FEF3C7;
-  color: #92400E;
+  background: rgba(245, 158, 11, 0.2);
+  color: #FBBF24;
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 600;
@@ -6545,13 +6547,13 @@ h1, h2, h3, h4, h5, h6 {
 
 .alert-time {
   font-size: 0.72rem;
-  color: #718096;
+  color: #94A3B8;
   margin-left: auto;
 }
 
 .alert-explanation {
   font-size: 0.84rem;
-  color: #183247;
+  color: #FFFFFF;
   line-height: 1.45;
   margin: 0 0 10px;
 }
@@ -6566,7 +6568,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .alert-action-row small {
   font-size: 0.74rem;
-  color: #718096;
+  color: #94A3B8;
 }
 
 .alert-buttons {
@@ -6575,9 +6577,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-alert-action {
-  background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  color: #183247;
+  background: #111C31;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
   font-size: 0.74rem;
   font-weight: 600;
   padding: 5px 12px;
@@ -6587,15 +6589,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-alert-action:hover {
-  background: #F1F5F9;
-  color: #183247;
-  border-color: #94A3B8;
+  background: rgba(16, 185, 129, 0.18);
+  color: #34D399;
+  border-color: #10B981;
 }
 
 .btn-alert-action.resolve:hover {
-  background: #EAF6EF;
-  color: #16845B;
-  border-color: #A7D7C1;
+  background: rgba(16, 185, 129, 0.25);
+  color: #34D399;
+  border-color: #34D399;
 }
 
 /* Cross-Navigation Hub */
@@ -6658,8 +6660,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .white-toolbar-card {
-  background: #FFFFFF;
-  border: 1px solid var(--surface-border);
+  background: #0E1726;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 12px 18px;
   display: flex;
@@ -6667,7 +6669,7 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .toolbar-left {
@@ -6682,10 +6684,10 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 6px;
   padding: 3px 10px;
-  background: #EAF6EF;
-  border: 1px solid #D1E7DC;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
   border-radius: 999px;
-  color: #16845B;
+  color: #34D399;
   font-size: 0.74rem;
   font-weight: 600;
 }
@@ -6694,13 +6696,14 @@ h1, h2, h3, h4, h5, h6 {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #16845B;
+  background: #10B981;
+  box-shadow: 0 0 6px #10B981;
 }
 
 .toolbar-divider {
   width: 1px;
   height: 18px;
-  background: #E4EBE6;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .toolbar-location {
@@ -6708,19 +6711,24 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 6px;
   font-size: 0.8rem;
-  color: #718096;
+  color: #94A3B8;
 }
 
 .toolbar-select {
-  background: #FFFFFF;
-  border: 1px solid var(--surface-border);
+  background: #070C16;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
   padding: 4px 8px;
-  color: #183247;
+  color: #FFFFFF;
   font-size: 0.8rem;
   font-weight: 600;
   outline: none;
   cursor: pointer;
+}
+
+.toolbar-select option {
+  background: #070C16;
+  color: #FFFFFF;
 }
 
 .toolbar-right {
@@ -6732,8 +6740,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .timeframe-pill-group {
   display: inline-flex;
-  background: #F7F9F7;
-  border: 1px solid var(--surface-border);
+  background: #070C16;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   padding: 3px;
   gap: 2px;
@@ -6746,40 +6754,41 @@ h1, h2, h3, h4, h5, h6 {
   padding: 5px 12px;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #718096;
+  color: #94A3B8;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .timeframe-btn:hover {
-  color: #183247;
+  color: #FFFFFF;
 }
 
 .timeframe-btn.active {
-  background: #FFFFFF;
-  color: #16845B;
-  box-shadow: 0 1px 3px rgba(24, 50, 71, 0.08);
+  background: #111C31;
+  color: #34D399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   font-weight: 700;
 }
 
 .btn-emerald-primary {
-  background: #16845B;
-  color: #FFFFFF;
+  background: #10B981;
+  color: #080D1A;
   border: none;
   border-radius: 8px;
   padding: 7px 16px;
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
-  box-shadow: 0 1px 3px rgba(22, 132, 91, 0.2);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .btn-emerald-primary:hover {
-  background: #106646;
+  background: #34D399;
   transform: translateY(-1px);
 }
 
