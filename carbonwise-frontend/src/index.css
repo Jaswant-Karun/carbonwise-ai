@@ -6812,11 +6812,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .saas-summary-card {
-  background: #FFFFFF;
-  border: 1px solid var(--surface-border);
+  background: #0E1726;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 18px 20px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -6824,7 +6824,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .saas-summary-card:hover {
-  box-shadow: var(--shadow);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   transform: translateY(-1px);
 }
 
@@ -6836,7 +6836,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .saas-card-label {
-  color: #718096;
+  color: #94A3B8;
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -6852,28 +6852,28 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .saas-icon-badge.emerald {
-  background: #EAF6EF;
-  color: #16845B;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34D399;
 }
 
 .saas-icon-badge.amber {
-  background: #FEF3C7;
-  color: #D97706;
+  background: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
 }
 
 .saas-icon-badge.blue {
-  background: #EFF6FF;
-  color: #2563EB;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38BDF8;
 }
 
 .saas-icon-badge.mint {
-  background: #EAF6EF;
-  color: #16845B;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34D399;
 }
 
 .saas-icon-badge.purple {
-  background: #F3E8FF;
-  color: #7C3AED;
+  background: rgba(139, 92, 246, 0.15);
+  color: #A78BFA;
 }
 
 .saas-card-metric-row {
@@ -6887,14 +6887,14 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Manrope', sans-serif;
   font-size: 1.6rem;
   font-weight: 800;
-  color: #183247;
+  color: #FFFFFF;
   letter-spacing: -0.02em;
 }
 
 .saas-card-unit {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #718096;
+  color: #94A3B8;
 }
 
 .saas-card-subinfo {
@@ -6902,16 +6902,16 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: space-between;
   font-size: 0.75rem;
-  color: #718096;
+  color: #94A3B8;
 }
 
 .saas-tonnes-tag, .saas-share-tag {
   font-weight: 600;
-  color: #183247;
+  color: #FFFFFF;
 }
 
 .saas-aux-text {
-  color: #718096;
+  color: #94A3B8;
   font-size: 0.73rem;
 }
 
@@ -6926,19 +6926,19 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .saas-trend-badge.positive {
-  background: #EAF6EF;
-  color: #16845B;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34D399;
 }
 
 .saas-trend-badge.negative {
-  background: #FEE2E2;
-  color: #DC2626;
+  background: rgba(239, 68, 68, 0.15);
+  color: #F87171;
 }
 
 .saas-card-progress-bar {
   width: 100%;
   height: 6px;
-  background: #E4EBE6;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   overflow: hidden;
   margin-top: 4px;
@@ -6946,13 +6946,13 @@ h1, h2, h3, h4, h5, h6 {
 
 .saas-card-progress-fill {
   height: 100%;
-  background: #16845B;
+  background: #10B981;
   border-radius: 999px;
   transition: width 0.3s ease;
 }
 
 .saas-card-link {
-  color: #16845B;
+  color: #34D399;
   font-weight: 600;
   text-decoration: none;
   display: inline-flex;
@@ -6974,11 +6974,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .saas-content-card {
-  background: #FFFFFF;
-  border: 1px solid var(--surface-border);
+  background: #0E1726;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   padding: 22px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
 }
@@ -6995,20 +6995,20 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Manrope', sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #183247;
+  color: #FFFFFF;
   letter-spacing: -0.01em;
 }
 
 .card-sub-muted {
   font-size: 0.8rem;
-  color: #718096;
+  color: #94A3B8;
   margin-top: 2px;
 }
 
 .btn-card-action {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #16845B;
+  color: #34D399;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -7019,7 +7019,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-card-action:hover {
-  background: #EAF6EF;
+  background: rgba(16, 185, 129, 0.15);
 }
 
 .card-kicker-tag {
