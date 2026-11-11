@@ -50,17 +50,25 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data);
   };
 
-  const loginAsDemo = () => {
-    const demoUser = {
-      id: 999,
-      name: 'Sustainability Ambassador',
-      email: 'demo@carbonwise.ai',
-      role: 'demo_user',
-    };
-    localStorage.setItem('token', 'demo-token-carbonwise-preview');
-    localStorage.setItem('carbonwise_demo_mode', 'true');
-    setUser(demoUser);
-    return demoUser;
+  const loginAsDemo = async () => {
+    try {
+      const res = await api.post('/auth/demo');
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('carbonwise_demo_mode', 'true');
+      setUser(res.data);
+      return res.data;
+    } catch {
+      const demoUser = {
+        id: 205,
+        name: 'Sustainability Ambassador',
+        email: 'demo@carbonwise.ai',
+        role: 'demo_user',
+      };
+      localStorage.setItem('token', 'demo-token-carbonwise-preview');
+      localStorage.setItem('carbonwise_demo_mode', 'true');
+      setUser(demoUser);
+      return demoUser;
+    }
   };
 
   const logout = () => {

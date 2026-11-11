@@ -90,4 +90,28 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getMe };
+const loginDemo = async (req, res) => {
+  try {
+    let userResult = await db.query('SELECT id, name, email FROM users WHERE email = $1', ['demo@carbonwise.ai']);
+    let user = userResult.rows[0];
+    if (!user) {
+      const hashed = await bcrypt.hash('DemoUser123!', 10);
+      const insert = await db.query(
+        'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email',
+        ['Sustainability Ambassador', 'demo@carbonwise.ai', hashed]
+      );
+      user = insert.rows[0];
+    }
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      token: generateToken(user.id),
+    });
+  } catch (error) {
+    console.error('Demo login error:', error.message);
+    res.status(500).json({ message: 'Server error during demo authentication' });
+  }
+};
+
+module.exports = { registerUser, loginUser, getMe, loginDemo };
