@@ -528,7 +528,7 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Filter size={16} className="icon-mint" />
-                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#ffffff' }}>Audit Timeframe:</span>
+                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#183247' }}>Audit Timeframe:</span>
                 <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
                   ({reportData?.meta?.startDate} to {reportData?.meta?.endDate})
                 </span>
@@ -933,7 +933,7 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                         <td>
                           <span className="category-cell-badge">
                             <Icon size={14} style={{ color: cat.color }} />
-                            <strong style={{ color: '#ffffff' }}>{cat.label}</strong>
+                            <strong style={{ color: '#183247' }}>{cat.label}</strong>
                           </span>
                         </td>
                         <td>
@@ -1022,21 +1022,21 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                     </tr>
                   </thead>
                   <tbody>
-                    {reportData.highestActivities.map((act) => (
-                      <tr key={act.id}>
+                    {reportData.highestActivities.map((act, idx) => (
+                      <tr key={act.id || idx}>
                         <td className="mono" style={{ color: '#f59e0b', fontWeight: 700 }}>
-                          #{act.rank}
+                          #{act.rank || idx + 1}
                         </td>
                         <td className="mono" style={{ fontSize: '0.78rem' }}>
                           {act.date}
                         </td>
                         <td>
                           <span className="category-cell-badge">
-                            <strong style={{ color: '#ffffff' }}>{act.categoryLabel}</strong>
+                            <strong style={{ color: '#183247' }}>{act.categoryLabel || act.label || act.activity_type}</strong>
                           </span>
                         </td>
                         <td style={{ fontSize: '0.8rem' }}>
-                          <strong style={{ color: '#ffffff' }}>{act.details}</strong>
+                          <strong style={{ color: '#183247' }}>{act.details || act.detailsText || 'Activity emission'}</strong>
                           {act.notes && (
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                               Ref: {act.notes}
@@ -1054,12 +1054,12 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                           </div>
                         </td>
                         <td>
-                          <span className={`btn-scope-pill ${act.scope.toLowerCase().replace(' ', '-')}`}>
-                            {act.scope}
+                          <span className={`btn-scope-pill ${(act.scope || 'Scope 3').toLowerCase().replace(' ', '-')}`}>
+                            {act.scope || 'Scope 3'}
                           </span>
                         </td>
                         <td>
-                          <span className="source-citation-badge">{act.factorSource}</span>
+                          <span className="source-citation-badge">{act.factorSource || 'UK DEFRA 2024 / IPCC AR6'}</span>
                         </td>
                       </tr>
                     ))}
@@ -1133,7 +1133,7 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                     {(reportData?.dailyRollup || []).map((d) => (
                       <tr key={d.date}>
                         <td className="mono" style={{ fontSize: '0.8rem' }}>{d.date}</td>
-                        <td><strong style={{ color: '#ffffff' }}>{d.label}</strong></td>
+                        <td><strong style={{ color: '#183247' }}>{d.label}</strong></td>
                         <td className="mono" style={{ color: d.emissionsKg > 0 ? '#10b981' : '#64748b', fontWeight: 600 }}>
                           {round(d.emissionsKg)} kg
                         </td>
@@ -1160,7 +1160,7 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                     {(reportData?.weeklyRollup || []).map((w) => (
                       <tr key={w.weekStart}>
                         <td className="mono" style={{ fontSize: '0.8rem' }}>{w.weekStart}</td>
-                        <td><strong style={{ color: '#ffffff' }}>{w.label}</strong></td>
+                        <td><strong style={{ color: '#183247' }}>{w.label}</strong></td>
                         <td className="mono" style={{ color: '#10b981', fontWeight: 600 }}>{round(w.emissionsKg)} kg</td>
                         <td className="mono" style={{ color: '#94a3b8' }}>{round(w.emissionsTonnes, 4)} t</td>
                         <td className="mono">{w.activityCount} logs</td>
@@ -1185,7 +1185,7 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                     {(reportData?.monthlyRollup || []).map((m) => (
                       <tr key={m.monthKey}>
                         <td className="mono" style={{ fontSize: '0.8rem' }}>{m.monthKey}</td>
-                        <td><strong style={{ color: '#ffffff' }}>{m.label}</strong></td>
+                        <td><strong style={{ color: '#183247' }}>{m.label}</strong></td>
                         <td className="mono" style={{ color: '#10b981', fontWeight: 600 }}>{round(m.emissionsKg)} kg</td>
                         <td className="mono" style={{ color: '#94a3b8' }}>{round(m.emissionsTonnes, 4)} t</td>
                         <td className="mono">{m.activityCount} logs</td>
@@ -1208,7 +1208,7 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                   <tbody>
                     {(reportData?.annualRollup || []).map((y) => (
                       <tr key={y.yearKey}>
-                        <td><strong style={{ color: '#ffffff' }}>{y.yearKey}</strong></td>
+                        <td><strong style={{ color: '#183247' }}>{y.yearKey}</strong></td>
                         <td className="mono" style={{ color: '#10b981', fontWeight: 600 }}>{round(y.emissionsKg)} kg</td>
                         <td className="mono" style={{ color: '#94a3b8' }}>{round(y.emissionsTonnes, 4)} t</td>
                         <td className="mono">{y.activityCount} logs</td>
@@ -1456,7 +1456,7 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Calendar size={18} className="icon-mint" />
-                <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#ffffff' }}>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#183247' }}>
                   Monthly Sustainability Audit Pack
                 </h3>
               </div>
@@ -1502,7 +1502,7 @@ ${(r.recommendations || []).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                   <div className="math-step-card">
                     <span className="math-step-title">Month Footprint</span>
-                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff' }}>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#183247' }}>
                       {round(monthlyReportData.report?.totals?.emissionsKg)} <span style={{ fontSize: '0.8rem', color: '#10b981' }}>kg CO₂e</span>
                     </div>
                     <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>

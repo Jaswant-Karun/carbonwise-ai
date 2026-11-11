@@ -277,11 +277,11 @@ export const demoDetailedReport = {
     { scope: 'Scope 3', emissionsKg: 33.9, emissionsTonnes: 0.0339, percentage: 32.8 },
   ],
   highestActivities: [
-    { id: 101, activity_type: 'electricity', label: 'Electricity & Energy', emissionsKg: 60.0, date: '2026-11-10', detailsText: '120 kWh [Grid] [Solar: 30 kWh]' },
-    { id: 104, activity_type: 'facilities', label: 'Facilities & Buildings', emissionsKg: 25.0, date: '2026-11-06', detailsText: 'Commercial Building [50 kWh]' },
-    { id: 102, activity_type: 'transport', label: 'Transportation', emissionsKg: 9.45, date: '2026-11-09', detailsText: 'Hybrid Car: 45 km (2 pax)' },
-    { id: 103, activity_type: 'food', label: 'Food & Diet', emissionsKg: 7.5, date: '2026-11-08', detailsText: 'Vegetarian Meal (3 meals)' },
-    { id: 106, activity_type: 'water', label: 'Water Usage', emissionsKg: 1.4, date: '2026-11-07', detailsText: 'Municipal Tap: 4 m³' },
+    { id: 101, rank: 1, activity_type: 'electricity', category: 'electricity', label: 'Electricity & Energy', categoryLabel: 'Electricity & Energy', emissionsKg: 60.0, emissionsTonnes: 0.06, scope: 'Scope 2', factorSource: 'EPA eGRID 2024 / NREL', date: '2026-11-10', details: '120 kWh [Grid] [Solar: 30 kWh]', detailsText: '120 kWh [Grid] [Solar: 30 kWh]' },
+    { id: 104, rank: 2, activity_type: 'facilities', category: 'facilities', label: 'Facilities & Buildings', categoryLabel: 'Facilities & Buildings', emissionsKg: 25.0, emissionsTonnes: 0.025, scope: 'Scope 1', factorSource: 'CBECS 2024 / DEFRA', date: '2026-11-06', details: 'Commercial Building [50 kWh]', detailsText: 'Commercial Building [50 kWh]' },
+    { id: 102, rank: 3, activity_type: 'transport', category: 'transport', label: 'Transportation', categoryLabel: 'Transportation', emissionsKg: 9.45, emissionsTonnes: 0.0095, scope: 'Scope 1', factorSource: 'UK DEFRA 2024', date: '2026-11-09', details: 'Hybrid Car: 45 km (2 pax)', detailsText: 'Hybrid Car: 45 km (2 pax)' },
+    { id: 103, rank: 4, activity_type: 'food', category: 'food', label: 'Food & Diet', categoryLabel: 'Food & Diet', emissionsKg: 7.5, emissionsTonnes: 0.0075, scope: 'Scope 3', factorSource: 'Poore & Nemecek 2018 / IPCC', date: '2026-11-08', details: 'Vegetarian Meal (3 meals)', detailsText: 'Vegetarian Meal (3 meals)' },
+    { id: 106, rank: 5, activity_type: 'water', category: 'water', label: 'Water Usage', categoryLabel: 'Water Usage', emissionsKg: 1.4, emissionsTonnes: 0.0014, scope: 'Scope 3', factorSource: 'UK Water Industry Research', date: '2026-11-07', details: 'Municipal Tap: 4 m³', detailsText: 'Municipal Tap: 4 m³' },
   ],
   narrative: {
     summary: 'Total footprint for the selected 30-day period is 103.35 kg CO₂e (0.1034 tonnes), reflecting a 9.97% reduction compared to the prior equivalent cycle. Grid electricity and facilities HVAC operations represent 82.3% of cumulative emissions.',

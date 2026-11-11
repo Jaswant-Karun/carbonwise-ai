@@ -512,7 +512,7 @@ const getDetailedReport = async (userId, options = {}) => {
       notes: act.details?.notes || act.details?.billReference || act.details?.itemDescription || '',
       emissionsKg: kg,
       emissionsTonnes: round(kg / 1000.0, 4),
-      scope: act.scope || 'Scope 3',
+      scope: act.details?.scope || act.scope || 'Scope 3',
       factorSource: act.factor_source || 'UK DEFRA 2024 / IPCC AR6',
       methodology: act.methodology || 'Quantity × Verified Emission Factor',
     };
@@ -567,7 +567,7 @@ const getDetailedReport = async (userId, options = {}) => {
       details: formatActivityDetails(act),
       emissionsKg: round(act.carbon_emissions, 2),
       emissionsTonnes: round((parseFloat(act.carbon_emissions) || 0) / 1000.0, 4),
-      scope: act.scope || 'Scope 3',
+      scope: act.details?.scope || act.scope || 'Scope 3',
       factorSource: act.factor_source || 'UK DEFRA 2024 / IPCC AR6',
       notes: act.details?.notes || '',
     })),
