@@ -1,4 +1,5 @@
 # CarbonWise AI — Real-Time Climate Intelligence & Environmental Anomaly Detection Platform
+
 **Tagline: Monitor. Detect. Analyze. Alert.**  
 **Aligned with UN Sustainable Development Goal 13: Climate Action**
 
@@ -38,12 +39,14 @@ CarbonWise AI is a unified, full-stack environmental intelligence SaaS platform.
    - Employs PostgreSQL SHA-256 caching (`ai_response_cache`), in-flight request deduplication, and graceful deterministic fallbacks if Gemini quota is exhausted.
 
 ### The Problem
+
 1. **Fragmented Environmental Datasets**: Climate monitoring data is spread across heterogeneous portals (national weather models, air monitoring stations, satellite-derived reanalysis datasets), making it difficult for individuals and organizations to understand local environmental changes.
 2. **Delayed & Unexplainable Alerts**: Most consumer environmental apps show raw numbers (e.g., $38^\circ\text{C}$ or $120\,\mu\text{g/m}^3$) without baseline context, failing to explain whether an observation is an extreme anomaly, a seasonal expected variation, or a faulty sensor flatline.
 3. **Black-Box Carbon Tools & Hallucinated Advice**: Typical carbon calculators output a static number without showing the underlying emission factors, without tracking historical trends, or by using unconstrained generative AI that hallucinates measurements and claims causation without scientific evidence.
 4. **Conflating Weather with Climate Change**: Public discussions and superficial tools often confuse short-term local weather fluctuations with long-term climatological trends, or mix hypothetical lifestyle savings with verified physical reductions.
 
 ### Project Objectives
+
 - **Ingest Verified Live Telemetry**: Automatically retrieve real-time weather and ambient air quality from documented, authoritative APIs (Open-Meteo, OpenAQ) without requiring manual data entry.
 - **Explainable Statistical Anomaly Detection**: Build a transparent, deterministic detection engine using robust statistical methods (Median Absolute Deviation, Robust Z-scores, and seasonal reference normals) that separates true atmospheric anomalies from sensor data-quality faults.
 - **Strict Data Segregation**: Maintain absolute scientific separation between:
@@ -136,6 +139,7 @@ flowchart TD
 ## 3. Technology Stack & Data Providers
 
 ### Frontend Technologies
+
 - **Framework**: React 19 (`react`, `react-dom` `^19.2.4`)
 - **Build Tool**: Vite 8 (`vite` `^8.0.0`)
 - **Routing**: React Router v7 (`react-router-dom` `^7.13.1`)
@@ -145,6 +149,7 @@ flowchart TD
 - **HTTP Client**: Axios (`axios` `^1.13.6`)
 
 ### Backend Technologies
+
 - **Runtime**: Node.js (v20+ / v22 LTS tested)
 - **Framework**: Express 5 (`express` `^5.2.1`)
 - **Database Driver**: `pg` `^8.20.0` (PostgreSQL client with SSL pooling)
@@ -154,6 +159,7 @@ flowchart TD
 - **Test Runner**: Node.js Built-in Test Runner (`node --test`)
 
 ### Verified Data Providers & Attribution
+
 1. **Open-Meteo Weather API** ([open-meteo.com](https://open-meteo.com/)):
    - *Data*: Hourly temperature, relative humidity, precipitation, wind speed, surface pressure, 7-day numerical ensemble weather predictions.
    - *Attribution*: Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
@@ -173,22 +179,27 @@ flowchart TD
 ## 4. Installation & Startup Instructions
 
 ### Prerequisites
+
 - Node.js (v20.0.0 or higher recommended)
 - PostgreSQL (v14 or higher) running locally or hosted on Render / Supabase / Neon
 - Git
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/Jaswant-Karun/carbonwise-ai.git
 cd Carbonwise_Ai_SDG13
 ```
 
 ### 2. Backend Setup
+
 ```bash
 cd carbonwise-backend
 npm install
 ```
+
 Configure your environment variables (see Section 6), then start the backend service:
+
 ```bash
 # Development mode with auto-reload:
 npm run dev
@@ -196,15 +207,19 @@ npm run dev
 # Or production mode:
 npm start
 ```
+
 The backend initializes database tables on startup and listens at `http://localhost:5000`.
 
 ### 3. Frontend Setup
+
 In a separate terminal:
+
 ```bash
 cd carbonwise-frontend
 npm install
 npm run dev
 ```
+
 Open `http://localhost:5173` in your browser.
 
 ---
@@ -214,10 +229,13 @@ Open `http://localhost:5173` in your browser.
 The database setup is **completely safe and non-destructive**. It never drops existing tables or deletes user records.
 
 ### Database Setup
+
 1. Create a database in your PostgreSQL instance:
+
    ```sql
    CREATE DATABASE carbonwise;
    ```
+
 2. The application includes both an idempotent startup initializer ([`src/models/schema.js`](carbonwise-backend/src/models/schema.js)) and numbered migration scripts in [`carbonwise-backend/migrations`](carbonwise-backend/migrations):
    - `001_environment_intelligence.sql`: Regions, sources, observations, alerts, ingestion runs.
    - `002_live_climate_ingestion.sql`: Unique constraints for idempotent telemetry upserts.
@@ -226,6 +244,7 @@ The database setup is **completely safe and non-destructive**. It never drops ex
    - `005_carbon_intelligence_and_coach.sql`: Scenarios, coach plans, coach actions, coach goals, impact baselines, and impact reports.
 
 ### Applying Migrations Manually (Optional / CI/CD)
+
 ```bash
 psql "$DATABASE_URL" -f migrations/001_environment_intelligence.sql
 psql "$DATABASE_URL" -f migrations/002_live_climate_ingestion.sql
@@ -241,6 +260,7 @@ Each migration has a matching `.down.sql` file for safe rollback of newly added 
 ## 6. Environment Configuration (.env Examples)
 
 ### Backend Configuration (`carbonwise-backend/.env`)
+
 Create `carbonwise-backend/.env` containing the following template:
 
 ```env
@@ -272,6 +292,7 @@ ENVIRONMENT_SYNC_INTERVAL_MS=1800000
 ```
 
 ### Frontend Configuration (`carbonwise-frontend/.env`)
+
 Create `carbonwise-frontend/.env`:
 
 ```env
@@ -286,6 +307,7 @@ VITE_API_URL=http://localhost:5000/api
 ## 7. Ingestion & Anomaly Detection Methodology
 
 ### Telemetry Ingestion Pipeline
+
 1. **Coordinate Validation**: Validates user-selected regions ($-90^\circ \le \text{lat} \le 90^\circ$, $-180^\circ \le \text{lon} \le 180^\circ$).
 2. **Provider Dispatch**: Fetches multi-variable weather (temperature, humidity, rain, wind, pressure) and air quality (PM2.5, PM10, AQI).
 3. **Unit Normalization**: Standardizes variables into scientific units ($^\circ\text{C}$, $\text{mm}$, $\text{km/h}$, $\text{hPa}$, $\mu\text{g/m}^3$) while preserving original source measurements.
@@ -293,6 +315,7 @@ VITE_API_URL=http://localhost:5000/api
 5. **Freshness Tracking**: Categorizes telemetry as `fresh` ($\le 120$ minutes old) or `stale`.
 
 ### Mathematical Anomaly Detection
+
 The anomaly detection engine in [`climateAnomalyService.js`](carbonwise-backend/src/services/climateAnomalyService.js) uses **robust, non-parametric statistics** rather than simple averages that are easily distorted by extreme outliers:
 
 $$\text{Median} = \tilde{x} = \text{median}(X)$$
@@ -306,6 +329,7 @@ $$\text{Robust Z-Score} = \frac{x_{\text{observed}} - \tilde{x}}{\text{Robust } 
 $$\text{Threshold} = \max(\tilde{x} \times 1.5,\; \tilde{x} + 2 \times \text{Robust } \sigma)$$
 
 ### Atmospheric Anomaly vs. Data Quality Fault
+
 The engine rigorously separates true atmospheric events from sensor/provider failure modes:
 
 | Detection Type | Category | Condition / Evidence | Action Taken |
@@ -321,19 +345,24 @@ The engine rigorously separates true atmospheric events from sensor/provider fai
 ## 8. How to Interpret the Dashboard, Baselines & Alerts
 
 ### 1. Scientific Integrity Principle
+>
 > [!IMPORTANT]
 > **One weather event is NOT proof of climate change.**
 > A single record-breaking hot day or heavy thunderstorm is an acute meteorological weather anomaly. **Climate change** represents statistically significant shifts in multi-decadal distributions (typically 30-year WMO climate normal periods, such as 1991–2020). CarbonWise AI explicitly distinguishes short-term weather anomalies from decadal climate trend lines.
 
 ### 2. Multi-Tier Data Separation
+
 To prevent misleading users, CarbonWise AI visualizes four distinct data tiers:
+
 - **Tier 1: Historical Ground Truth** — Verified physical observations recorded in PostgreSQL.
 - **Tier 2: Current Telemetry** — The latest live sensor reading.
 - **Tier 3: Short-Term NWP Forecast** — 7-day numerical weather predictions generated by atmospheric physics models (ECMWF/GFS), showing 10th–90th percentile uncertainty bands.
 - **Tier 4: Long-Term Climate Projections** — 2025–2050 IPCC CMIP6 multi-model scenario trajectories based on greenhouse gas forcing pathways, not daily weather predictions.
 
 ### 3. Personal Carbon Footprint vs. Planetary Climate
+
 Personal carbon accounting (activities logged in kg CO₂) is kept on a completely separate analytical pipeline from macro environmental monitoring (weather and air quality):
+
 - **Carbon Intelligence**: Analyzes where emissions came from based on EPA/IPCC-aligned emission factors ($0.21\,\text{kg/km}$ transport, $0.50\,\text{kg/kWh}$ electricity, etc.).
 - **What-If Simulator**: Models hypothetical behavioral changes. Potential savings are clearly flagged with an estimation disclaimer and **never modify actual activity history**.
 
@@ -344,6 +373,7 @@ Personal carbon accounting (activities logged in kg CO₂) is kept on a complete
 Google Gemini (`gemini-2.5-flash`) acts strictly as an **explanation and reporting assistant**. It is barred from numerical calculations and data fabrication.
 
 ### Safety & Reliability Mechanisms in [`geminiChatService.js`](carbonwise-backend/src/services/geminiChatService.js)
+
 1. **PostgreSQL Response Caching**: Responses are stored in `ai_response_cache` using a SHA-256 hash of the normalized input, prompt version, model version, and user ID:
    $$\text{Cache Key} = \text{SHA256}(\text{userId} + \text{task} + \text{input} + \text{promptVersion} + \text{modelVersion})$$
    Identical requests reuse the cached response, preventing external API calls.
@@ -358,12 +388,16 @@ Google Gemini (`gemini-2.5-flash`) acts strictly as an **explanation and reporti
 The platform has undergone rigorous automated testing with zero mock fabrications:
 
 ### 1. Backend Integration & Unit Tests
+
 Run the backend test suite:
+
 ```powershell
 cd carbonwise-backend
 npm test
 ```
+
 **Actual Outcome**:
+
 ```text
 ✔ 1. Server and PostgreSQL connectivity
 ✔ 2. Authentication setup and user tokens
@@ -390,13 +424,17 @@ npm test
 ```
 
 ### 2. Frontend Linting & Production Build
+
 Run frontend quality checks:
+
 ```powershell
 cd carbonwise-frontend
 npm run lint
 npm run build
 ```
+
 **Actual Outcome**:
+
 - `npm run lint`: **0 errors** (all fast refresh and hook dependency checks pass).
 - `npm run build`: Vite v8 compiled in **578 ms** with zero errors (`dist/index.html`, `dist/assets/index.css`, `dist/assets/index.js`).
 
@@ -407,6 +445,7 @@ npm run build
 All endpoints are hosted at `http://localhost:5000/api`. Authenticated routes require `Authorization: Bearer <token>`.
 
 ### 1. Authentication & System Health
+
 | Method | Endpoint | Auth | Purpose |
 | :--- | :--- | :---: | :--- |
 | `GET` | `/health` | Public | Server liveness and database connection status |
@@ -415,6 +454,7 @@ All endpoints are hosted at `http://localhost:5000/api`. Authenticated routes re
 | `GET` | `/auth/me` | User | Get authenticated user profile |
 
 ### 2. Live Environmental Telemetry & Alerts
+
 | Method | Endpoint | Auth | Purpose |
 | :--- | :--- | :---: | :--- |
 | `GET` | `/environment/locations/search?q={query}` | User | Open-Meteo geocoding search for global locations |
@@ -431,6 +471,7 @@ All endpoints are hosted at `http://localhost:5000/api`. Authenticated routes re
 | `PATCH` | `/environment/alerts/:id` | User | Update alert status (`open`, `acknowledged`, `resolved`) |
 
 ### 3. Personal Carbon Intelligence & Sustainability Modules
+
 | Method | Endpoint | Auth | Purpose |
 | :--- | :--- | :---: | :---: |
 | `POST` | `/activities` | User | Log carbon activity (`activity_type`, `details`, `date`) |
@@ -454,12 +495,14 @@ All endpoints are hosted at `http://localhost:5000/api`. Authenticated routes re
 During your project viva or live demonstration, follow this sequence to demonstrate real data ingestion, statistical anomaly detection, and segregation of metrics:
 
 ### Step 1: User Login & Location Selection
+
 1. Log in to the application at `http://localhost:5173`.
 2. Navigate to **Live Monitoring** (`/live-climate`).
 3. Click **Add Location** and search for a city (e.g., `Bengaluru` or `London`). The app calls the Open-Meteo Geocoding API and returns coordinates ($12.97^\circ\,\text{N}, 77.59^\circ\,\text{E}$).
 4. Click to save. The backend saves the region into PostgreSQL `environment_regions` and immediately triggers an initial live telemetry ingestion.
 
 ### Step 2: Live Ingestion & Telemetry Verification
+
 1. Click **Sync Telemetry** on the dashboard header.
 2. Watch the backend logs: `[scheduler] Ingested 5 points for "Bengaluru Urban"`.
 3. The dashboard cards update with real empirical measurements:
@@ -470,6 +513,7 @@ During your project viva or live demonstration, follow this sequence to demonstr
    - Freshness badge shows **"Live sync"** ($\le 120$ min).
 
 ### Step 3: Statistical Baseline & Anomaly Engine
+
 1. Point to the **Statistical Baseline** card on the screen.
 2. Explain that the baseline is computed from the historical median ($\tilde{x}$) and Median Absolute Deviation (MAD), not a simple average.
 3. If an observation exceeds $\max(\tilde{x} \times 1.5,\; \tilde{x} + 2\sigma)$, the detection engine flags it as an anomaly.
@@ -477,6 +521,7 @@ During your project viva or live demonstration, follow this sequence to demonstr
 5. Demonstrate clicking **Acknowledge** or **Resolve** on an alert, showing that the resolution history timestamp is stored in PostgreSQL.
 
 ### Step 4: Multi-Tier Forecast vs. Climate Projection
+
 1. Navigate to **Climate Trends & Forecasts** (`/climate-trends`).
 2. Show the **Ordinary Least Squares (OLS) trend line** and comparison against the **1991–2020 WMO Standard Climate Normal**.
 3. Point out the clear visual separation between:
@@ -486,6 +531,7 @@ During your project viva or live demonstration, follow this sequence to demonstr
 4. Highlight the disclaimer: *"Projections simulate multi-decadal climatological forcing, not day-to-day weather events."*
 
 ### Step 5: Personal Carbon Modules (What-If Simulator & Eco-Coach)
+
 1. Navigate to **What-If Simulator** (`/simulator`).
 2. Demonstrate adjusting electricity reduction by 20% or switching 50% of transport from car to public transit.
 3. Show that potential savings ($10.5\,\text{kg CO}_2$) are calculated deterministically using published emission factors.
@@ -493,6 +539,7 @@ During your project viva or live demonstration, follow this sequence to demonstr
 5. Navigate to **Eco-Coach** (`/action-plan`) to show the 7-day plan adapted to the user's highest-emitting categories.
 
 ### Step 6: Gemini Caching & Fallback Proof
+
 1. Trigger an AI Insight card. Point to backend logs: `[gemini] task=env_insights cache_hit=false latency_ms=1200`.
 2. Refresh the page: the backend responds in $< 10\,\text{ms}$ with `[gemini] task=env_insights cache_hit=true`, proving that the response was served from PostgreSQL `ai_response_cache` without hitting the Google Gemini API.
 3. Explain that if the network drops or quota is exhausted, deterministic rule-based cards are displayed automatically.
@@ -502,29 +549,38 @@ During your project viva or live demonstration, follow this sequence to demonstr
 ## 13. Viva Voce Questions & Authoritative Answers
 
 ### Q1: What UN Sustainable Development Goal does this project target?
+>
 > **Answer**: It directly supports **UN SDG 13: Climate Action**, specifically:
+>
 > - *Target 13.3*: Improve education, awareness-raising, and human and institutional capacity on climate change mitigation, adaptation, impact reduction, and early warning.
 > - *Target 13.b*: Promote mechanisms for raising capacity for effective climate change-related planning and management.
 
 ### Q2: Why is one extreme weather event not proof of climate change?
+>
 > **Answer**: Weather is the atmospheric state at a specific time and location (hours to days), driven by chaotic thermodynamic shifts. Climate is the statistical distribution of weather over prolonged periods (typically 30 years according to the World Meteorological Organization). A single extreme temperature spike is an acute meteorological anomaly; only a statistically significant decadal shift in the frequency, duration, or intensity of such anomalies constitutes evidence of climate change.
 
 ### Q3: Why did you use Median Absolute Deviation (MAD) instead of mean and standard deviation?
+>
 > **Answer**: Standard deviation assumes a normal (Gaussian) distribution and is easily skewed by extreme outliers. Environmental telemetry often includes extreme weather spikes or corrupted sensor reads. MAD is a **robust, non-parametric statistic** that measures dispersion around the median without being distorted by anomalies, ensuring a reliable baseline.
 
 ### Q4: How do you prevent generative AI from hallucinating measurements?
+>
 > **Answer**: We use a strict **three-tier boundary architecture**:
+>
 > 1. Numerical calculations, statistical anomaly detection, and emission factor math are computed 100% deterministically in Node.js before any AI prompt is constructed.
 > 2. Gemini receives only verified numerical summary evidence with explicit negative constraints: *"DO NOT invent measurements, alerts, or confidence scores."*
 > 3. AI outputs are validated against JSON schemas, SHA-256 cached in PostgreSQL, and backed by deterministic fallback cards if the model fails.
 
 ### Q5: How do the What-If Simulator and Eco-Coach preserve scientific integrity?
+>
 > **Answer**: Many apps falsely record simulated savings as verified reductions. CarbonWise AI enforces **strict separation of concerns**:
+>
 > - Logged activities represent historical emissions.
 > - What-If scenarios represent hypothetical potential savings and never alter historical records.
 > - Completing an Eco-Coach action tracks habit compliance; it is never claimed as a proven carbon reduction unless verified by a corresponding decrease in subsequent activity records.
 
 ### Q6: What happens if OpenAQ has no station near the selected location?
+>
 > **Answer**: Rather than falsely reporting zero pollution ("clean air"), the system returns an explicit status `data_unavailable` with the message: *"No suitable ground monitoring station found within 25 km radius."* Open-Meteo's atmospheric model provides continuous gridded ambient estimates as an alternate data layer.
 
 ---
@@ -532,12 +588,14 @@ During your project viva or live demonstration, follow this sequence to demonstr
 ## 14. Data Attribution & Limitations
 
 ### Data Attribution
+
 - Weather forecasts, geocoding, and historical weather data provided by [Open-Meteo.com](https://open-meteo.com) under CC BY 4.0.
 - Air quality telemetry provided by the [OpenAQ Community](https://openaq.org) and participating government environmental agencies.
 - 30-year climatological normals adapted from the [NASA POWER Project](https://power.larc.nasa.gov/).
 - Climate change scenarios adapted from the [IPCC AR6 Working Group I CMIP6 Multi-Model Ensemble](https://www.ipcc.ch/report/ar6/wg1/).
 
 ### Limitations
+
 - **Ground Sensor Availability**: Physical OpenAQ stations are clustered around major metropolitan areas; rural coverage depends on gridded reanalysis models.
 - **Short History Constraints**: The personal carbon forecast algorithm requires at least 3 observed days for weekly projections and 14 days for monthly projections. Sparse accounts display an insufficiency notice rather than extrapolating artificial values.
 - **Emission Factor Regionality**: Carbon emission factors represent published national/international averages ($0.21\,\text{kg CO}_2/\text{km}$ transport, $0.50\,\text{kg CO}_2/\text{kWh}$ grid electricity). They should be customized with local power grid intensity factors for specific industrial audits.
@@ -545,4 +603,5 @@ During your project viva or live demonstration, follow this sequence to demonstr
 ---
 
 ## 15. License
+
 Developed for academic presentation, demonstration, and evaluation under SDG 13 Climate Action guidelines. Licensed under the ISC License.
