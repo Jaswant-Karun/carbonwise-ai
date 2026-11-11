@@ -1,10 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const { addActivity, getActivities, deleteActivity } = require('../controllers/activityController');
+const {
+  addActivity,
+  getActivities,
+  getActivity,
+  updateActivity,
+  deleteActivity,
+} = require('../controllers/activityController');
 const { protect } = require('../middlewares/authMiddleware');
-//Added new Activity
-router.post('/', protect, addActivity);
-router.get('/', protect, getActivities);
-router.delete('/:id', protect, deleteActivity);
+
+router.use(protect);
+
+router.post('/', addActivity);
+router.get('/', getActivities);
+router.get('/:id', getActivity);
+router.put('/:id', updateActivity);
+router.patch('/:id', updateActivity);
+router.delete('/:id', deleteActivity);
 
 module.exports = router;

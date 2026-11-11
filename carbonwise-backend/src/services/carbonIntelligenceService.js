@@ -4,22 +4,256 @@ const EMISSION_FACTORS = {
   food: { label: 'Food', unit: 'meal', factor: 2.5, reductionRate: 0.25, rationale: 'Replace some high-emission meals with plant-forward alternatives.' },
   flight: { label: 'Flights', unit: 'km', factor: 0.255, reductionRate: 0.1, rationale: 'Prefer rail or virtual meetings where practical and consolidate trips.' },
   shopping: { label: 'Shopping', unit: 'item', factor: 5, reductionRate: 0.15, rationale: 'Buy fewer, longer-lasting items and choose lower-impact alternatives.' },
+  water: { label: 'Water', unit: 'liters', factor: 0.001, reductionRate: 0.15, rationale: 'Fix water leaks, use aerated fixtures, and shorten hot showers.' },
+  waste: { label: 'Waste', unit: 'kg', factor: 0.58, reductionRate: 0.25, rationale: 'Compost organics, recycle plastics, and reduce single-use packaging.' },
+  facilities: { label: 'Facilities', unit: 'kWh', factor: 0.5, reductionRate: 0.15, rationale: 'Optimize facility heating/cooling schedules, smart thermostats, and LED retrofits.' },
+  other: { label: 'Other', unit: 'items', factor: 5.0, reductionRate: 0.1, rationale: 'Extend electronic device lifespans and purchase eco-certified goods.' },
+};
+
+const CATEGORY_ALIASES = {
+  transportation: 'transport',
+  driving: 'transport',
+  travel: 'transport',
+  transit: 'transport',
+  energy: 'electricity',
+  power: 'electricity',
+  diet: 'food',
+  dining: 'food',
+  meals: 'food',
+  water_usage: 'water',
+  waste_management: 'waste',
+  garbage: 'waste',
+  buildings: 'facilities',
+  facility: 'facilities',
+  office: 'facilities',
+  goods: 'other',
+  electronics: 'other',
+  purchases: 'other',
+};
+
+const normalizeCategory = (category) => {
+  if (typeof category !== 'string') return '';
+  const clean = category.trim().toLowerCase();
+  return CATEGORY_ALIASES[clean] || clean;
 };
 
 const getEmissionFactor = (category) => {
-  const normalizedCategory = typeof category === 'string' ? category.trim().toLowerCase() : '';
+  const normalizedCategory = normalizeCategory(category);
   return EMISSION_FACTORS[normalizedCategory] || null;
 };
 
-const calculateActivityEmissions = (category, details) => {
+const calculateActivityEmissions = (categoryInput, details) => {
+  const category = normalizeCategory(categoryInput);
   const factor = getEmissionFactor(category);
-  const value = Number(typeof details === 'object' ? details?.value : details);
-  if (!factor || !Number.isFinite(value) || value < 0) {
+  if (!factor) {
     const error = new Error('Activity category and non-negative numeric value are required.');
     error.statusCode = 400;
     throw error;
   }
-  return round(value * factor.factor);
+
+  // If details is a simple number or null/undefined
+  if (typeof details !== 'object' || details === null) {
+    const value = Number(details);
+    if (!Number.isFinite(value) || value < 0) {
+      const error = new Error('Activity category and non-negative numeric value are required.');
+      error.statusCode = 400;
+      throw error;
+    }
+    return round(value * factor.factor);
+  }
+
+  // Check if this is a simple payload: e.g. { value: 100 } with no category-specific subfields
+  const hasSubcategory = Boolean(
+    details.mealType || details.foodType || details.foodWasteKg ||
+    details.energySource || details.solarGenerationKwh || details.generatorFuelLiters ||
+    details.transportMode || details.passengers || details.distanceKm ||
+    details.waterSource || details.volumeLiters || details.isHotWater || details.cubicMeters ||
+    details.wasteType || details.wasteQuantityKg || details.treatmentMethod ||
+    details.facilityType || details.areaSqMeters || details.hvacHours || details.refrigerantLeakageKg ||
+    details.sourceType || details.spendAmount
+  );
+
+  if (!hasSubcategory && details.value !== undefined) {
+    const value = Number(details.value);
+    if (!Number.isFinite(value) || value < 0) {
+      const error = new Error('Activity category and non-negative numeric value are required.');
+      error.statusCode = 400;
+      throw error;
+    }
+    return round(value * factor.factor);
+  }
+
+  // Rich, dynamic domain calculations based on SDG-13 / GHG Protocol factors:
+  let totalEmissions = 0;
+
+  switch (category) {
+    case 'food': {
+      const mealType = details.mealType || details.foodType || 'meat_average';
+      const quantity = Number(details.quantity ?? details.value ?? 1);
+      if (!Number.isFinite(quantity) || quantity < 0) throw new Error('Food quantity must be non-negative.');
+
+      const mealFactors = {
+        vegan: 0.9,
+        vegetarian: 1.5,
+        dairy: 1.9,
+        seafood: 2.8,
+        meat_average: 3.5,
+        meat_high: 7.2,
+      };
+      const mealFactor = mealFactors[mealType] || factor.factor;
+      totalEmissions = quantity * mealFactor;
+
+      const wasteKg = Number(details.foodWasteKg || 0);
+      if (Number.isFinite(wasteKg) && wasteKg > 0) {
+        totalEmissions += wasteKg * 2.5; // Food waste methane emission factor
+      }
+      break;
+    }
+
+    case 'electricity': {
+      const kwh = Number(details.kwh ?? details.value ?? 0);
+      if (!Number.isFinite(kwh) || kwh < 0) throw new Error('Electricity kWh must be non-negative.');
+
+      const source = details.energySource || 'grid';
+      const sourceFactors = {
+        grid: 0.50,
+        coal: 0.90,
+        natural_gas: 0.45,
+        renewable: 0.02,
+        solar: 0.02,
+      };
+
+      if (source === 'diesel_generator') {
+        const liters = Number(details.generatorFuelLiters ?? (kwh / 3.0));
+        totalEmissions = liters * 2.68;
+      } else {
+        const baseFactor = sourceFactors[source] || factor.factor;
+        const solarOffsetKwh = Math.max(0, Number(details.solarGenerationKwh || 0));
+        const netKwh = Math.max(0, kwh - solarOffsetKwh);
+        totalEmissions = (netKwh * baseFactor) + (solarOffsetKwh * 0.02);
+      }
+      break;
+    }
+
+    case 'transport':
+    case 'flight': {
+      const distance = Number(details.distanceKm ?? details.distance ?? details.value ?? 0);
+      if (!Number.isFinite(distance) || distance < 0) throw new Error('Travel distance must be non-negative.');
+
+      const mode = details.transportMode || (category === 'flight' ? 'flight_economy' : 'car_petrol');
+      const passengers = Math.max(1, Number(details.passengers || 1));
+
+      const transportFactors = {
+        car_petrol: 0.192 / passengers,
+        car_diesel: 0.171 / passengers,
+        car_hybrid: 0.109 / passengers,
+        car_electric: 0.053 / passengers,
+        car_ev: 0.053 / passengers,
+        motorbike: 0.103,
+        bus: 0.082,
+        train: 0.035,
+        flight_economy: 0.255,
+        flight_business: 0.380,
+        walking_cycling: 0.0,
+      };
+
+      const rate = transportFactors[mode] !== undefined ? transportFactors[mode] : factor.factor;
+      totalEmissions = distance * rate;
+      break;
+    }
+
+    case 'water': {
+      let liters = Number(details.volumeLiters ?? details.liters ?? details.value ?? 0);
+      if (details.unit === 'm3' || details.unit === 'cubic_meters' || details.cubicMeters) {
+        liters = Number(details.cubicMeters || details.value || 0) * 1000;
+      }
+      if (!Number.isFinite(liters) || liters < 0) throw new Error('Water volume must be non-negative.');
+
+      const source = details.waterSource || (details.isHotWater ? 'tap_hot' : 'tap_cold');
+      const waterFactors = {
+        tap_cold: 0.00035,
+        tap_hot: 0.0058,
+        bottled: 0.16,
+        groundwater: 0.0006,
+        recycled: 0.0001,
+      };
+      const rate = waterFactors[source] || factor.factor;
+      totalEmissions = liters * rate;
+      break;
+    }
+
+    case 'waste': {
+      const kg = Number(details.wasteQuantityKg ?? details.wasteKg ?? details.value ?? 0);
+      if (!Number.isFinite(kg) || kg < 0) throw new Error('Waste quantity must be non-negative.');
+
+      const treatment = details.treatmentMethod || 'landfill';
+      const wasteType = details.wasteType || 'mixed';
+
+      let rate = factor.factor; // default 0.58
+      if (treatment === 'recycled') {
+        rate = 0.05;
+      } else if (treatment === 'composted') {
+        rate = 0.10;
+      } else if (wasteType === 'organic' || wasteType === 'food') {
+        rate = 0.95;
+      } else if (wasteType === 'plastic') {
+        rate = 0.04;
+      }
+      totalEmissions = kg * rate;
+      break;
+    }
+
+    case 'facilities': {
+      const facilityKwh = Number(details.kwh ?? details.value ?? 0);
+      if (facilityKwh > 0) {
+        totalEmissions += facilityKwh * 0.50;
+      } else if (details.areaSqMeters) {
+        const area = Number(details.areaSqMeters);
+        const days = Number(details.days || 1);
+        totalEmissions += area * days * 0.08;
+      }
+      if (details.hvacHours) {
+        const hours = Number(details.hvacHours);
+        const kw = Number(details.hvacKwRating || 3.5);
+        totalEmissions += hours * kw * 0.50;
+      }
+      if (details.refrigerantLeakageKg) {
+        const refKg = Number(details.refrigerantLeakageKg);
+        totalEmissions += refKg * 1430; // R-410A GWP
+      }
+      if (totalEmissions === 0 && Number.isFinite(Number(details.value))) {
+        totalEmissions = Number(details.value) * factor.factor;
+      }
+      break;
+    }
+
+    case 'other':
+    case 'shopping': {
+      const subType = details.sourceType || details.subType || 'general';
+      const qty = Number(details.quantity ?? details.value ?? 1);
+      const otherRates = {
+        electronics_laptop: 210,
+        electronics_phone: 70,
+        electronics_monitor: 150,
+        clothing_apparel: 12,
+        furniture: 45,
+        paper_goods: 1.2,
+        general: factor.factor,
+      };
+      if (details.spendAmount) {
+        totalEmissions = Number(details.spendAmount) * 0.45;
+      } else {
+        const unitRate = otherRates[subType] || factor.factor;
+        totalEmissions = qty * unitRate;
+      }
+      break;
+    }
+
+    default:
+      totalEmissions = Number(details.value || 0) * factor.factor;
+  }
+
+  return round(Math.max(0, totalEmissions));
 };
 
 const round = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
@@ -33,7 +267,7 @@ const parseActivity = (activity) => {
   }
   const emissions = Number(activity.carbon_emissions);
   const category = typeof activity.activity_type === 'string'
-    ? activity.activity_type.trim().toLowerCase()
+    ? normalizeCategory(activity.activity_type)
     : '';
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !category || !Number.isFinite(emissions) || emissions < 0) {

@@ -101,7 +101,7 @@ const Dashboard = () => {
       ]);
 
       if (intelRes.status === 'fulfilled') setIntelligence(intelRes.value.data);
-      if (actRes.status === 'fulfilled') setActivities(actRes.value.data || []);
+      if (actRes.status === 'fulfilled') setActivities(Array.isArray(actRes.value.data) ? actRes.value.data : actRes.value.data?.activities || []);
       if (coachRes.status === 'fulfilled') setCoachPlan(coachRes.value.data);
       if (alertRes.status === 'fulfilled') setAlerts(alertRes.value.data || []);
 
