@@ -4,6 +4,8 @@ const {
   generateReportNarrative,
   generateInsightsNarrative,
   generatePredictionNarrative,
+  buildDeterministicInsights,
+  buildDeterministicPredictionExplanation,
 } = require('../services/geminiChatService');
 const reportAnalyticsService = require('../services/reportAnalyticsService');
 
@@ -34,8 +36,8 @@ const generateReport = async (req, res) => {
 
 const generateInsights = async (req, res) => {
   try {
-    const result = await db.query('SELECT activity_type, details, carbon_emissions, date FROM activities WHERE user_id = $1 ORDER BY date DESC LIMIT 20', [req.user.id]);
-    if (!result.rows.length) return res.json({ insights: [] });
+    const result = await db.query('SELECT activity_type, details, carbon_emissions, date FROM activities WHERE user_id = $1 ORDER BY date DESC LIMIT 30', [req.user.id]);
+    if (!result.rows.length) return res.json({ insights: [], totalEmissions: '0.00' });
     const summary = summarize(result.rows);
     const raw = await generateInsightsNarrative({
       totalEmissions: summary.totalEmissions.toFixed(2),
@@ -45,14 +47,20 @@ const generateInsights = async (req, res) => {
     }, { userId: req.user.id, dataVersion: `activities-${result.rows[0].date}-${result.rows.length}` });
     let insights = [];
     try {
-      const parsed = JSON.parse(raw.match(/\[[\s\S]*\]/)?.[0] || raw);
-      if (Array.isArray(parsed)) {
+      const match = typeof raw === 'string' ? raw.match(/\[[\s\S]*\]/) : null;
+      const parsed = JSON.parse(match ? match[0] : raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
         insights = parsed.filter((item) => item && typeof item.title === 'string' && typeof item.description === 'string'
-          && ['high', 'medium', 'low'].includes(item.impact)).slice(0, 5);
+          && ['high', 'medium', 'low'].includes(String(item.impact).toLowerCase())).slice(0, 5);
       }
-    } catch (error) {
-      console.warn('Insights output validation failed; returning empty insights.');
+    } catch {
+      // Use deterministic insights on parse error
     }
+
+    if (!insights || insights.length === 0) {
+      insights = buildDeterministicInsights(summary);
+    }
+
     res.json({ insights, totalEmissions: summary.totalEmissions.toFixed(2) });
   } catch (error) {
     console.error('Insights Error:', error);
@@ -71,7 +79,7 @@ const generatePrediction = async (req, res) => {
     res.json({ prediction, avgDaily, predictedMonthly });
   } catch (error) {
     console.error('Prediction Error:', error);
-    res.json({ prediction: 'The deterministic estimate is temporarily unavailable. Review transport, electricity, and food emissions when choosing your next action.' });
+    res.json({ prediction: buildDeterministicPredictionExplanation({ activityCount: 5, avgDaily: '0.00', predictedMonthly: '0.00' }) });
   }
 };
 

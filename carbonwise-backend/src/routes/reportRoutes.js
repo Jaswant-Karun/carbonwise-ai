@@ -22,5 +22,6 @@ router.get('/pdf', protect, generatePDFReport);
 router.get('/monthly', protect, generateReport);
 router.get('/insights', protect, generateInsights);
 router.get('/predict', protect, generatePrediction);
+router.get('/prediction', protect, generatePrediction);
 
 module.exports = router;
