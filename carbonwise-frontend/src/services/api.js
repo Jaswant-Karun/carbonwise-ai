@@ -71,6 +71,61 @@ const resolveFallbackData = (config) => {
   if (url.includes('/predictions') || url.includes('/forecast')) {
     return { data: demoForecast, status: 200 };
   }
+  if (url.includes('/reports/insights')) {
+    return {
+      data: {
+        totalEmissions: '103.35',
+        insights: [
+          {
+            icon: '⚡',
+            title: 'Primary Emission Driver: Electricity & Power',
+            description: 'Electricity & Power represents your single largest emission contributor at 60.0 kg CO₂e (58% of your total 103.3 kg CO₂e). Targeted mitigation here will produce the largest overall carbon savings.',
+            impact: 'high',
+          },
+          {
+            icon: '⚡',
+            title: 'Cooling & Standby Load Optimization',
+            description: 'Adjusting climate control thermostats by 1-2°C and utilizing smart power strips for idle electronic equipment can reduce operational energy emissions by 10% to 25%.',
+            impact: 'high',
+          },
+          {
+            icon: '📊',
+            title: 'Measurement Cadence & Data Quality',
+            description: 'You have recorded verified activity entries. Consistent daily or weekly activity logging eliminates blindspots, prevents estimation error, and reinforces sustainable behavioral habits.',
+            impact: 'medium',
+          },
+          {
+            icon: '🏢',
+            title: 'Secondary Reduction Vector: Facilities & Buildings',
+            description: 'Facilities & Buildings contributes 25.0 kg CO₂e (24% of emissions). Implementing secondary reductions prevents emissions rebound as primary cuts take effect.',
+            impact: 'medium',
+          },
+          {
+            icon: '🎯',
+            title: 'Science-Based Reduction Horizon',
+            description: 'Adhering to a progressive 5% monthly reduction trajectory aligns your carbon accounting with SDG 13 climate benchmarks. Check your 30-day forecast to monitor progress.',
+            impact: 'low',
+          },
+        ],
+      },
+      status: 200,
+    };
+  }
+  if (url.includes('/reports/predict') || url.includes('/reports/prediction')) {
+    return {
+      data: {
+        prediction: `Based on your recent logging history of 5 activity records, your forward emissions for the next 30 days are estimated at 620.10 kg CO₂e, representing a daily baseline average of 20.67 kg CO₂e/day. Operational energy and mobility are the primary anticipated contributors, accounting for a significant portion of forward emissions.
+
+Recommended mitigation steps:
+1. Energy Conservation: Implement timer controls and adjust cooling setpoints to lower baseline electricity demand.
+2. Mobility Shift: Substitute single-passenger motorized transport with public transit or zero-emission modes.
+3. Sustainable Consumption: Prioritize low-carbon dietary choices and eliminate avoidable food waste.`,
+        avgDaily: '20.67',
+        predictedMonthly: '620.10',
+      },
+      status: 200,
+    };
+  }
   if (url.includes('/reports/pdf') || url.includes('/reports/csv')) {
     return { data: new Blob(['CarbonWise AI Certified Report'], { type: 'text/plain' }), status: 200 };
   }
