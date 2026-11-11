@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../src/config/db');
 const { app } = require('../src/index');
 
-const API_BASE = 'http://localhost:5000/api';
+let apiBase = 'http://localhost:5000/api';
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
 let localServer;
@@ -15,7 +15,7 @@ const apiRequest = async (path, { method = 'GET', body = null, token = null, hea
   if (token) reqHeaders.Authorization = `Bearer ${token}`;
   const options = { method, headers: reqHeaders };
   if (body) options.body = JSON.stringify(body);
-  const res = await fetch(`${API_BASE}${path}`, options);
+  const res = await fetch(`${apiBase}${path}`, options);
   const text = await res.text();
   let json = null;
   try {
@@ -31,7 +31,9 @@ test('Module 11: End-to-End Functionality and Unified Workflow Verification', as
     if (!probe.ok) throw new Error();
   } catch {
     await new Promise((resolve) => {
-      localServer = app.listen(5000, () => {
+      localServer = app.listen(0, () => {
+        const port = localServer.address().port;
+        apiBase = `http://localhost:${port}/api`;
         startedLocal = true;
         resolve();
       });
