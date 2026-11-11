@@ -70,9 +70,41 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#F7F9F7',
+          fontFamily: "'DM Sans', sans-serif",
+          color: '#183247',
+        }}
+      >
+        <div
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            border: '3px solid #E4EBE6',
+            borderTopColor: '#16845B',
+            animation: 'cw-spin 0.8s linear infinite',
+            marginBottom: '16px',
+          }}
+        />
+        <style>{`@keyframes cw-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+        <div style={{ fontSize: '0.96rem', fontWeight: 600, color: '#183247' }}>Loading CarbonWise AI...</div>
+        <div style={{ fontSize: '0.84rem', color: '#718096', marginTop: '4px' }}>Verifying authenticated session</div>
+      </div>
+    );
+  }
+
   return (
     <AuthContext.Provider value={{ user, loading, login, register, loginAsDemo, logout }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

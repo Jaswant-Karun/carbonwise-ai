@@ -116,33 +116,117 @@ export const demoSummary = {
   ],
 };
 
-export const demoForecast = {
-  forecast: Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(Date.now() + (i + 1) * 86400000);
-    const dayOfWeek = d.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    const base = isWeekend ? 6.2 : 9.8;
-    const variation = Math.sin(i * 0.4) * 1.5;
-    const val = Number((base + variation).toFixed(2));
-    return {
-      date: d.toISOString().split('T')[0],
-      projectedKg: val,
-      lowerBound: Number((val * 0.88).toFixed(2)),
-      upperBound: Number((val * 1.12).toFixed(2)),
-      modelConfidence: 0.91,
-    };
-  }),
-  totalProjectedKg: 258.4,
-  baselineDailyAverage: 8.61,
-  horizonDays: 30,
-  topFutureContributor: 'electricity',
-  topFutureShare: 58.4,
-  explanation: 'Your 30-day forecast is driven by operational electricity loads. Mitigating standby equipment and utilizing smart thermostats during non-working hours offers the highest reduction leverage.',
-  recommendedMitigations: [
-    'Deploy smart power strips on server racks to eliminate phantom standby draw.',
-    'Increase cooling thermostat setpoint by 1.5°C during afternoon utility peak pricing.',
-    'Maintain high public transit and carpool share for commutes over 20 km.',
+export const demoIntelligence = {
+  period: { days: 30, currentStart: '2026-10-12', currentEnd: '2026-11-11', previousStart: '2026-09-12', previousEnd: '2026-10-11' },
+  totals: {
+    daily: 2.6,
+    weekly: 18.2,
+    monthly: 77.98,
+    currentPeriod: 77.98,
+    previousPeriod: 89.4,
+  },
+  comparison: {
+    current: 77.98,
+    previous: 89.4,
+    absoluteChange: -11.42,
+    percentageChange: -12.8,
+    status: 'decrease',
+  },
+  categoryBreakdown: [
+    { category: 'electricity', label: 'Electricity', emissions: 46.5, contributionPercentage: 60 },
+    { category: 'facilities', label: 'Facilities', emissions: 18.2, contributionPercentage: 23 },
+    { category: 'food', label: 'Food & Diet', emissions: 5.1, contributionPercentage: 7 },
+    { category: 'transport', label: 'Transportation', emissions: 4.63, contributionPercentage: 6 },
+    { category: 'waste', label: 'Waste Management', emissions: 2.1, contributionPercentage: 3 },
+    { category: 'water', label: 'Water Usage', emissions: 1.45, contributionPercentage: 2 },
   ],
+  largestSources: [
+    { category: 'electricity', label: 'Electricity', emissions: 46.5, contributionPercentage: 60 },
+    { category: 'facilities', label: 'Facilities', emissions: 18.2, contributionPercentage: 23 },
+    { category: 'food', label: 'Food & Diet', emissions: 5.1, contributionPercentage: 7 },
+    { category: 'transport', label: 'Transportation', emissions: 4.63, contributionPercentage: 6 },
+  ],
+  trends: [
+    { date: '2026-11-05', emissions: 2.4 },
+    { date: '2026-11-06', emissions: 3.1 },
+    { date: '2026-11-07', emissions: 1.8 },
+    { date: '2026-11-08', emissions: 4.2 },
+    { date: '2026-11-09', emissions: 2.7 },
+    { date: '2026-11-10', emissions: 3.5 },
+    { date: '2026-11-11', emissions: 2.1 },
+  ],
+  anomalies: [],
+  recommendations: [
+    {
+      category: 'electricity',
+      label: 'Electricity',
+      rank: 1,
+      currentEmissions: 46.5,
+      contributionPercentage: 60,
+      potentialSavingsKg: 6.98,
+      reductionRatePercentage: 15,
+      reason: 'Shift high-demand HVAC and server loads outside peak grid carbon hours and audit standby electronics.',
+    },
+    {
+      category: 'facilities',
+      label: 'Facilities',
+      rank: 2,
+      currentEmissions: 18.2,
+      contributionPercentage: 23,
+      potentialSavingsKg: 2.73,
+      reductionRatePercentage: 15,
+      reason: 'Optimize HVAC setpoints by 1.5°C and ensure occupancy sensors control lighting.',
+    },
+    {
+      category: 'food',
+      label: 'Food & Diet',
+      rank: 3,
+      currentEmissions: 5.1,
+      contributionPercentage: 7,
+      potentialSavingsKg: 1.28,
+      reductionRatePercentage: 25,
+      reason: 'Incorporate 2 additional plant-forward meals weekly to reduce dietary methane footprint.',
+    },
+  ],
+  activityCount: 6,
+  invalidActivityCount: 0,
+};
+
+export const demoForecast = {
+  forecast: {
+    sufficientData: true,
+    totalProjectedKg: 79.5,
+    totalProjected: 79.5,
+    baselineDailyAverage: 2.65,
+    trendDirection: 'decreasing',
+    daily: Array.from({ length: 30 }, (_, i) => {
+      const d = new Date(Date.now() + (i + 1) * 86400000);
+      const val = Number((2.65 + Math.sin(i * 0.5) * 0.4).toFixed(2));
+      return {
+        date: d.toISOString().split('T')[0],
+        emissions: val,
+        projectedKg: val,
+        lowerBound: Number((val * 0.88).toFixed(2)),
+        upperBound: Number((val * 1.12).toFixed(2)),
+      };
+    }),
+  },
+  dataQuality: {
+    isSufficient: true,
+    activityCount: 6,
+    distinctDays: 5,
+  },
+  explanation: {
+    aiNarrative: 'Statistical 30-day forecast models a slight downward emission trend (-4.2%) due to recent efficiency gains in electricity and transport.',
+  },
+  outlooks: {
+    topFutureContributor: {
+      category: 'electricity',
+      label: 'Electricity',
+      shareOfFuture: 58.4,
+    },
+  },
+  anomalies: [],
 };
 
 export const demoRegions = [
@@ -154,6 +238,12 @@ export const demoRegions = [
 
 export const demoRegionalSummary = {
   region: demoRegions[0],
+  current: {
+    temperature: 18.4,
+    relative_humidity: 58.0,
+    wind_speed: 14.2,
+    us_aqi: 38,
+  },
   metrics: [
     { metric: 'temperature', label: 'Current Temperature', latest: 18.4, unit: '°C', anomaly: false, freshness: 'live' },
     { metric: 'precipitation', label: '24h Precipitation', latest: 2.1, unit: 'mm', anomaly: false, freshness: 'live' },

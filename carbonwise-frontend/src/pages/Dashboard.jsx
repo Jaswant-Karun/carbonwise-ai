@@ -100,30 +100,6 @@ const Dashboard = () => {
   const [isSubmittingQuick, setIsSubmittingQuick] = useState(false);
   const [quickSuccess, setQuickSuccess] = useState(false);
 
-  // Listen for global quick add trigger from Header
-  useEffect(() => {
-    const handleOpenQuickAdd = () => setIsQuickAddOpen(true);
-    const handleDateRangeChange = (e) => {
-      const val = e.detail;
-      if (val === '7d') setPeriod('7');
-      else if (val === '30d') setPeriod('30');
-      else if (val === '90d') setPeriod('90');
-      else if (val === '1y') setPeriod('365');
-    };
-
-    window.addEventListener('carbonwise:open-quick-add', handleOpenQuickAdd);
-    window.addEventListener('carbonwise:date-range-change', handleDateRangeChange);
-    const handleSync = () => { loadDashboardData(); };
-    window.addEventListener('carbonwise:activity-recorded', handleSync);
-    window.addEventListener('carbonwise:action-updated', handleSync);
-    return () => {
-      window.removeEventListener('carbonwise:open-quick-add', handleOpenQuickAdd);
-      window.removeEventListener('carbonwise:date-range-change', handleDateRangeChange);
-      window.removeEventListener('carbonwise:activity-recorded', handleSync);
-      window.removeEventListener('carbonwise:action-updated', handleSync);
-    };
-  }, [loadDashboardData]);
-
   // Primary Data Fetch
   const loadDashboardData = useCallback(async () => {
     try {
@@ -148,17 +124,41 @@ const Dashboard = () => {
       if (regRes.status === 'fulfilled' && regRes.value.data?.length > 0) {
         const list = regRes.value.data;
         setRegions(list);
-        if (!selectedRegionId) setSelectedRegionId(String(list[0].id));
+        setSelectedRegionId((prev) => prev || String(list[0].id));
       }
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     } finally {
       setLoading(false);
     }
-  }, [period, selectedRegionId]);
+  }, [period]);
 
   useEffect(() => {
     loadDashboardData();
+  }, [loadDashboardData]);
+
+  // Listen for global quick add trigger from Header
+  useEffect(() => {
+    const handleOpenQuickAdd = () => setIsQuickAddOpen(true);
+    const handleDateRangeChange = (e) => {
+      const val = e.detail;
+      if (val === '7d') setPeriod('7');
+      else if (val === '30d') setPeriod('30');
+      else if (val === '90d') setPeriod('90');
+      else if (val === '1y') setPeriod('365');
+    };
+
+    window.addEventListener('carbonwise:open-quick-add', handleOpenQuickAdd);
+    window.addEventListener('carbonwise:date-range-change', handleDateRangeChange);
+    const handleSync = () => { loadDashboardData(); };
+    window.addEventListener('carbonwise:activity-recorded', handleSync);
+    window.addEventListener('carbonwise:action-updated', handleSync);
+    return () => {
+      window.removeEventListener('carbonwise:open-quick-add', handleOpenQuickAdd);
+      window.removeEventListener('carbonwise:date-range-change', handleDateRangeChange);
+      window.removeEventListener('carbonwise:activity-recorded', handleSync);
+      window.removeEventListener('carbonwise:action-updated', handleSync);
+    };
   }, [loadDashboardData]);
 
   // Load Environmental Telemetry for selected region
@@ -241,7 +241,7 @@ const Dashboard = () => {
   const isReduction = percentageChange != null && percentageChange < 0;
 
   // Specific Sector Emissions for the 5 Summary Cards
-  const categoryBreakdown = intelligence?.categoryBreakdown || [];
+  const categoryBreakdown = useMemo(() => intelligence?.categoryBreakdown || [], [intelligence]);
 
   const foodData = categoryBreakdown.find((c) => c.category === 'food');
   const foodEmissions = foodData ? foodData.emissions : 0;
@@ -268,11 +268,11 @@ const Dashboard = () => {
   const forecastTrend = forecastData?.forecast?.trendDirection || 'stable';
   const dataSufficiency = forecastData?.dataQuality?.isSufficient ?? true;
 
-  // Environmental Telemetry
-  const currentTemp = envSummary?.current?.temperature;
-  const currentHumidity = envSummary?.current?.relative_humidity;
-  const currentWind = envSummary?.current?.wind_speed;
-  const currentAqi = envSummary?.current?.us_aqi;
+  // Environmental Telemetry - tolerant across direct current properties or metrics array
+  const currentTemp = envSummary?.current?.temperature ?? envSummary?.metrics?.find(m => m.metric === 'temperature')?.latest;
+  const currentHumidity = envSummary?.current?.relative_humidity ?? envSummary?.metrics?.find(m => m.metric === 'relative_humidity')?.latest;
+  const currentWind = envSummary?.current?.wind_speed ?? envSummary?.metrics?.find(m => m.metric === 'wind_speed')?.latest;
+  const currentAqi = envSummary?.current?.us_aqi ?? envSummary?.metrics?.find(m => m.metric === 'pm25')?.latest ?? envSummary?.airQuality?.measurements?.[0]?.value;
 
   // Trend Chart Data (Professional White Theme styling)
   const lineChartData = useMemo(() => {

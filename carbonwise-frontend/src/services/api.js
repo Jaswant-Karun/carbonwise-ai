@@ -3,6 +3,7 @@ import {
   demoUser,
   demoActivities,
   demoSummary,
+  demoIntelligence,
   demoForecast,
   demoRegions,
   demoRegionalSummary,
@@ -81,7 +82,10 @@ const resolveFallbackData = (config) => {
   if (url.includes('/environment/alerts')) {
     return { data: demoRegionalSummary.activeAlerts, status: 200 };
   }
-  if (url.includes('/environment') || url.includes('/intelligence')) {
+  if (url.includes('/intelligence')) {
+    return { data: demoIntelligence, status: 200 };
+  }
+  if (url.includes('/environment')) {
     return { data: demoRegionalSummary, status: 200 };
   }
 
