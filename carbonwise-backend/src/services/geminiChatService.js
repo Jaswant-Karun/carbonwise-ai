@@ -659,9 +659,11 @@ const buildDeterministicTrendReport = (evidence) => {
 };
 
 const summarizeRegionalEvidence = ({ region, metrics = [], anomalies = [], alerts = [], airQuality }) => {
+  const hasCoords = region && Number.isFinite(Number(region.latitude)) && Number.isFinite(Number(region.longitude));
+  const coordinates = hasCoords ? `${Number(region.latitude).toFixed(2)}, ${Number(region.longitude).toFixed(2)}` : null;
   return {
     regionName: region?.name || 'Monitored Region',
-    coordinates: region ? `${Number(region.latitude).toFixed(2)}, ${Number(region.longitude).toFixed(2)}` : null,
+    coordinates,
     metrics: (metrics || []).slice(0, 5).map((m) => ({
       metric: m.metric,
       label: m.label,
@@ -675,9 +677,9 @@ const summarizeRegionalEvidence = ({ region, metrics = [], anomalies = [], alert
     airQualityStatus: airQuality?.status || 'unavailable',
     airQualityStation: airQuality?.stationName || null,
     airQualityPollutants: (airQuality?.measurements || []).slice(0, 4).map((p) => ({
-      pollutant: p.pollutant,
+      pollutant: p.pollutant || p.parameter || 'ambient',
       value: p.value,
-      unit: p.unit,
+      unit: p.unit || '',
     })),
   };
 };
@@ -699,7 +701,7 @@ const buildDeterministicRegionalInsights = (evidence) => {
   if (evidence.airQualityPollutants?.length > 0) {
     insights.push({
       title: 'Ground Air Quality Telemetry',
-      whatChanged: `OpenAQ ground station reporting ${evidence.airQualityPollutants.map((p) => `${p.pollutant.toUpperCase()}: ${p.value} ${p.unit}`).join(', ')}.`,
+      whatChanged: `OpenAQ ground station reporting ${evidence.airQualityPollutants.map((p) => `${String(p.pollutant || 'pollutant').toUpperCase()}: ${p.value} ${p.unit || ''}`).join(', ')}.`,
       evidence: `Station: ${evidence.airQualityStation || 'Nearest Ground Monitor'}; evaluation against WHO 2021 air quality guidelines.`,
       recommendation: 'Ambient particulate matter reflects local conditions and is evaluated separately from long-term climate change baselines.',
       severity: 'info',
