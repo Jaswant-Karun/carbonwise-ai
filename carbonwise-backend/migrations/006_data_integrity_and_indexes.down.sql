@@ -15,3 +15,4 @@ DROP INDEX IF EXISTS idx_coach_actions_plan_id;
 DROP INDEX IF EXISTS idx_coach_goals_user_status;
 DROP INDEX IF EXISTS idx_impact_baselines_user;
 DROP INDEX IF EXISTS idx_impact_reports_user_month;
+

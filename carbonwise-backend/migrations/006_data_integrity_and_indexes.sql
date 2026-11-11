@@ -31,3 +31,4 @@ CREATE INDEX IF NOT EXISTS idx_coach_goals_user_status ON coach_goals (user_id, 
 -- 5. Indexes on Impact Verification & Baseline Tracking
 CREATE INDEX IF NOT EXISTS idx_impact_baselines_user ON impact_baselines (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_impact_reports_user_month ON impact_reports (user_id, report_month DESC);
+

@@ -169,3 +169,4 @@ test('Database and Backend Integrity, Constraints & Indexes Verification', async
   // Cleanup
   await db.query(`DELETE FROM users WHERE id IN ($1, $2)`, [testUserId, testUserId + 1]);
 });
+
