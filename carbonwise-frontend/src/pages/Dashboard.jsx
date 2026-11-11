@@ -366,6 +366,9 @@ const Dashboard = () => {
             <div className="summary-card-value-row">
               <span className="summary-card-value">{round(currentFootprint)}</span>
               <span className="summary-card-unit">kg CO₂e</span>
+              <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 500, marginLeft: '6px' }}>
+                ({round(currentFootprint / 1000, 3)} t)
+              </span>
             </div>
             <div className="summary-card-footer">
               <span className={`summary-status-badge ${isReduction ? 'normal' : percentageChange > 0 ? 'warning' : 'blue'}`}>
@@ -380,7 +383,7 @@ const Dashboard = () => {
                 )}
               </span>
               <span className="summary-card-sub">
-                Previous period: {round(previousFootprint)} kg CO₂e
+                Previous: {round(previousFootprint)} kg ({round(previousFootprint / 1000, 3)} t)
               </span>
             </div>
           </div>
