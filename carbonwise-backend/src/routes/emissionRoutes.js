@@ -20,3 +20,4 @@ router.get('/summary', getSummary);
 router.get('/activity/:activityId', getActivityEmission);
 
 module.exports = router;
+

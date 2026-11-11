@@ -9,7 +9,7 @@ const getCarbonIntelligence = async (req, res) => {
 
   try {
     const activitiesResult = await db.query(
-      `SELECT activity_type, details, carbon_emissions, date
+      `SELECT activity_type, details, carbon_emissions, TO_CHAR(date, 'YYYY-MM-DD') as date
        FROM activities
        WHERE user_id = $1
        ORDER BY date ASC`,

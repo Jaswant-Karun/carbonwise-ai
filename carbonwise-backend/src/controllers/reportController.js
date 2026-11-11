@@ -5,6 +5,7 @@ const {
   generateInsightsNarrative,
   generatePredictionNarrative,
 } = require('../services/geminiChatService');
+const reportAnalyticsService = require('../services/reportAnalyticsService');
 
 const summarize = (activities) => {
   const byType = {};
@@ -76,28 +77,68 @@ const generatePrediction = async (req, res) => {
 
 const generatePDFReport = async (req, res) => {
   try {
-    const result = await db.query('SELECT activity_type, carbon_emissions, date FROM activities WHERE user_id = $1 ORDER BY date DESC LIMIT 30', [req.user.id]);
-    const activities = result.rows;
-    if (!activities.length) return res.status(400).json({ message: 'No activities found. Log some activities first to generate a PDF report.' });
-    const summary = summarize(activities);
-    const doc = new PDFDocument({ margin: 50 });
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=carbon-report.pdf');
-    doc.pipe(res);
-    doc.fontSize(20).text('Carbon Footprint Report', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(12).text(`Generated on: ${new Date().toLocaleDateString()}`);
-    doc.text(`Total Emissions: ${summary.totalEmissions.toFixed(2)} kg CO2`);
-    doc.text(`Activities Analyzed: ${activities.length}`);
-    doc.moveDown().fontSize(14).text('Emission Breakdown by Activity', { underline: true });
-    Object.entries(summary.byType).forEach(([type, value]) => doc.fontSize(12).text(`- ${type}: ${value.toFixed(2)} kg CO2`));
-    doc.moveDown().fontSize(14).text('Recent Activities', { underline: true });
-    activities.slice(0, 10).forEach((activity) => doc.fontSize(11).text(`${activity.date ? new Date(activity.date).toLocaleDateString() : 'N/A'} | ${activity.activity_type} | ${parseFloat(activity.carbon_emissions).toFixed(2)} kg CO2`));
-    doc.end();
+    const { filter = '30d', startDate, endDate } = req.query;
+    await reportAnalyticsService.generatePDF(req.user.id, { filter, startDate, endDate }, res);
   } catch (error) {
     console.error('PDF Report Error:', error);
-    res.status(500).json({ message: 'Error generating PDF report' });
+    if (!res.headersSent) {
+      res.status(500).json({ message: 'Error generating PDF report' });
+    }
   }
 };
 
-module.exports = { generateReport, generateInsights, generatePrediction, generatePDFReport };
+const getDetailedReportController = async (req, res) => {
+  try {
+    const { filter = '30d', startDate, endDate } = req.query;
+    const report = await reportAnalyticsService.getDetailedReport(req.user.id, {
+      filter,
+      startDate,
+      endDate,
+    });
+    res.json(report);
+  } catch (error) {
+    console.error('Detailed Report Error:', error);
+    res.status(500).json({ message: 'Error generating detailed emissions report' });
+  }
+};
+
+const downloadCSVController = async (req, res) => {
+  try {
+    const { filter = '30d', startDate, endDate } = req.query;
+    const csvContent = await reportAnalyticsService.generateCSV(req.user.id, {
+      filter,
+      startDate,
+      endDate,
+    });
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="carbonwise-emissions-report-${filter}.csv"`
+    );
+    res.send(csvContent);
+  } catch (error) {
+    console.error('CSV Report Error:', error);
+    res.status(500).json({ message: 'Error exporting CSV report' });
+  }
+};
+
+const getMonthlySustainabilityController = async (req, res) => {
+  try {
+    const { month } = req.query;
+    const report = await reportAnalyticsService.getMonthlySustainabilityReport(req.user.id, month);
+    res.json(report);
+  } catch (error) {
+    console.error('Monthly Sustainability Report Error:', error);
+    res.status(500).json({ message: 'Error generating monthly sustainability report' });
+  }
+};
+
+module.exports = {
+  generateReport,
+  generateInsights,
+  generatePrediction,
+  generatePDFReport,
+  getDetailedReport: getDetailedReportController,
+  downloadCSV: downloadCSVController,
+  getMonthlySustainability: getMonthlySustainabilityController,
+};

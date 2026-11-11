@@ -21,7 +21,18 @@ const addActivity = async (req, res) => {
       region: req.body.region || 'Global',
     });
 
-    const carbon_emissions = calcResult.emissionsKg;
+    const explicitEmissions = req.body.carbonEmissions !== undefined && req.body.carbonEmissions !== null
+      ? Number(req.body.carbonEmissions)
+      : (req.body.carbon_emissions !== undefined && req.body.carbon_emissions !== null
+        ? Number(req.body.carbon_emissions)
+        : null);
+
+    const carbon_emissions = explicitEmissions !== null ? explicitEmissions : calcResult.emissionsKg;
+    if (explicitEmissions !== null) {
+      calcResult.emissionsKg = explicitEmissions;
+      calcResult.emissionsTonnes = Number((explicitEmissions / 1000).toFixed(4));
+    }
+
     details.emissions_tonnes = calcResult.emissionsTonnes;
     details.scope = calcResult.scope;
     details.methodology = calcResult.methodology;
@@ -170,7 +181,18 @@ const updateActivity = async (req, res) => {
       region: req.body.region || 'Global',
     });
 
-    const carbon_emissions = calcResult.emissionsKg;
+    const explicitEmissions = req.body.carbonEmissions !== undefined && req.body.carbonEmissions !== null
+      ? Number(req.body.carbonEmissions)
+      : (req.body.carbon_emissions !== undefined && req.body.carbon_emissions !== null
+        ? Number(req.body.carbon_emissions)
+        : null);
+
+    const carbon_emissions = explicitEmissions !== null ? explicitEmissions : calcResult.emissionsKg;
+    if (explicitEmissions !== null) {
+      calcResult.emissionsKg = explicitEmissions;
+      calcResult.emissionsTonnes = Number((explicitEmissions / 1000).toFixed(4));
+    }
+
     details.emissions_tonnes = calcResult.emissionsTonnes;
     details.scope = calcResult.scope;
     details.methodology = calcResult.methodology;
