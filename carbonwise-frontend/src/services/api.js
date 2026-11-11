@@ -3,6 +3,7 @@ import {
   demoUser,
   demoActivities,
   demoSummary,
+  demoDetailedReport,
   demoIntelligence,
   demoForecast,
   demoRegions,
@@ -67,8 +68,11 @@ const resolveFallbackData = (config) => {
   if (url.includes('/predictions') || url.includes('/forecast')) {
     return { data: demoForecast, status: 200 };
   }
-  if (url.includes('/reports/monthly') || url.includes('/reports')) {
-    return { data: { ...demoSummary, monthly: demoSummary }, status: 200 };
+  if (url.includes('/reports/pdf') || url.includes('/reports/csv')) {
+    return { data: new Blob(['CarbonWise AI Certified Report'], { type: 'text/plain' }), status: 200 };
+  }
+  if (url.includes('/reports/monthly') || url.includes('/reports/analytics') || url.includes('/reports')) {
+    return { data: demoDetailedReport, status: 200 };
   }
   if (url.includes('/action-plans') || url.includes('/coach')) {
     return { data: demoActionPlan, status: 200 };

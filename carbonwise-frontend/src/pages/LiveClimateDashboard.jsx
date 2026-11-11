@@ -25,6 +25,7 @@ import {
   Search,
   ShieldAlert,
   ShieldCheck,
+  Sliders,
   Sparkles,
   Thermometer,
   TrendingUp,

@@ -229,6 +229,67 @@ export const demoForecast = {
   anomalies: [],
 };
 
+export const demoDetailedReport = {
+  filter: '30d',
+  label: 'Last 30 Days',
+  startDate: new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0],
+  endDate: new Date().toISOString().split('T')[0],
+  totals: {
+    emissionsKg: 103.35,
+    emissionsTonnes: 0.1034,
+    activityCount: 6,
+    dailyAverageKg: 3.45,
+    sectorCount: 6,
+  },
+  comparison: {
+    previousTotalKg: 114.8,
+    changeKg: -11.45,
+    changePercentage: -9.97,
+    trend: 'decreasing',
+  },
+  categoryBreakdown: [
+    { category: 'electricity', label: 'Electricity & Energy', emissionsKg: 60.0, emissionsTonnes: 0.06, percentage: 58.1, color: '#38BDF8', prevEmissionsKg: 68.0 },
+    { category: 'facilities', label: 'Facilities & Buildings', emissionsKg: 25.0, emissionsTonnes: 0.025, percentage: 24.2, color: '#8B5CF6', prevEmissionsKg: 28.0 },
+    { category: 'transport', label: 'Transportation', emissionsKg: 9.45, emissionsTonnes: 0.0095, percentage: 9.1, color: '#10B981', prevEmissionsKg: 11.2 },
+    { category: 'food', label: 'Food & Diet', emissionsKg: 7.5, emissionsTonnes: 0.0075, percentage: 7.3, color: '#F59E0B', prevEmissionsKg: 6.2 },
+    { category: 'water', label: 'Water Usage', emissionsKg: 1.4, emissionsTonnes: 0.0014, percentage: 1.4, color: '#06B6D4', prevEmissionsKg: 1.4 },
+  ],
+  dailyRollup: Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(Date.now() - (29 - i) * 86400000);
+    const val = i === 25 ? 25.0 : i === 26 ? 1.4 : i === 27 ? 7.5 : i === 28 ? 9.45 : i === 29 ? 60.0 : 0;
+    return {
+      date: d.toISOString().split('T')[0],
+      label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      emissionsKg: val,
+      emissionsTonnes: Number((val / 1000).toFixed(4)),
+      activityCount: val > 0 ? 1 : 0,
+      byCategory: val > 0 ? { electricity: val } : {},
+    };
+  }),
+  monthlyRollup: [
+    { month: '2026-09', label: 'Sep 2026', emissionsKg: 98.4, activityCount: 14 },
+    { month: '2026-10', label: 'Oct 2026', emissionsKg: 114.8, activityCount: 18 },
+    { month: '2026-11', label: 'Nov 2026', emissionsKg: 103.35, activityCount: 6 },
+  ],
+  scopeBreakdown: [
+    { scope: 'Scope 1', emissionsKg: 9.45, emissionsTonnes: 0.0095, percentage: 9.1 },
+    { scope: 'Scope 2', emissionsKg: 60.0, emissionsTonnes: 0.06, percentage: 58.1 },
+    { scope: 'Scope 3', emissionsKg: 33.9, emissionsTonnes: 0.0339, percentage: 32.8 },
+  ],
+  highestActivities: [
+    { id: 101, activity_type: 'electricity', label: 'Electricity & Energy', emissionsKg: 60.0, date: '2026-11-10', detailsText: '120 kWh [Grid] [Solar: 30 kWh]' },
+    { id: 104, activity_type: 'facilities', label: 'Facilities & Buildings', emissionsKg: 25.0, date: '2026-11-06', detailsText: 'Commercial Building [50 kWh]' },
+    { id: 102, activity_type: 'transport', label: 'Transportation', emissionsKg: 9.45, date: '2026-11-09', detailsText: 'Hybrid Car: 45 km (2 pax)' },
+    { id: 103, activity_type: 'food', label: 'Food & Diet', emissionsKg: 7.5, date: '2026-11-08', detailsText: 'Vegetarian Meal (3 meals)' },
+    { id: 106, activity_type: 'water', label: 'Water Usage', emissionsKg: 1.4, date: '2026-11-07', detailsText: 'Municipal Tap: 4 m³' },
+  ],
+  narrative: {
+    summary: 'Total footprint for the selected 30-day period is 103.35 kg CO₂e (0.1034 tonnes), reflecting a 9.97% reduction compared to the prior equivalent cycle. Grid electricity and facilities HVAC operations represent 82.3% of cumulative emissions.',
+    topDriver: 'Electricity (58.1% of total footprint)',
+    keyOpportunity: 'Shifting peak cooling loads and expanding rooftop solar self-consumption will yield maximum impact towards SDG-13 compliance.',
+  },
+};
+
 export const demoRegions = [
   { id: 1, name: 'New York, USA', latitude: 40.71, longitude: -74.01, country: 'USA', admin1: 'New York', timezone: 'America/New_York' },
   { id: 2, name: 'London, UK', latitude: 51.51, longitude: -0.13, country: 'UK', admin1: 'Greater London', timezone: 'Europe/London' },

@@ -55,6 +55,7 @@ import {
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Layout from '../components/Layout';
+import LoadingState from '../components/LoadingState';
 
 ChartJS.register(
   CategoryScale,
