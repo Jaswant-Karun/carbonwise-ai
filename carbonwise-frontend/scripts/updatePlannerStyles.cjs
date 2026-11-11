@@ -320,3 +320,4 @@ css = css.replace(
 
 fs.writeFileSync(cssPath, css, 'utf8');
 console.log('✅ Updated index.css successfully with White SaaS theme rules!');
+
