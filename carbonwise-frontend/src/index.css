@@ -5883,14 +5883,14 @@ h1, h2, h3, h4, h5, h6 {
    SCIENTIFIC DOMAIN DISTINCTION & GUARDRAILS MATRIX
 ======================================================== */
 .scientific-distinction-matrix {
-  background: #FFFFFF;
-  border: 1px solid #E4EBE6;
+  background: #0E1726;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 22px 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 4px 20px rgba(24, 50, 71, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .matrix-header {
@@ -5899,7 +5899,7 @@ h1, h2, h3, h4, h5, h6 {
   gap: 8px;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #183247;
+  color: #FFFFFF;
 }
 
 .matrix-grid-5col {
@@ -5921,8 +5921,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .matrix-col {
-  background: #F7F9F7;
-  border: 1px solid #E4EBE6;
+  background: #111C31;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
   padding: 14px 12px;
   display: flex;
@@ -5932,9 +5932,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .matrix-col.active {
-  border: 1.5px solid #3B82F6;
-  background: #EFF6FF;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+  border: 1.5px solid #38BDF8;
+  background: #0D233A;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15);
 }
 
 .matrix-col-icon {
@@ -5947,40 +5947,40 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .matrix-col-icon.emerald {
-  background: #DCFCE7;
-  color: #166534;
+  background: rgba(16, 185, 129, 0.2);
+  color: #34D399;
 }
 
 .matrix-col-icon.blue {
-  background: #DBEAFE;
-  color: #1E40AF;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38BDF8;
 }
 
 .matrix-col-icon.amber {
-  background: #FEF3C7;
-  color: #B45309;
+  background: rgba(245, 158, 11, 0.2);
+  color: #F59E0B;
 }
 
 .matrix-col-icon.purple {
-  background: #F3E8FF;
-  color: #7E22CE;
+  background: rgba(139, 92, 246, 0.2);
+  color: #A78BFA;
 }
 
 .matrix-col-icon.cyan {
-  background: #CFFAFE;
-  color: #0E7490;
+  background: rgba(6, 182, 212, 0.2);
+  color: #22D3EE;
 }
 
 .matrix-col strong {
   display: block;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #183247;
+  color: #FFFFFF;
 }
 
 .matrix-col span {
   font-size: 0.72rem;
-  color: #4A5568;
+  color: #94A3B8;
   line-height: 1.45;
 }
 
@@ -6009,8 +6009,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .telemetry-card {
-  background: #FFFFFF;
-  border: 1px solid #E4EBE6;
+  background: #0E1726;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   padding: 16px 18px;
   display: flex;
@@ -6019,24 +6019,24 @@ h1, h2, h3, h4, h5, h6 {
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
-  box-shadow: 0 2px 8px rgba(24, 50, 71, 0.03);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .telemetry-card:hover {
-  border-color: #16845B;
+  border-color: #10B981;
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(22, 132, 91, 0.08);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.18);
 }
 
 .telemetry-card.selected {
-  border: 2px solid #16845B;
-  background: #F0FDF4;
-  box-shadow: 0 4px 16px rgba(22, 132, 91, 0.12);
+  border: 2px solid #10B981;
+  background: #0C1E28;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);
 }
 
 .telemetry-card.anomaly-active {
   border-color: #F59E0B;
-  background: #FFFBEB;
+  background: #1C180E;
 }
 
 .telemetry-card-top {
@@ -6049,7 +6049,7 @@ h1, h2, h3, h4, h5, h6 {
 .telemetry-label {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #718096;
+  color: #94A3B8;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -6073,7 +6073,7 @@ h1, h2, h3, h4, h5, h6 {
 .telemetry-primary-value {
   font-size: 1.65rem;
   font-weight: 800;
-  color: #183247 !important;
+  color: #FFFFFF !important;
   letter-spacing: -0.02em;
 }
 
@@ -6085,15 +6085,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .deviation-badge.pos {
-  background: #FEE2E2;
-  color: #DC2626;
-  border: 1px solid #FECACA;
+  background: rgba(239, 68, 68, 0.2);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
 }
 
 .deviation-badge.neg {
-  background: #DBEAFE;
-  color: #1E40AF;
-  border: 1px solid #BFDBFE;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38BDF8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
 }
 
 .telemetry-card-footer {
@@ -6101,13 +6101,13 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: space-between;
   font-size: 0.72rem;
-  border-top: 1px solid #F1F5F9;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   padding-top: 8px;
   margin-top: 4px;
 }
 
 .telemetry-baseline-note {
-  color: #718096;
+  color: #94A3B8;
   font-size: 0.72rem;
 }
 
@@ -6117,11 +6117,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .freshness-indicator.fresh {
-  color: #166534;
+  color: #34D399;
 }
 
 .freshness-indicator.stale {
-  color: #B45309;
+  color: #F59E0B;
 }
 
 .card-anomaly-flag {
@@ -6129,7 +6129,7 @@ h1, h2, h3, h4, h5, h6 {
   top: -8px;
   right: 12px;
   background: #F59E0B;
-  color: #FFFFFF;
+  color: #080D1A;
   font-size: 0.62rem;
   font-weight: 800;
   padding: 2px 7px;
@@ -6142,14 +6142,14 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Telemetry Visualizer Card */
 .telemetry-visualizer-card {
-  background: #FFFFFF;
-  border: 1px solid #E4EBE6;
+  background: #0E1726;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 4px 16px rgba(24, 50, 71, 0.04);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .visualizer-header {
@@ -6170,13 +6170,13 @@ h1, h2, h3, h4, h5, h6 {
 .visualizer-title-row h2 {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #183247;
+  color: #FFFFFF;
   margin: 0;
 }
 
 .visualizer-desc {
   font-size: 0.82rem;
-  color: #718096;
+  color: #94A3B8;
   margin: 0;
 }
 
@@ -6187,15 +6187,22 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .metric-pill {
-  border: 1px solid #E4EBE6;
-  background: #F7F9F7;
-  color: #4A5568;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #111C31;
+  color: #94A3B8;
   font-size: 0.78rem;
   font-weight: 600;
   padding: 6px 14px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.metric-pill.active {
+  background: #10B981;
+  color: #080D1A;
+  font-weight: 700;
+  border-color: #10B981;
 }
 
 .metric-pill:hover {
