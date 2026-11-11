@@ -1,118 +1,78 @@
-
 import React, { useState, useEffect, useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ChevronDown,
   Bell,
   CalendarDays,
-  Download,
+  Leaf,
+  Plus,
   MapPin,
-  RefreshCw,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 
 const pageMeta = {
   '/dashboard': {
-    eyebrow: 'Carbon & Climate Intelligence',
-    title: 'Executive Climate & Carbon Dashboard',
-    description: 'Unified command center for carbon emission accounting, predictive forecasting, and live environmental telemetry.',
+    eyebrow: 'Command Center',
+    title: 'Overview Dashboard',
+    description: 'Track your carbon emissions, predictive trajectories, and live environmental intelligence.',
   },
   '/activities': {
-    eyebrow: 'Data Capture & Tracking',
-    title: 'Activity Emission Log (Track)',
-    description: 'Log transport, electricity, diet, flights, and lifestyle emissions with automated carbon calculations.',
+    eyebrow: 'Activity Management',
+    title: 'Activity Logs',
+    description: 'Record, filter, edit, and audit carbon-generating activities across 7 certified emission sectors.',
   },
   '/carbon-intelligence': {
-    eyebrow: 'Deep Emission Analytics',
-    title: 'Smart Carbon Intelligence (Analyze)',
-    description: 'Category breakdowns, historical variance, and deterministic reduction opportunities.',
+    eyebrow: 'Emission Intelligence',
+    title: 'Carbon Emissions',
+    description: 'Deep category breakdowns, deterministic calculation formulas, and official emission factor references.',
   },
   '/carbon-forecast': {
-    eyebrow: 'Predictive Modeling',
-    title: 'Carbon Footprint Forecast (Predict)',
-    description: 'Statistical moving-average emission forecasting and unusual spike anomaly detection.',
+    eyebrow: 'AI Forecasting',
+    title: 'AI Predictions',
+    description: 'Multi-horizon emission forecasts, uncertainty confidence intervals, and anomaly detection.',
   },
   '/action-plan': {
-    eyebrow: 'Adaptive Decarbonization',
-    title: 'Climate Action Plan (Reduce)',
-    description: 'Personalized 7-day adaptive sustainability goals and measurable reduction targets.',
-  },
-  '/impact': {
-    eyebrow: 'Target Verification',
-    title: 'Sustainability Impact Tracker',
-    description: 'Benchmark progress against historical baselines and verify tangible emission reductions.',
-  },
-  '/live-monitoring': {
-    eyebrow: 'Continuous Telemetry',
-    title: 'Live Environmental Monitoring',
-    description: 'Atmospheric observations, air quality index, and meteorological forecasts.',
-  },
-  '/live-climate': {
-    eyebrow: 'Continuous Telemetry',
-    title: 'Live Environmental Monitoring',
-    description: 'Atmospheric observations, air quality index, and meteorological forecasts.',
-  },
-  '/climate-analytics': {
-    eyebrow: 'Multi-Decadal Analytics',
-    title: 'Climate Trends & Baselines',
-    description: 'Historical temperature and precipitation trends compared against 1991–2020 WMO standard normals.',
-  },
-  '/climate-trends': {
-    eyebrow: 'Multi-Decadal Analytics',
-    title: 'Climate Trends & Baselines',
-    description: 'Historical temperature and precipitation trends compared against 1991–2020 WMO standard normals.',
-  },
-  '/anomaly-detection': {
-    eyebrow: 'Statistical Detection',
-    title: 'Atmospheric Anomaly Engine',
-    description: 'Explainable statistical anomaly identification using MAD, robust Z-scores, and seasonal limits.',
-  },
-  '/alerts': {
-    eyebrow: 'Evidence-Based Warning System',
-    title: 'Environmental Alerts & Air Quality',
-    description: 'Prioritized alerts based on measured atmospheric deviations and EPA/WHO air quality thresholds.',
-  },
-  '/ai-insights': {
-    eyebrow: 'Explainable AI Analytics',
-    title: 'AI Climate Insights',
-    description: 'Natural-language climate intelligence explaining observed anomalies with deterministic fallbacks.',
-  },
-  '/insights': {
-    eyebrow: 'Explainable AI Analytics',
-    title: 'AI Climate Insights',
-    description: 'Natural-language climate intelligence explaining observed anomalies with deterministic fallbacks.',
+    eyebrow: 'Decarbonization Roadmap',
+    title: 'Climate Actions',
+    description: 'AI-prioritized reduction opportunities, verified savings formulas, and action progress tracking.',
   },
   '/reports': {
-    eyebrow: 'Environmental Audits',
-    title: 'Climate & Sustainability Reports',
-    description: 'Export verifiable PDF reports and evidence-based environmental telemetry summaries.',
+    eyebrow: 'Reporting & Compliance',
+    title: 'Analytics & Reports',
+    description: 'Comprehensive period rollups, visual Chart.js audits, and instant PDF / CSV compliance export.',
+  },
+  '/live-climate': {
+    eyebrow: 'Physical Telemetry',
+    title: 'Environmental Intelligence',
+    description: 'Real-time Open-Meteo weather observations, NASA POWER baselines, and OpenAQ ground station telemetry.',
+  },
+  '/alerts': {
+    eyebrow: 'Warning System',
+    title: 'Notifications & Alerts',
+    description: 'Real-time atmospheric anomaly detection and EPA/WHO air quality threshold warnings.',
   },
   '/settings': {
-    eyebrow: 'Workspace Configuration',
-    title: 'Platform Settings & Locations',
-    description: 'Configure monitoring regions, sensor telemetry preferences, and provider connections.',
-  },
-  '/profile': {
-    eyebrow: 'Workspace Configuration',
-    title: 'Platform Settings & Locations',
-    description: 'Configure monitoring regions, sensor telemetry preferences, and provider connections.',
+    eyebrow: 'Workspace Preferences',
+    title: 'Settings & Profile',
+    description: 'Manage user credentials, preferred units (metric/imperial), default region, and notification rules.',
   },
 };
 
 const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const meta = pageMeta[location.pathname] || pageMeta['/dashboard'];
-  const [regions, setRegions] = useState([]);
-  const [selectedRegion, setSelectedRegion] = useState('New York, USA');
-  const [lastUpdate, setLastUpdate] = useState('Syncing...');
+
   const [alertCount, setAlertCount] = useState(0);
-  const [dateRange, setDateRange] = useState('7d');
+  const [dateRange, setDateRange] = useState('30d');
+  const [selectedRegion, setSelectedRegion] = useState('New York, USA');
+  const [regions, setRegions] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
-    const fetchData = async () => {
+    const fetchHeaderData = async () => {
       try {
         const [regRes, alertRes] = await Promise.allSettled([
           api.get('/environment/regions'),
@@ -128,15 +88,29 @@ const Header = () => {
             const openAlerts = alertRes.value.data.filter((a) => a.status === 'open');
             setAlertCount(openAlerts.length);
           }
-          setLastUpdate('Live • Open-Meteo Synced');
         }
       } catch {
-        if (isMounted) setLastUpdate('Connecting...');
+        // Fallback silently if offline
       }
     };
-    fetchData();
+    fetchHeaderData();
     return () => { isMounted = false; };
   }, []);
+
+  const handleQuickAddClick = () => {
+    // If on /dashboard, dispatch event to open dashboard's Quick Add modal
+    if (location.pathname === '/dashboard') {
+      window.dispatchEvent(new CustomEvent('carbonwise:open-quick-add'));
+    } else {
+      // Navigate to /activities with quick-add trigger
+      navigate('/activities?action=new');
+    }
+  };
+
+  const handleDateRangeChange = (val) => {
+    setDateRange(val);
+    window.dispatchEvent(new CustomEvent('carbonwise:date-range-change', { detail: val }));
+  };
 
   const initials = user?.name
     ?.split(' ')
@@ -150,47 +124,23 @@ const Header = () => {
       <div className="page-heading">
         <div className="header-meta-row">
           <span className="page-eyebrow">{meta.eyebrow}</span>
-          <div className="live-status-pill">
-            <span className="live-status-dot" />
-            <span>{lastUpdate}</span>
-          </div>
+          <span className="header-welcome-greeting">
+            Welcome back, <strong>{user?.name?.split(' ')[0] || 'User'}</strong>
+          </span>
         </div>
         <h1>{meta.title}</h1>
         <p>{meta.description}</p>
       </div>
 
       <div className="header-actions">
-        {/* Location Selector */}
-        <div className="header-location-picker">
-          <MapPin size={14} className="location-icon" />
-          <select
-            value={selectedRegion}
-            onChange={(e) => setSelectedRegion(e.target.value)}
-            className="location-select"
-            aria-label="Monitored Location"
-          >
-            {regions.length > 0 ? (
-              regions.map((reg) => (
-                <option key={reg.id} value={reg.name}>
-                  {reg.name}
-                </option>
-              ))
-            ) : (
-              <option value="New York, USA">New York, USA</option>
-            )}
-          </select>
-          <ChevronDown size={13} className="chevron" />
-        </div>
-
         {/* Date Range Selector */}
-        <div className="header-date-range">
-          <CalendarDays size={14} />
+        <div className="header-date-range" title="Global Dashboard Timeframe Filter">
+          <CalendarDays size={14} className="date-icon" />
           <select
             value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="location-select"
+            onChange={(e) => handleDateRangeChange(e.target.value)}
+            className="header-select"
             aria-label="Timeframe"
-            style={{ background: 'transparent', border: 'none', color: 'inherit', padding: 0 }}
           >
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
@@ -200,24 +150,34 @@ const Header = () => {
           <ChevronDown size={13} className="chevron" />
         </div>
 
-        {/* Download Report Button */}
-        <Link to="/reports" className="header-btn-download">
-          <Download size={14} />
-          <span>Download Report</span>
-        </Link>
+        {/* Quick Add Activity Button */}
+        <button
+          type="button"
+          onClick={handleQuickAddClick}
+          className="header-btn-quick-add"
+          title="Quickly record a new carbon activity"
+        >
+          <Plus size={15} />
+          <span>Quick Add Activity</span>
+        </button>
 
-        {/* Notification Indicator with alert count badge */}
-        <Link to="/alerts" className="header-icon-btn" aria-label="Active Alerts" title="Active Environmental Alerts">
+        {/* Notification Icon with Count Badge */}
+        <Link
+          to="/alerts"
+          className="header-icon-btn"
+          aria-label="Environmental Notifications"
+          title={`${alertCount} active alerts`}
+        >
           <Bell size={16} />
           {alertCount > 0 && <span className="notification-indicator">{alertCount}</span>}
         </Link>
 
-        {/* User Avatar */}
-        <Link to="/settings" className="header-profile-badge" aria-label="Platform Settings">
+        {/* User Profile */}
+        <Link to="/settings" className="header-profile-badge" aria-label="Platform Settings & Profile" title="Account Settings">
           <span className="header-avatar-circle">{initials}</span>
           <div className="header-profile-text">
-            <strong>{user?.name || 'Climate Analyst'}</strong>
-            <small>Environmental Lead</small>
+            <strong>{user?.name || 'Sustainability Lead'}</strong>
+            <small>{user?.email || 'Settings'}</small>
           </div>
         </Link>
       </div>

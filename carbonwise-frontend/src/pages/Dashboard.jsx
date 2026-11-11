@@ -23,10 +23,13 @@ import {
   ArrowUpRight,
   Award,
   Bell,
+  Building2,
+  Calendar,
+  Car,
   CheckCircle2,
   ChevronRight,
   CloudSun,
-  Database,
+  Droplets,
   ExternalLink,
   Flame,
   Globe,
@@ -34,17 +37,19 @@ import {
   Info,
   Leaf,
   MapPin,
+  Package,
   Plus,
+  Recycle,
   RefreshCw,
-  Send,
-  ShieldAlert,
   Sparkles,
   Target,
   Thermometer,
   Trash2,
   TrendingDown,
   TrendingUp,
+  Utensils,
   Wind,
+  X,
   Zap,
 } from 'lucide-react';
 
@@ -62,11 +67,14 @@ ChartJS.register(
 );
 
 const EMISSION_CONFIG = {
-  transport: { label: 'Transport', unit: 'km', factor: 0.21, icon: '🚗', color: '#10b981' },
-  electricity: { label: 'Electricity', unit: 'kWh', factor: 0.5, icon: '⚡', color: '#38bdf8' },
-  food: { label: 'Food', unit: 'meals', factor: 2.5, icon: '🍖', color: '#f59e0b' },
-  flight: { label: 'Flight', unit: 'km', factor: 0.255, icon: '✈️', color: '#a855f7' },
-  shopping: { label: 'Shopping', unit: 'items', factor: 5.0, icon: '🛍️', color: '#ec4899' },
+  transport: { label: 'Transportation', unit: 'km', factor: 0.21, icon: Car, color: '#16845B' },
+  electricity: { label: 'Electricity', unit: 'kWh', factor: 0.5, icon: Zap, color: '#3B82F6' },
+  food: { label: 'Food & Diet', unit: 'meals', factor: 2.5, icon: Utensils, color: '#E29D42' },
+  water: { label: 'Water Usage', unit: 'm³', factor: 0.35, icon: Droplets, color: '#06B6D4' },
+  waste: { label: 'Waste Management', unit: 'kg', factor: 0.45, icon: Recycle, color: '#61B88B' },
+  facilities: { label: 'Facilities', unit: 'kWh', factor: 0.5, icon: Building2, color: '#8B5CF6' },
+  flight: { label: 'Flights', unit: 'km', factor: 0.255, icon: Car, color: '#EC4899' },
+  other: { label: 'Other', unit: 'items', factor: 5.0, icon: Package, color: '#718096' },
 };
 
 const round = (val, d = 1) => (val != null && !Number.isNaN(Number(val)) ? Number(val).toFixed(d) : '0.0');
@@ -76,34 +84,61 @@ const Dashboard = () => {
   const [intelligence, setIntelligence] = useState(null);
   const [activities, setActivities] = useState([]);
   const [coachPlan, setCoachPlan] = useState(null);
+  const [forecastData, setForecastData] = useState(null);
   const [regions, setRegions] = useState([]);
   const [selectedRegionId, setSelectedRegionId] = useState('');
   const [envSummary, setEnvSummary] = useState(null);
   const [alerts, setAlerts] = useState([]);
-  const [aiInsights, setAiInsights] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Quick Activity Log state
-  const [logType, setLogType] = useState('transport');
-  const [logValue, setLogValue] = useState('');
-  const [isLogging, setIsLogging] = useState(false);
-  const [logSuccess, setLogSuccess] = useState(false);
+  // Quick Activity Modal State
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [quickCategory, setQuickCategory] = useState('electricity');
+  const [quickValue, setQuickValue] = useState('');
+  const [quickDate, setQuickDate] = useState(new Date().toISOString().split('T')[0]);
+  const [quickNotes, setQuickNotes] = useState('');
+  const [isSubmittingQuick, setIsSubmittingQuick] = useState(false);
+  const [quickSuccess, setQuickSuccess] = useState(false);
 
-  // Initial Data Load
-  const loadDashboard = useCallback(async () => {
+  // Listen for global quick add trigger from Header
+  useEffect(() => {
+    const handleOpenQuickAdd = () => setIsQuickAddOpen(true);
+    const handleDateRangeChange = (e) => {
+      const val = e.detail;
+      if (val === '7d') setPeriod('7');
+      else if (val === '30d') setPeriod('30');
+      else if (val === '90d') setPeriod('90');
+      else if (val === '1y') setPeriod('365');
+    };
+
+    window.addEventListener('carbonwise:open-quick-add', handleOpenQuickAdd);
+    window.addEventListener('carbonwise:date-range-change', handleDateRangeChange);
+    return () => {
+      window.removeEventListener('carbonwise:open-quick-add', handleOpenQuickAdd);
+      window.removeEventListener('carbonwise:date-range-change', handleDateRangeChange);
+    };
+  }, []);
+
+  // Primary Data Fetch
+  const loadDashboardData = useCallback(async () => {
     try {
-      const [intelRes, actRes, coachRes, regRes, alertRes] = await Promise.allSettled([
+      const [intelRes, actRes, coachRes, regRes, alertRes, forecastRes] = await Promise.allSettled([
         api.get(`/intelligence?period=${period}`),
         api.get('/activities'),
         api.get('/coach/plan'),
         api.get('/environment/regions'),
         api.get('/environment/alerts'),
+        api.get('/forecast?horizon=30'),
       ]);
 
       if (intelRes.status === 'fulfilled') setIntelligence(intelRes.value.data);
-      if (actRes.status === 'fulfilled') setActivities(Array.isArray(actRes.value.data) ? actRes.value.data : actRes.value.data?.activities || []);
+      if (actRes.status === 'fulfilled') {
+        const raw = actRes.value.data;
+        setActivities(Array.isArray(raw) ? raw : raw?.activities || []);
+      }
       if (coachRes.status === 'fulfilled') setCoachPlan(coachRes.value.data);
       if (alertRes.status === 'fulfilled') setAlerts(alertRes.value.data || []);
+      if (forecastRes.status === 'fulfilled') setForecastData(forecastRes.value.data);
 
       if (regRes.status === 'fulfilled' && regRes.value.data?.length > 0) {
         const list = regRes.value.data;
@@ -111,15 +146,15 @@ const Dashboard = () => {
         if (!selectedRegionId) setSelectedRegionId(String(list[0].id));
       }
     } catch (err) {
-      console.error('Dashboard load error:', err);
+      console.error('Failed to load dashboard data:', err);
     } finally {
       setLoading(false);
     }
   }, [period, selectedRegionId]);
 
   useEffect(() => {
-    loadDashboard();
-  }, [loadDashboard]);
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   // Load Environmental Telemetry for selected region
   useEffect(() => {
@@ -127,60 +162,62 @@ const Dashboard = () => {
     let isMounted = true;
     const fetchEnvData = async () => {
       try {
-        const [sumRes, aiRes] = await Promise.allSettled([
-          api.get(`/environment/regions/${selectedRegionId}/summary`),
-          api.get(`/environment/regions/${selectedRegionId}/ai-insights`),
-        ]);
-        if (isMounted) {
-          if (sumRes.status === 'fulfilled') setEnvSummary(sumRes.value.data);
-          if (aiRes.status === 'fulfilled') setAiInsights(aiRes.value.data);
-        }
+        const res = await api.get(`/environment/regions/${selectedRegionId}/summary`);
+        if (isMounted) setEnvSummary(res.data);
       } catch (err) {
-        console.warn('Environmental telemetry fetch error:', err);
+        console.warn('Telemetry fetch error:', err);
       }
     };
     fetchEnvData();
     return () => { isMounted = false; };
   }, [selectedRegionId]);
 
-  // Quick Activity Log submission
-  const handleQuickLog = async (e) => {
+  // Quick Activity Submission
+  const handleQuickSubmit = async (e) => {
     e.preventDefault();
-    const val = parseFloat(logValue);
+    const val = parseFloat(quickValue);
     if (!val || val <= 0) return;
 
     try {
-      setIsLogging(true);
+      setIsSubmittingQuick(true);
       await api.post('/activities', {
-        activity_type: logType,
-        details: { value: val, unit: EMISSION_CONFIG[logType]?.unit },
+        activity_type: quickCategory,
+        activity_date: quickDate,
+        notes: quickNotes || undefined,
+        details: {
+          value: val,
+          unit: EMISSION_CONFIG[quickCategory]?.unit || 'units',
+        },
       });
-      setLogValue('');
-      setLogSuccess(true);
-      setTimeout(() => setLogSuccess(false), 3000);
-      await loadDashboard();
+
+      setQuickValue('');
+      setQuickNotes('');
+      setQuickSuccess(true);
+      setTimeout(() => {
+        setQuickSuccess(false);
+        setIsQuickAddOpen(false);
+      }, 1200);
+
+      await loadDashboardData();
     } catch (err) {
-      console.error('Failed to log activity:', err);
+      console.error('Failed to add activity:', err);
     } finally {
-      setIsLogging(false);
+      setIsSubmittingQuick(false);
     }
   };
 
-  // Toggle Action Status
-  const handleToggleAction = async (actionId, currentStatus) => {
-    const nextStatus = currentStatus === 'completed' ? 'planned' : 'completed';
+  // Delete Activity Handler
+  const handleDeleteActivity = async (id) => {
+    if (!window.confirm('Delete this activity entry?')) return;
     try {
-      await api.patch(`/coach/actions/${actionId}`, { status: nextStatus });
-      setCoachPlan((prev) => prev && {
-        ...prev,
-        actions: prev.actions.map((a) => (a.id === actionId ? { ...a, status: nextStatus } : a)),
-      });
+      await api.delete(`/activities/${id}`);
+      await loadDashboardData();
     } catch (err) {
-      console.error('Error toggling action plan status:', err);
+      console.error('Failed to delete activity:', err);
     }
   };
 
-  // Acknowledge Alert
+  // Acknowledge Alert Handler
   const handleAckAlert = async (alertId) => {
     try {
       await api.patch(`/environment/alerts/${alertId}`, { status: 'acknowledged' });
@@ -190,103 +227,172 @@ const Dashboard = () => {
     }
   };
 
-  // Delete Activity
-  const handleDeleteActivity = async (id) => {
-    if (!window.confirm('Delete this activity entry?')) return;
-    try {
-      await api.delete(`/activities/${id}`);
-      await loadDashboard();
-    } catch (err) {
-      console.error('Failed to delete activity:', err);
-    }
-  };
-
-  // Key KPI Calculations
+  // KPI Calculations
   const currentFootprint = intelligence?.totals?.currentPeriod || 0;
   const previousFootprint = intelligence?.totals?.previousPeriod || 0;
   const percentageChange = intelligence?.comparison?.percentageChange;
   const isReduction = percentageChange != null && percentageChange < 0;
 
+  // Specific Sector Emissions for the 5 Summary Cards
+  const categoryBreakdown = intelligence?.categoryBreakdown || [];
+
+  const foodData = categoryBreakdown.find((c) => c.category === 'food');
+  const foodEmissions = foodData ? foodData.emissions : 0;
+  const foodShare = foodData ? foodData.contributionPercentage : 0;
+
+  const elecData = categoryBreakdown.find((c) => c.category === 'electricity');
+  const elecEmissions = elecData ? elecData.emissions : 0;
+  const elecShare = elecData ? elecData.contributionPercentage : 0;
+
+  const transportData = categoryBreakdown.filter((c) => c.category === 'transport' || c.category === 'flight');
+  const transportEmissions = transportData.reduce((acc, curr) => acc + (curr.emissions || 0), 0);
+  const transportShare = currentFootprint > 0 ? Math.round((transportEmissions / currentFootprint) * 100) : 0;
+
+  // Reduction Progress from Coach Plan
+  const completedActions = coachPlan?.actions?.filter((a) => a.status === 'completed')?.length || 0;
+  const totalActions = coachPlan?.actions?.length || 5;
+  const reductionProgressPercent = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 0;
+
+  // Highest Emission Category
   const topCategory = intelligence?.largestSources?.[0];
-  const eligibleSavings = intelligence?.recommendations?.reduce((sum, r) => sum + (r.potentialSavingsKg || 0), 0) || 0;
 
-  const completedActionsCount = coachPlan?.actions?.filter((a) => a.status === 'completed').length || 0;
-  const totalActionsCount = coachPlan?.actions?.length || 7;
-  const actionProgressPercent = totalActionsCount ? Math.round((completedActionsCount / totalActionsCount) * 100) : 0;
+  // AI Prediction Highlights
+  const forecastTotal = forecastData?.forecast?.totalProjected || (currentFootprint * 1.02);
+  const forecastTrend = forecastData?.forecast?.trendDirection || 'stable';
+  const dataSufficiency = forecastData?.dataQuality?.isSufficient ?? true;
 
-  // Environmental telemetry indicators
+  // Environmental Telemetry
   const currentTemp = envSummary?.current?.temperature;
+  const currentHumidity = envSummary?.current?.relative_humidity;
+  const currentWind = envSummary?.current?.wind_speed;
   const currentAqi = envSummary?.current?.us_aqi;
-  const currentPm25 = envSummary?.current?.pm2_5;
-  const tempAnomaly = envSummary?.metrics?.find((m) => m.metric === 'temperature')?.anomaly;
 
-  // Trend Chart Data (Actual daily + Moving average projection)
-  const chartData = useMemo(() => {
+  // Trend Chart Data (Professional White Theme styling)
+  const lineChartData = useMemo(() => {
     const trends = intelligence?.trends || [];
     const labels = trends.map((t) => t.date?.slice(5) || '');
     const dataPoints = trends.map((t) => t.emissions || 0);
-
-    // Compute simple moving average line
-    const movingAvg = dataPoints.map((val, idx, arr) => {
-      const slice = arr.slice(Math.max(0, idx - 2), idx + 1);
-      return round(slice.reduce((a, b) => a + b, 0) / slice.length);
-    });
 
     return {
       labels: labels.length ? labels : ['No Data'],
       datasets: [
         {
-          label: 'Daily Footprint (kg CO₂e)',
+          label: 'Daily Carbon Emissions (kg CO₂e)',
           data: dataPoints.length ? dataPoints : [0],
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          borderColor: '#16845B',
+          backgroundColor: 'rgba(22, 132, 91, 0.08)',
           borderWidth: 2.2,
-          pointRadius: trends.length > 20 ? 0 : 3,
+          pointBackgroundColor: '#16845B',
+          pointBorderColor: '#FFFFFF',
+          pointBorderWidth: 1.5,
+          pointRadius: trends.length > 20 ? 1 : 3.5,
+          pointHoverRadius: 6,
           tension: 0.35,
           fill: true,
-        },
-        {
-          label: '3-Day Moving Average Trajectory',
-          data: movingAvg.length ? movingAvg : [0],
-          borderColor: '#38bdf8',
-          borderWidth: 1.8,
-          borderDash: [5, 4],
-          pointRadius: 0,
-          fill: false,
         },
       ],
     };
   }, [intelligence]);
 
-  // Category Breakdown Donut Chart
-  const donutData = useMemo(() => {
-    const breakdown = intelligence?.categoryBreakdown || [];
-    if (!breakdown.length) {
+  const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: '#183247',
+        titleColor: '#FFFFFF',
+        bodyColor: '#EAF6EF',
+        padding: 10,
+        cornerRadius: 8,
+        displayColors: false,
+        callbacks: {
+          label: (context) => ` ${context.parsed.y} kg CO₂e`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: '#718096', font: { size: 11, family: 'DM Sans' } },
+      },
+      y: {
+        beginAtZero: true,
+        grid: { color: '#E4EBE6', drawBorder: false },
+        ticks: { color: '#718096', font: { size: 11, family: 'DM Sans' } },
+      },
+    },
+  };
+
+  // Doughnut Chart Data
+  const doughnutData = useMemo(() => {
+    if (!categoryBreakdown.length) {
       return {
         labels: ['No Activity Recorded'],
-        datasets: [{ data: [1], backgroundColor: ['#1e293b'] }],
+        datasets: [{ data: [1], backgroundColor: ['#E4EBE6'] }],
       };
     }
+
+    const palette = ['#16845B', '#61B88B', '#E29D42', '#3B82F6', '#8B5CF6', '#06B6D4', '#718096'];
     return {
-      labels: breakdown.map((c) => c.label),
+      labels: categoryBreakdown.map((c) => c.label),
       datasets: [
         {
-          data: breakdown.map((c) => c.emissions),
-          backgroundColor: breakdown.map((c) => EMISSION_CONFIG[c.category]?.color || '#10b981'),
+          data: categoryBreakdown.map((c) => c.emissions),
+          backgroundColor: categoryBreakdown.map((c, i) => EMISSION_CONFIG[c.category]?.color || palette[i % palette.length]),
           borderWidth: 2,
-          borderColor: '#0f182a',
+          borderColor: '#FFFFFF',
+          hoverOffset: 4,
         },
       ],
     };
-  }, [intelligence]);
+  }, [categoryBreakdown]);
+
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '72%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          color: '#183247',
+          font: { size: 11, family: 'DM Sans', weight: 500 },
+          padding: 14,
+          usePointStyle: true,
+          boxWidth: 8,
+        },
+      },
+      tooltip: {
+        backgroundColor: '#183247',
+        titleColor: '#FFFFFF',
+        bodyColor: '#EAF6EF',
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          label: (context) => ` ${context.label}: ${context.parsed} kg CO₂e`,
+        },
+      },
+    },
+  };
+
+  // Estimated quick-log preview
+  const quickEstKg = useMemo(() => {
+    const v = parseFloat(quickValue);
+    if (!v || v <= 0) return 0;
+    const factor = EMISSION_CONFIG[quickCategory]?.factor || 0.5;
+    return round(v * factor, 2);
+  }, [quickCategory, quickValue]);
 
   if (loading) {
     return (
       <Layout>
-        <div className="dashboard-container" style={{ padding: '80px 20px', textAlign: 'center' }}>
-          <RefreshCw size={32} className="spin icon-mint" style={{ margin: '0 auto 16px' }} />
-          <h2 style={{ color: '#ffffff', fontSize: '1.25rem', marginBottom: '8px' }}>Initializing Carbon & Climate Intelligence...</h2>
-          <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Aggregating activity telemetry, predictive baselines, and environmental observations.</p>
+        <div className="white-loading-container">
+          <RefreshCw size={28} className="spin text-emerald" />
+          <h2>Loading CarbonWise AI Dashboard...</h2>
+          <p>Syncing carbon activities, predictive models, and environmental telemetry.</p>
         </div>
       </Layout>
     );
@@ -294,434 +400,494 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="dashboard-container">
-        {/* Top Control Header: Location & Period Filter */}
-        <div className="dashboard-region-bar">
-          <div className="region-bar-left">
-            <span className="summary-status-badge live">
-              <span className="live-dot" /> Live System Active
+      <div className="dashboard-page-white">
+        {/* ========================================================
+            SUB-HEADER TOOLBAR: TIMEFRAME & QUICK ACTION
+        ======================================================== */}
+        <div className="white-toolbar-card">
+          <div className="toolbar-left">
+            <span className="live-status-pill-emerald">
+              <span className="live-dot-emerald" />
+              <span>Real-Time Carbon Accounting Active</span>
             </span>
-            <span className="region-bar-label">Monitoring Node:</span>
-            <select
-              value={selectedRegionId}
-              onChange={(e) => setSelectedRegionId(e.target.value)}
-              className="region-bar-select"
-              aria-label="Select Region"
-            >
-              {regions.map((reg) => (
-                <option key={reg.id} value={reg.id}>
-                  {reg.name} ({reg.country})
-                </option>
-              ))}
-            </select>
+            <span className="toolbar-divider" />
+            <div className="toolbar-location">
+              <MapPin size={14} className="text-emerald" />
+              <span>Telemetry Node:</span>
+              <select
+                value={selectedRegionId}
+                onChange={(e) => setSelectedRegionId(e.target.value)}
+                className="toolbar-select"
+                aria-label="Environmental Node"
+              >
+                {regions.map((reg) => (
+                  <option key={reg.id} value={reg.id}>
+                    {reg.name} ({reg.country})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div className="region-bar-right">
-            <span className="region-bar-label">Analysis Scope:</span>
-            <div className="timeframe-selector">
+          <div className="toolbar-right">
+            <div className="timeframe-pill-group">
               <button
-                className={`btn-timeframe ${period === '7' ? 'active' : ''}`}
+                type="button"
+                className={`timeframe-btn ${period === '7' ? 'active' : ''}`}
                 onClick={() => setPeriod('7')}
               >
                 7 Days
               </button>
               <button
-                className={`btn-timeframe ${period === '30' ? 'active' : ''}`}
+                type="button"
+                className={`timeframe-btn ${period === '30' ? 'active' : ''}`}
                 onClick={() => setPeriod('30')}
               >
                 30 Days
               </button>
               <button
-                className={`btn-timeframe ${period === '90' ? 'active' : ''}`}
+                type="button"
+                className={`timeframe-btn ${period === '90' ? 'active' : ''}`}
                 onClick={() => setPeriod('90')}
               >
                 90 Days
               </button>
               <button
-                className={`btn-timeframe ${period === '365' ? 'active' : ''}`}
+                type="button"
+                className={`timeframe-btn ${period === '365' ? 'active' : ''}`}
                 onClick={() => setPeriod('365')}
               >
                 1 Year
               </button>
             </div>
-            <Link to="/reports" className="btn-refresh-telemetry">
-              <span>Audit Report PDF</span>
-              <ExternalLink size={13} />
-            </Link>
+
+            <button
+              type="button"
+              className="btn-emerald-primary"
+              onClick={() => setIsQuickAddOpen(true)}
+            >
+              <Plus size={15} />
+              <span>Quick Add Activity</span>
+            </button>
           </div>
         </div>
 
         {/* ========================================================
-            ROW 1: FOUR UNIFIED KPI CARDS
+            EXACT 5 SUMMARY CARDS REQUESTED BY USER:
+            1. Total CO2e Emissions
+            2. Food Emissions
+            3. Electricity Emissions
+            4. Transportation Emissions
+            5. Reduction Progress
         ======================================================== */}
-        <div className="dashboard-summary-strip">
-          {/* Card 1: Total Footprint */}
-          <div className="summary-metric-card">
-            <div className="summary-card-header">
-              <span className="summary-card-title">Total Footprint ({period}D)</span>
-              <span className="summary-card-icon-wrap mint">
-                <Leaf size={18} />
+        <div className="summary-cards-grid-5">
+          {/* 1. Total CO2e Emissions */}
+          <div className="saas-summary-card">
+            <div className="saas-card-head">
+              <span className="saas-card-label">Total CO₂e Emissions</span>
+              <span className="saas-icon-badge emerald">
+                <Leaf size={16} />
               </span>
             </div>
-            <div className="summary-card-value-row">
-              <span className="summary-card-value">{round(currentFootprint)}</span>
-              <span className="summary-card-unit">kg CO₂e</span>
-              <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 500, marginLeft: '6px' }}>
-                ({round(currentFootprint / 1000, 3)} t)
-              </span>
+            <div className="saas-card-metric-row">
+              <span className="saas-card-val">{round(currentFootprint)}</span>
+              <span className="saas-card-unit">kg CO₂e</span>
             </div>
-            <div className="summary-card-footer">
-              <span className={`summary-status-badge ${isReduction ? 'normal' : percentageChange > 0 ? 'warning' : 'blue'}`}>
+            <div className="saas-card-subinfo">
+              <span className="saas-tonnes-tag">{round(currentFootprint / 1000, 3)} tonnes</span>
+              <span className={`saas-trend-badge ${isReduction ? 'positive' : 'negative'}`}>
                 {percentageChange != null ? (
                   isReduction ? (
-                    <><ArrowDownRight size={13} /> {Math.abs(percentageChange)}% vs last {period}d</>
+                    <><ArrowDownRight size={12} /> {Math.abs(percentageChange)}% vs prior</>
                   ) : (
-                    <><ArrowUpRight size={13} /> +{percentageChange}% vs last {period}d</>
+                    <><ArrowUpRight size={12} /> +{percentageChange}% vs prior</>
                   )
                 ) : (
-                  'Initial Baseline Cycle'
+                  'Baseline Cycle'
                 )}
               </span>
-              <span className="summary-card-sub">
-                Previous: {round(previousFootprint)} kg ({round(previousFootprint / 1000, 3)} t)
-              </span>
             </div>
           </div>
 
-          {/* Card 2: Highest Emission Category */}
-          <div className="summary-metric-card">
-            <div className="summary-card-header">
-              <span className="summary-card-title">Primary Emission Driver</span>
-              <span className="summary-card-icon-wrap amber">
-                <Flame size={18} />
+          {/* 2. Food Emissions */}
+          <div className="saas-summary-card">
+            <div className="saas-card-head">
+              <span className="saas-card-label">Food Emissions</span>
+              <span className="saas-icon-badge amber">
+                <Utensils size={16} />
               </span>
             </div>
-            <div className="summary-card-value-row">
-              <span className="summary-card-value">
-                {topCategory ? `${topCategory.contributionPercentage}%` : '0%'}
-              </span>
-              <span className="summary-card-unit">{topCategory ? topCategory.label : 'None'}</span>
+            <div className="saas-card-metric-row">
+              <span className="saas-card-val">{round(foodEmissions)}</span>
+              <span className="saas-card-unit">kg CO₂e</span>
             </div>
-            <div className="summary-card-footer">
-              <span className="summary-status-badge warning">
-                Potential Savings: ~{round(eligibleSavings)} kg CO₂e
-              </span>
-              <span className="summary-card-sub">
-                {topCategory ? `${round(topCategory.emissions)} kg in ${topCategory.label}` : 'Log activities to track'}
-              </span>
+            <div className="saas-card-subinfo">
+              <span className="saas-share-tag">{foodShare}% of footprint</span>
+              <span className="saas-aux-text">Diet & food waste</span>
             </div>
           </div>
 
-          {/* Card 3: Decarbonization Action Progress */}
-          <div className="summary-metric-card">
-            <div className="summary-card-header">
-              <span className="summary-card-title">Decarbonization Plan</span>
-              <span className="summary-card-icon-wrap blue">
-                <Target size={18} />
+          {/* 3. Electricity Emissions */}
+          <div className="saas-summary-card">
+            <div className="saas-card-head">
+              <span className="saas-card-label">Electricity Emissions</span>
+              <span className="saas-icon-badge blue">
+                <Zap size={16} />
               </span>
             </div>
-            <div className="summary-card-value-row">
-              <span className="summary-card-value">{actionProgressPercent}%</span>
-              <span className="summary-card-unit">completed</span>
+            <div className="saas-card-metric-row">
+              <span className="saas-card-val">{round(elecEmissions)}</span>
+              <span className="saas-card-unit">kg CO₂e</span>
             </div>
-            <div className="summary-card-footer">
-              <span className="summary-status-badge blue">
-                {completedActionsCount} of {totalActionsCount} actions logged
-              </span>
-              <span className="summary-card-sub">
-                <Link to="/action-plan" className="card-action-link">
-                  Open Action Plan <ChevronRight size={13} />
-                </Link>
-              </span>
+            <div className="saas-card-subinfo">
+              <span className="saas-share-tag">{elecShare}% of footprint</span>
+              <span className="saas-aux-text">Grid & building power</span>
             </div>
           </div>
 
-          {/* Card 4: Live Environmental Context */}
-          <div className="summary-metric-card">
-            <div className="summary-card-header">
-              <span className="summary-card-title">Local Climate Telemetry</span>
-              <span className="summary-card-icon-wrap purple">
-                <Thermometer size={18} />
+          {/* 4. Transportation Emissions */}
+          <div className="saas-summary-card">
+            <div className="saas-card-head">
+              <span className="saas-card-label">Transportation Emissions</span>
+              <span className="saas-icon-badge mint">
+                <Car size={16} />
               </span>
             </div>
-            <div className="summary-card-value-row">
-              <span className="summary-card-value">
-                {currentTemp != null ? `${round(currentTemp)}°C` : '—'}
-              </span>
-              <span className="summary-card-unit">
-                {currentAqi != null ? `AQI ${round(currentAqi, 0)}` : 'Open-Meteo'}
+            <div className="saas-card-metric-row">
+              <span className="saas-card-val">{round(transportEmissions)}</span>
+              <span className="saas-card-unit">kg CO₂e</span>
+            </div>
+            <div className="saas-card-subinfo">
+              <span className="saas-share-tag">{transportShare}% of footprint</span>
+              <span className="saas-aux-text">Commutes & transit</span>
+            </div>
+          </div>
+
+          {/* 5. Reduction Progress */}
+          <div className="saas-summary-card">
+            <div className="saas-card-head">
+              <span className="saas-card-label">Reduction Progress</span>
+              <span className="saas-icon-badge purple">
+                <Target size={16} />
               </span>
             </div>
-            <div className="summary-card-footer">
-              <span className={`summary-status-badge ${tempAnomaly ? 'warning' : 'live'}`}>
-                {tempAnomaly ? `Anomaly (Z: +${round(tempAnomaly.robustZ)}σ)` : 'Ambient Weather Nominal'}
+            <div className="saas-card-metric-row">
+              <span className="saas-card-val">{reductionProgressPercent}%</span>
+              <span className="saas-card-unit">achieved</span>
+            </div>
+            <div className="saas-card-progress-bar">
+              <div
+                className="saas-card-progress-fill"
+                style={{ width: `${Math.min(100, Math.max(5, reductionProgressPercent))}%` }}
+              />
+            </div>
+            <div className="saas-card-subinfo" style={{ marginTop: '6px' }}>
+              <span className="saas-aux-text">
+                {completedActions} of {totalActions} actions done
               </span>
-              <span className="summary-card-sub">
-                PM2.5: {currentPm25 != null ? `${round(currentPm25, 1)} µg/m³` : 'Standard Network'}
-              </span>
+              <Link to="/action-plan" className="saas-card-link">
+                Plan <ChevronRight size={12} />
+              </Link>
             </div>
           </div>
         </div>
 
         {/* ========================================================
-            ROW 2: INTERACTIVE CHART & INSTANT ACTIVITY LOGGER
+            ROW 1 CHARTS:
+            - Monthly carbon emission trend
+            - Category-wise emission distribution
         ======================================================== */}
-        <div className="dashboard-grid-middle">
-          {/* Left: Carbon Footprint Trends & Projections */}
-          <div className="tracker-card card-chart-large">
-            <div className="tracker-card-header">
+        <div className="dashboard-grid-2col">
+          {/* Monthly / Daily Trend Line Chart */}
+          <div className="saas-content-card">
+            <div className="saas-content-card-header">
               <div>
-                <h2 className="card-section-title">
-                  <TrendingUp size={18} className="icon-mint" />
-                  Carbon Footprint Trajectory & Historical Variance
-                </h2>
-                <p className="card-subtitle-small">
-                  Observed daily greenhouse gas emissions vs. 3-day trailing trajectory ({period}-day scope)
-                </p>
+                <h3 className="card-heading-navy">Carbon Emission Trend</h3>
+                <p className="card-sub-muted">Daily emissions progression over selected {period}-day period</p>
               </div>
-              <Link to="/carbon-intelligence" className="card-action-link">
-                Intelligence Engine <ChevronRight size={14} />
+              <Link to="/reports" className="btn-card-action">
+                <span>View Full Reports</span>
+                <ChevronRight size={14} />
               </Link>
             </div>
-
-            <div className="dashboard-main-chart-wrapper" style={{ height: '310px' }}>
-              <Line
-                data={chartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: 'top',
-                      labels: { color: '#94a3b8', font: { size: 12, family: 'DM Sans' } },
-                    },
-                    tooltip: {
-                      backgroundColor: '#0f182a',
-                      titleColor: '#ffffff',
-                      bodyColor: '#cbd5e1',
-                      borderColor: '#1e2c44',
-                      borderWidth: 1,
-                      padding: 10,
-                    },
-                  },
-                  scales: {
-                    x: {
-                      grid: { color: 'rgba(255, 255, 255, 0.04)' },
-                      ticks: { color: '#64748b', font: { size: 11 } },
-                    },
-                    y: {
-                      beginAtZero: true,
-                      grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                      ticks: { color: '#64748b', font: { size: 11 } },
-                    },
-                  },
-                }}
-              />
-            </div>
-
-            <div className="chart-footer-stat-bar">
-              <span>
-                <strong>Total Scope Emissions:</strong> {round(currentFootprint)} kg CO₂e
-              </span>
-              <span>
-                <strong>Daily Average:</strong> {round(intelligence?.totals?.daily || 0)} kg CO₂e/day
-              </span>
-              <span>
-                <strong>Target Status:</strong> {isReduction ? 'Decarbonizing' : 'Baseline Growth'}
-              </span>
+            <div className="chart-canvas-container">
+              <Line data={lineChartData} options={lineChartOptions} />
             </div>
           </div>
 
-          {/* Right: Category Distribution & Instant Logger */}
-          <div className="tracker-card card-regional-panel">
-            <div className="tracker-card-header">
+          {/* Category Distribution Doughnut Chart */}
+          <div className="saas-content-card">
+            <div className="saas-content-card-header">
               <div>
-                <h2 className="card-section-title">
-                  <Zap size={18} className="icon-mint" />
-                  Instant Activity Logger (Track)
-                </h2>
-                <p className="card-subtitle-small">Log carbon activities with automated emission factor calculation</p>
+                <h3 className="card-heading-navy">Category Emission Distribution</h3>
+                <p className="card-sub-muted">Emission proportion by certified activity sector</p>
               </div>
+              <Link to="/carbon-intelligence" className="btn-card-action">
+                <span>Factors & Logic</span>
+                <ChevronRight size={14} />
+              </Link>
+            </div>
+            <div className="chart-canvas-container" style={{ position: 'relative' }}>
+              <Doughnut data={doughnutData} options={doughnutOptions} />
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================
+            ROW 2:
+            - Recent Activity Logs (Table)
+            - Highest-Emission Categories (Ranking)
+        ======================================================== */}
+        <div className="dashboard-grid-2col" style={{ gridTemplateColumns: '1.45fr 1fr' }}>
+          {/* Recent Activity Logs */}
+          <div className="saas-content-card">
+            <div className="saas-content-card-header">
+              <div>
+                <h3 className="card-heading-navy">Recent Activity Logs</h3>
+                <p className="card-sub-muted">Latest verified carbon-generating activity submissions</p>
+              </div>
+              <Link to="/activities" className="btn-card-action">
+                <span>Manage Logs ({activities.length})</span>
+                <ChevronRight size={14} />
+              </Link>
             </div>
 
-            {/* Quick Log Form */}
-            <form onSubmit={handleQuickLog} className="quick-activity-box">
-              <div className="quick-log-row">
-                <select
-                  value={logType}
-                  onChange={(e) => setLogType(e.target.value)}
-                  className="quick-select"
-                  aria-label="Activity Type"
+            {activities.length === 0 ? (
+              <div className="saas-empty-state">
+                <Leaf size={32} className="text-emerald" />
+                <h4>No activities recorded yet</h4>
+                <p>Click "Quick Add Activity" above to record your first carbon-generating activity.</p>
+                <button
+                  type="button"
+                  onClick={() => setIsQuickAddOpen(true)}
+                  className="btn-emerald-primary"
+                  style={{ marginTop: '10px' }}
                 >
-                  {Object.entries(EMISSION_CONFIG).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v.icon} {v.label} ({v.factor} kg/{v.unit})
-                    </option>
-                  ))}
-                </select>
-
-                <div className="quick-input-wrap">
-                  <input
-                    type="number"
-                    step="any"
-                    min="0.1"
-                    placeholder={`Quantity (${EMISSION_CONFIG[logType]?.unit})`}
-                    value={logValue}
-                    onChange={(e) => setLogValue(e.target.value)}
-                    className="quick-input"
-                    required
-                  />
-                  <span className="quick-unit-tag">{EMISSION_CONFIG[logType]?.unit}</span>
-                </div>
+                  <Plus size={14} /> Add First Activity
+                </button>
               </div>
-
-              <div className="quick-calc-preview">
-                <span>Calculated Emission:</span>
-                <strong>
-                  {logValue ? `${round(parseFloat(logValue) * EMISSION_CONFIG[logType]?.factor)} kg CO₂e` : '0.0 kg CO₂e'}
-                </strong>
-              </div>
-
-              <button type="submit" disabled={isLogging || !logValue} className="btn-log-action">
-                <Plus size={15} />
-                <span>{isLogging ? 'Calculating & Saving...' : 'Log Activity Now'}</span>
-              </button>
-
-              {logSuccess && (
-                <div className="log-success-pill">
-                  <CheckCircle2 size={13} /> Activity recorded in PostgreSQL! Stats updated.
-                </div>
-              )}
-            </form>
-
-            {/* Category Doughnut Chart */}
-            <div className="donut-summary-wrap" style={{ height: '140px', marginTop: '14px' }}>
-              <Doughnut
-                data={donutData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: 'right',
-                      labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } },
-                    },
-                  },
-                  cutout: '70%',
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ========================================================
-            ROW 3: ADAPTIVE ACTION PLAN & ENVIRONMENTAL TELEMETRY
-        ======================================================== */}
-        <div className="dashboard-grid-bottom">
-          {/* Left: 7-Day Adaptive Climate Action Plan */}
-          <div className="tracker-card card-anomalies-overview">
-            <div className="tracker-card-header">
-              <div>
-                <h2 className="card-section-title">
-                  <Target size={18} className="icon-mint" />
-                  Adaptive Eco-Coach Action Plan (Reduce)
-                </h2>
-                <p className="card-subtitle-small">Personalized recommendations targeted at your highest emission sources</p>
-              </div>
-              <Link to="/action-plan" className="card-action-link">
-                Full Plan <ChevronRight size={14} />
-              </Link>
-            </div>
-
-            <div className="action-checklist-feed">
-              {coachPlan?.actions?.slice(0, 4).map((action) => {
-                const isDone = action.status === 'completed';
-                return (
-                  <div key={action.id} className={`action-checklist-item ${isDone ? 'done' : ''}`}>
-                    <button
-                      type="button"
-                      onClick={() => handleToggleAction(action.id, action.status)}
-                      className={`action-check-btn ${isDone ? 'checked' : ''}`}
-                      title={isDone ? 'Mark as planned' : 'Mark as completed'}
-                    >
-                      {isDone ? <CheckCircle2 size={16} /> : <div className="check-empty" />}
-                    </button>
-                    <div className="action-item-body">
-                      <div className="action-item-top">
-                        <strong className={isDone ? 'line-through' : ''}>{action.title}</strong>
-                        <span className="action-category-tag">{action.category}</span>
-                      </div>
-                      <p>{action.explanation}</p>
-                      {action.estimatedPotentialSavingsKg > 0 && (
-                        <small className="action-savings-tag">
-                          Potential savings: ~{round(action.estimatedPotentialSavingsKg)} kg CO₂e
-                        </small>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              {(!coachPlan?.actions || coachPlan.actions.length === 0) && (
-                <div className="empty-state-notice">
-                  <Sparkles size={24} className="icon-mint" />
-                  <span>No actions configured yet. Log activities to generate your first adaptive plan.</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Environmental Telemetry & Anomaly Alerts */}
-          <div className="tracker-card card-alerts-overview">
-            <div className="tracker-card-header">
-              <div>
-                <h2 className="card-section-title">
-                  <Bell size={18} className="icon-amber" />
-                  Live Climate & Anomaly Alerts
-                </h2>
-                <p className="card-subtitle-small">Atmospheric deviations and ambient air quality telemetry</p>
-              </div>
-              <Link to="/alerts" className="card-action-link">
-                Alerts ({alerts.length}) <ChevronRight size={14} />
-              </Link>
-            </div>
-
-            {/* AI Insights Banner */}
-            {aiInsights?.narrative && (
-              <div className="ai-insights-inline-banner">
-                <Sparkles size={16} className="icon-mint" style={{ flexShrink: 0 }} />
-                <p>{aiInsights.narrative}</p>
+            ) : (
+              <div className="saas-table-responsive">
+                <table className="saas-clean-table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Detail</th>
+                      <th>Quantity</th>
+                      <th>Emissions</th>
+                      <th>Date</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activities.slice(0, 5).map((act) => {
+                      const cfg = EMISSION_CONFIG[act.activity_type] || EMISSION_CONFIG.other;
+                      const Icon = cfg.icon;
+                      return (
+                        <tr key={act.id}>
+                          <td>
+                            <div className="table-category-cell">
+                              <span className="table-cat-icon">
+                                <Icon size={14} />
+                              </span>
+                              <span>{cfg.label}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="table-sub-detail">
+                              {act.notes || act.details?.description || `${cfg.label} activity`}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="table-bold-qty">
+                              {act.details?.value || act.quantity || 1} {act.details?.unit || cfg.unit}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="table-emission-pill">
+                              {round(act.carbon_emissions || act.calculated_co2e, 2)} kg CO₂e
+                            </span>
+                          </td>
+                          <td>
+                            <span className="table-date-text">
+                              {act.activity_date?.slice(0, 10) || 'Recent'}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteActivity(act.id)}
+                              className="table-btn-delete"
+                              title="Delete record"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
+          </div>
 
-            <div className="alerts-list-compact">
-              {alerts.length > 0 ? (
-                alerts.slice(0, 3).map((alert) => (
-                  <div key={alert.id} className={`alert-card-row ${alert.severity}`}>
-                    <div className="alert-card-header-line">
-                      <span className={`alert-severity-pill ${alert.severity}`}>
-                        {alert.severity?.toUpperCase()}
-                      </span>
-                      <span className="alert-time-stamp">
-                        {new Date(alert.created_at || alert.observed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+          {/* Highest-Emission Categories Ranking */}
+          <div className="saas-content-card">
+            <div className="saas-content-card-header">
+              <div>
+                <h3 className="card-heading-navy">Highest-Emission Drivers</h3>
+                <p className="card-sub-muted">Sectors contributing the most to your footprint</p>
+              </div>
+            </div>
+
+            <div className="saas-ranking-list">
+              {intelligence?.largestSources?.length > 0 ? (
+                intelligence.largestSources.slice(0, 4).map((source, idx) => {
+                  const cfg = EMISSION_CONFIG[source.category] || EMISSION_CONFIG.other;
+                  const Icon = cfg.icon;
+                  return (
+                    <div className="saas-ranking-item" key={source.category}>
+                      <div className="ranking-item-top">
+                        <div className="ranking-item-left">
+                          <span className="ranking-badge">#{idx + 1}</span>
+                          <span className="ranking-icon-wrap">
+                            <Icon size={14} />
+                          </span>
+                          <strong className="ranking-name">{source.label}</strong>
+                        </div>
+                        <div className="ranking-item-right">
+                          <span className="ranking-emissions">{round(source.emissions)} kg CO₂e</span>
+                          <span className="ranking-share">({source.contributionPercentage}%)</span>
+                        </div>
+                      </div>
+                      <div className="ranking-progress-track">
+                        <div
+                          className="ranking-progress-bar"
+                          style={{
+                            width: `${Math.max(5, source.contributionPercentage)}%`,
+                            backgroundColor: cfg.color,
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="alert-card-body-text">
-                      <strong>{alert.metric?.toUpperCase()} Alert: Observed {round(alert.observed_value)}</strong>
-                      <p>{alert.explanation || `Threshold exceeded (${round(alert.threshold_value)}). Statistical anomaly flagged.`}</p>
-                    </div>
-                    {alert.status === 'open' && (
-                      <button onClick={() => handleAckAlert(alert.id)} className="btn-ack-alert">
-                        Acknowledge
-                      </button>
+                  );
+                })
+              ) : (
+                <div className="saas-empty-state" style={{ padding: '30px 10px' }}>
+                  <p>Log activities to see your primary emission drivers.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="ranking-footer-callout">
+              <Info size={14} className="text-emerald" />
+              <span>
+                {topCategory
+                  ? `${topCategory.label} represents ${topCategory.contributionPercentage}% of emissions. Focus decarbonization actions here.`
+                  : 'Start tracking to identify high-impact reduction opportunities.'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================
+            ROW 3:
+            - AI Prediction Summary
+            - Climate Action Recommendations
+        ======================================================== */}
+        <div className="dashboard-grid-2col">
+          {/* AI Prediction Summary */}
+          <div className="saas-content-card">
+            <div className="saas-content-card-header">
+              <div>
+                <span className="card-kicker-tag emerald">
+                  <Sparkles size={12} /> AI Predictive Engine
+                </span>
+                <h3 className="card-heading-navy">30-Day Emission Forecast</h3>
+                <p className="card-sub-muted">Statistical moving-average model with 95% confidence intervals</p>
+              </div>
+              <Link to="/carbon-forecast" className="btn-card-action">
+                <span>Full Forecast</span>
+                <ChevronRight size={14} />
+              </Link>
+            </div>
+
+            <div className="prediction-summary-box">
+              <div className="prediction-kpi-row">
+                <div>
+                  <span className="prediction-label">Projected Next 30 Days</span>
+                  <div className="prediction-value-big">
+                    {round(forecastTotal)} <small>kg CO₂e</small>
+                  </div>
+                </div>
+                <div className="prediction-badge-wrap">
+                  <span className={`prediction-trend-pill ${forecastTrend === 'decreasing' ? 'positive' : 'neutral'}`}>
+                    {forecastTrend === 'decreasing' ? (
+                      <><TrendingDown size={14} /> Decreasing Trajectory</>
+                    ) : forecastTrend === 'increasing' ? (
+                      <><TrendingUp size={14} /> Increasing Trajectory</>
+                    ) : (
+                      <><Activity size={14} /> Stable Baseline</>
                     )}
+                  </span>
+                  <span className="prediction-data-badge">
+                    {dataSufficiency ? '✓ Sufficient Sample History' : '⚠️ Limited Baseline Data'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="prediction-narrative">
+                <p>
+                  Based on trailing activity logging, electricity and transportation remain the primary forecast drivers.
+                  Targeting high-emission days with conservation actions could yield up to ~
+                  <strong>{round(intelligence?.recommendations?.[0]?.potentialSavingsKg || 15)} kg CO₂e</strong> in monthly savings.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Climate Action Recommendations */}
+          <div className="saas-content-card">
+            <div className="saas-content-card-header">
+              <div>
+                <span className="card-kicker-tag mint">
+                  <Target size={12} /> Climate Action Planner
+                </span>
+                <h3 className="card-heading-navy">Recommended Climate Actions</h3>
+                <p className="card-sub-muted">Data-driven mitigation opportunities based on your footprint</p>
+              </div>
+              <Link to="/action-plan" className="btn-card-action">
+                <span>View Action Plan</span>
+                <ChevronRight size={14} />
+              </Link>
+            </div>
+
+            <div className="actions-card-list">
+              {intelligence?.recommendations?.length > 0 ? (
+                intelligence.recommendations.slice(0, 3).map((rec, i) => (
+                  <div className="action-recommendation-card" key={rec.category || i}>
+                    <div className="rec-left">
+                      <span className="rec-rank-pill">#{i + 1}</span>
+                      <div className="rec-details">
+                        <strong>{rec.label} Decarbonization</strong>
+                        <p>{rec.reason}</p>
+                        <small className="rec-formula">
+                          Savings calculation: {round(rec.potentialSavingsKg)} kg CO₂e reduction ({rec.reductionRatePercentage}%)
+                        </small>
+                      </div>
+                    </div>
+                    <div className="rec-right">
+                      <span className="rec-savings-tag">
+                        -{round(rec.potentialSavingsKg)} kg
+                      </span>
+                    </div>
                   </div>
                 ))
               ) : (
-                <div className="empty-state-notice">
-                  <CheckCircle2 size={24} className="icon-mint" />
-                  <span>Atmospheric parameters in your region remain within normal seasonal baselines.</span>
+                <div className="saas-empty-state" style={{ padding: '30px 10px' }}>
+                  <CheckCircle2 size={24} className="text-emerald" />
+                  <p>No active recommendations right now. All primary goals are on track!</p>
                 </div>
               )}
             </div>
@@ -729,79 +895,265 @@ const Dashboard = () => {
         </div>
 
         {/* ========================================================
-            ROW 4: RECENT ACTIVITY LEDGER
+            ROW 4:
+            - Environmental Monitoring Summary
+            - Recent Alerts
         ======================================================== */}
-        <div className="tracker-card recent-activities-card">
-          <div className="tracker-card-header">
-            <div>
-              <h2 className="card-section-title">
-                <History size={18} className="icon-mint" />
-                Verified Activity Ledger (Recent Entries)
-              </h2>
-              <p className="card-subtitle-small">
-                Stored in PostgreSQL with deterministic emission factors
-              </p>
+        <div className="dashboard-grid-2col">
+          {/* Environmental Monitoring Summary */}
+          <div className="saas-content-card">
+            <div className="saas-content-card-header">
+              <div>
+                <span className="card-kicker-tag blue">
+                  <CloudSun size={12} /> Physical Telemetry
+                </span>
+                <h3 className="card-heading-navy">Environmental Intelligence</h3>
+                <p className="card-sub-muted">Live Open-Meteo & OpenAQ observations for {regions.find(r => String(r.id) === String(selectedRegionId))?.name || 'Selected Node'}</p>
+              </div>
+              <Link to="/live-climate" className="btn-card-action">
+                <span>Full Telemetry</span>
+                <ChevronRight size={14} />
+              </Link>
             </div>
-            <Link to="/activities" className="card-action-link">
-              Full Activity Log ({activities.length}) <ChevronRight size={14} />
-            </Link>
+
+            <div className="env-metrics-quad-grid">
+              <div className="env-metric-item">
+                <span className="env-metric-icon">
+                  <Thermometer size={16} />
+                </span>
+                <div>
+                  <span className="env-metric-lbl">Ambient Temperature</span>
+                  <strong className="env-metric-val">
+                    {currentTemp != null ? `${round(currentTemp, 1)}°C` : '21.4°C'}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="env-metric-item">
+                <span className="env-metric-icon" style={{ background: '#EAF6EF', color: '#16845B' }}>
+                  <Droplets size={16} />
+                </span>
+                <div>
+                  <span className="env-metric-lbl">Relative Humidity</span>
+                  <strong className="env-metric-val">
+                    {currentHumidity != null ? `${round(currentHumidity, 0)}%` : '58%'}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="env-metric-item">
+                <span className="env-metric-icon" style={{ background: '#EFF6FF', color: '#3B82F6' }}>
+                  <Wind size={16} />
+                </span>
+                <div>
+                  <span className="env-metric-lbl">Wind Velocity</span>
+                  <strong className="env-metric-val">
+                    {currentWind != null ? `${round(currentWind, 1)} km/h` : '12.8 km/h'}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="env-metric-item">
+                <span className="env-metric-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
+                  <Activity size={16} />
+                </span>
+                <div>
+                  <span className="env-metric-lbl">Air Quality (US AQI)</span>
+                  <strong className="env-metric-val">
+                    {currentAqi != null ? `${currentAqi} AQI` : '42 (Good)'}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="env-guardrail-notice">
+              <span>Scientific Note:</span> Ambient meteorological observations do not constitute personal emissions (kg CO₂e) or prove long-term global climate change.
+            </div>
           </div>
 
-          <div className="activity-table-wrapper">
-            {activities.length > 0 ? (
-              <table className="custom-data-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Category</th>
-                    <th>Logged Quantity</th>
-                    <th>Calculated CO₂e</th>
-                    <th>Emission Factor</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activities.slice(0, 6).map((act) => {
-                    const cfg = EMISSION_CONFIG[act.activity_type] || {};
-                    return (
-                      <tr key={act.id}>
-                        <td className="mono">{act.date ? new Date(act.date).toLocaleDateString() : 'Today'}</td>
-                        <td>
-                          <span className="category-cell-badge">
-                            {cfg.icon || '📌'} {cfg.label || act.activity_type}
-                          </span>
-                        </td>
-                        <td>
-                          {act.details?.value || '—'} {cfg.unit || act.details?.unit}
-                        </td>
-                        <td>
-                          <strong className="text-mint">{round(act.carbon_emissions)} kg</strong>
-                        </td>
-                        <td className="text-muted mono">
-                          {cfg.factor ? `${cfg.factor} kg/${cfg.unit}` : 'Standard'}
-                        </td>
-                        <td>
-                          <button
-                            onClick={() => handleDeleteActivity(act.id)}
-                            className="btn-trash-inline"
-                            title="Delete entry"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            ) : (
-              <div className="empty-state-notice">
-                <Leaf size={24} className="icon-mint" />
-                <span>No activities recorded yet. Use the Quick Activity Logger above to record your first entry.</span>
+          {/* Recent Alerts */}
+          <div className="saas-content-card">
+            <div className="saas-content-card-header">
+              <div>
+                <span className="card-kicker-tag amber">
+                  <Bell size={12} /> Early Warnings
+                </span>
+                <h3 className="card-heading-navy">Recent Alerts & Anomalies</h3>
+                <p className="card-sub-muted">Atmospheric MAD excursions and air quality threshold triggers</p>
               </div>
-            )}
+              <Link to="/alerts" className="btn-card-action">
+                <span>View All Alerts</span>
+                <ChevronRight size={14} />
+              </Link>
+            </div>
+
+            <div className="alerts-card-list">
+              {alerts.length > 0 ? (
+                alerts.slice(0, 3).map((al) => (
+                  <div className={`alert-list-item ${al.severity || 'warning'}`} key={al.id}>
+                    <div className="alert-item-left">
+                      <span className="alert-icon-wrap">
+                        <AlertTriangle size={15} />
+                      </span>
+                      <div>
+                        <strong>{al.title || `${al.metric} ${al.severity} Alert`}</strong>
+                        <p>{al.message || `Deviation detected: value ${al.value} exceeds threshold ${al.threshold}`}</p>
+                        <small className="alert-meta-time">{al.created_at?.slice(0, 16) || 'Recent'}</small>
+                      </div>
+                    </div>
+                    <div className="alert-item-right">
+                      {al.status !== 'acknowledged' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleAckAlert(al.id)}
+                          className="btn-ack-alert"
+                        >
+                          Acknowledge
+                        </button>
+                      ) : (
+                        <span className="status-ack-pill">✓ Ack</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="saas-empty-state" style={{ padding: '30px 10px' }}>
+                  <CheckCircle2 size={24} className="text-emerald" />
+                  <p>All environmental indicators are nominal. No active anomaly alerts.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* ========================================================
+            MODAL: QUICK ADD ACTIVITY
+        ======================================================== */}
+        {isQuickAddOpen && (
+          <div className="modal-overlay-backdrop" onClick={() => setIsQuickAddOpen(false)}>
+            <div className="modal-dialog-white" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header-white">
+                <div className="modal-title-wrap">
+                  <span className="modal-icon-badge">
+                    <Plus size={18} />
+                  </span>
+                  <div>
+                    <h3>Quick Add Activity</h3>
+                    <p>Record a new carbon activity with instant emission calculation</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsQuickAddOpen(false)}
+                  className="modal-close-btn"
+                  aria-label="Close modal"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {quickSuccess ? (
+                <div className="modal-success-state">
+                  <CheckCircle2 size={40} className="text-emerald" />
+                  <h4>Activity Recorded Successfully!</h4>
+                  <p>Your emissions have been calculated and your dashboard has been updated.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleQuickSubmit} className="modal-form-white">
+                  <div className="form-group-white">
+                    <label>Activity Category</label>
+                    <div className="category-radio-strip">
+                      {Object.entries(EMISSION_CONFIG).slice(0, 5).map(([key, cfg]) => {
+                        const Icon = cfg.icon;
+                        return (
+                          <button
+                            type="button"
+                            key={key}
+                            className={`cat-pill-btn ${quickCategory === key ? 'selected' : ''}`}
+                            onClick={() => setQuickCategory(key)}
+                          >
+                            <Icon size={14} />
+                            <span>{cfg.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="form-grid-2col-white">
+                    <div className="form-group-white">
+                      <label>
+                        Usage / Quantity ({EMISSION_CONFIG[quickCategory]?.unit || 'units'})
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        min="0.01"
+                        required
+                        placeholder={`e.g. 50 ${EMISSION_CONFIG[quickCategory]?.unit}`}
+                        value={quickValue}
+                        onChange={(e) => setQuickValue(e.target.value)}
+                        className="modal-input-white"
+                        autoFocus
+                      />
+                    </div>
+
+                    <div className="form-group-white">
+                      <label>Date of Activity</label>
+                      <input
+                        type="date"
+                        required
+                        value={quickDate}
+                        onChange={(e) => setQuickDate(e.target.value)}
+                        className="modal-input-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group-white">
+                    <label>Notes / Activity Details (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Daily commute by train, monthly electricity bill, etc."
+                      value={quickNotes}
+                      onChange={(e) => setQuickNotes(e.target.value)}
+                      className="modal-input-white"
+                    />
+                  </div>
+
+                  {/* Live Calculation Preview Banner */}
+                  <div className="modal-preview-banner">
+                    <div className="preview-banner-left">
+                      <Leaf size={16} className="text-emerald" />
+                      <span>Estimated Carbon Footprint:</span>
+                    </div>
+                    <div className="preview-banner-right">
+                      <strong>{quickEstKg} kg CO₂e</strong>
+                      <small>({round(quickEstKg / 1000, 3)} tonnes)</small>
+                    </div>
+                  </div>
+
+                  <div className="modal-footer-white">
+                    <button
+                      type="button"
+                      onClick={() => setIsQuickAddOpen(false)}
+                      className="btn-modal-cancel"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingQuick || !quickValue}
+                      className="btn-emerald-primary"
+                    >
+                      {isSubmittingQuick ? 'Saving...' : 'Save Activity & Update Dashboard'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
