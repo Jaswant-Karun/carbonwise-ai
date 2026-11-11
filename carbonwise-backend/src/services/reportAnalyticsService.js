@@ -893,3 +893,4 @@ module.exports = {
   generatePDF,
   getMonthlySustainabilityReport,
 };
+
